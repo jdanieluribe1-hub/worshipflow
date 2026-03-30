@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { uploadPDF, addSong } from '../lib/supabase'
-import { parsePDFWithAI, generateProPresenterTemplate } from '../lib/ai'
+import { uploadPDF, addSong, updateSong } from '../lib/supabase'
+import { parsePDFWithAI } from '../lib/ai'
 
 const KEYS = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B']
 const TEMPOS = ['Fast','Medium','Slow']
@@ -9,14 +9,15 @@ export default function Upload({ refreshSongs }) {
   const [step, setStep] = useState('idle')
   const [extracted, setExtracted] = useState(null)
   const [pdfFile, setPdfFile] = useState(null)
-  const [propre, setPropre] = useState('')
+  const [urlInput, setUrlInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   const handleFile = async (file) => {
     if (!file || file.type !== 'application/pdf') return alert('Please upload a PDF file.')
     setPdfFile(file)
     setStep('parsing')
-
+    setError('')
     try {
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader()
@@ -26,113 +27,196 @@ export default function Upload({ refreshSongs }) {
       })
       const result = await parsePDFWithAI(base64)
       setExtracted({ title: result.title || file.name.replace('.pdf',''), artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
-      setPropre(generateProPresenterTemplate(result.title || file.name, result.key || 'G', result.lyrics || ''))
       setStep('review')
     } catch(e) {
-      alert('Error parsing PDF: ' + e.message)
+      setError('Error parsing PDF: ' + e.message)
+      setStep('idle')
+    }
+  }
+
+  const handleURL = async () => {
+    if (!urlInput.trim()) return alert('Please enter a URL.')
+    setStep('parsing')
+    setError('')
+    try {
+      const res = await fetch('/api/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlInput.trim() })
+      })
+      const result = await res.json()
+      if (result.error) throw new Error(result.error)
+      setExtracted({ title: result.title || '', artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
+      setStep('review')
+    } catch(e) {
+      setError('Error fetching URL: ' + e.message)
       setStep('idle')
     }
   }
 
   const handleSave = async () => {
-    if (!extracted?.title) return alert('Please enter a song title.')
+    if (!extracted.title.trim()) return alert('Please enter a song title.')
     setSaving(true)
     try {
       let pdf_url = null
       if (pdfFile) pdf_url = await uploadPDF(pdfFile, extracted.title)
-      await addSong({ title: extracted.title, artist: extracted.artist, key: extracted.key, tempo: extracted.tempo, themes: [], specialty: [], notes: '', lyrics: extracted.lyrics, pdf_url, plays_3weeks: 0, plays_3months: 0, plays_year: 0 })
+      await addSong({
+        title: extracted.title.trim(),
+        artist: extracted.artist.trim(),
+        key: extracted.key,
+        tempo: extracted.tempo,
+        themes: [], specialty: [], notes: '',
+        lyrics: extracted.lyrics,
+        pdf_url,
+        plays_3weeks: 0, plays_3months: 0, plays_year: 0
+      })
       await refreshSongs()
       setStep('done')
-    } catch(e) { alert('Error saving: ' + e.message) }
+    } catch(e) {
+      alert('Error saving: ' + e.message)
+    }
     setSaving(false)
   }
 
-  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setPropre('') }
+  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setError('') }
+
+  if (step === 'done') return (
+    <div className="empty-state">
+      <div className="empty-icon">✅</div>
+      <div className="empty-text">Song saved to your library!</div>
+      <button className="btn btn-primary" style={{ marginTop:16 }} onClick={reset}>Upload Another</button>
+    </div>
+  )
 
   return (
     <div>
-      {step === 'done' ? (
-        <div className="empty-state">
-          <div className="empty-icon">✅</div>
-          <div className="empty-text">Song saved to your library!</div>
-          <button className="btn btn-primary" style={{ marginTop:16 }} onClick={reset}>Upload Another</button>
-        </div>
-      ) : (
+      {step === 'idle' && (
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
           <div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Upload Chord Chart PDF</div>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Option 1 — Paste a URL</div>
+            <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12 }}>Works great with cifraclub, CCLI, PraiseCharts, and most chord chart sites.</div>
+            <div style={{ display:'flex', gap:10 }}>
+              <input type="text" placeholder="https://cifraclub.com.br/..." value={urlInput} onChange={e=>setUrlInput(e.target.value)} style={{ flex:1 }} onKeyDown={e=>e.key==='Enter'&&handleURL()} />
+              <button className="btn btn-primary" onClick={handleURL}>Fetch</button>
+            </div>
+            {error && <div style={{ marginTop:10, fontSize:13, color:'var(--red)' }}>{error}</div>}
 
-            {step === 'idle' && (
-              <div className="upload-zone" onClick={()=>document.getElementById('pdf-input').click()}>
-                <div style={{ fontSize:32, marginBottom:10 }}>📄</div>
-                <div style={{ fontSize:14, fontWeight:500, marginBottom:4 }}>Click to upload a PDF</div>
-                <div style={{ fontSize:12, color:'var(--muted)' }}>AI will extract title, key, and lyrics automatically</div>
-                <input id="pdf-input" type="file" accept=".pdf" style={{ display:'none' }} onChange={e=>handleFile(e.target.files[0])} />
-              </div>
-            )}
+            <div style={{ display:'flex', alignItems:'center', gap:12, margin:'24px 0' }}>
+              <div style={{ flex:1, height:1, background:'var(--border)' }} />
+              <div style={{ fontSize:12, color:'var(--muted)' }}>or</div>
+              <div style={{ flex:1, height:1, background:'var(--border)' }} />
+            </div>
 
-            {step === 'parsing' && (
-              <div style={{ textAlign:'center', padding:40, color:'var(--accent)' }}>
-                <div style={{ fontSize:28, marginBottom:12 }}>⏳</div>
-                <div style={{ fontSize:14 }}>AI is reading your chord chart...</div>
-              </div>
-            )}
-
-            {step === 'review' && extracted && (
-              <div className="card" style={{ marginTop:0 }}>
-                <div style={{ fontSize:11, color:'var(--muted)', marginBottom:14, textTransform:'uppercase', letterSpacing:'0.5px' }}>AI Extracted — Review & Edit</div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Song Title</label>
-                    <input type="text" value={extracted.title} onChange={e=>setExtracted(x=>({...x,title:e.target.value}))} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Artist</label>
-                    <input type="text" value={extracted.artist} onChange={e=>setExtracted(x=>({...x,artist:e.target.value}))} />
-                  </div>
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Key</label>
-                    <select value={extracted.key} onChange={e=>{setExtracted(x=>({...x,key:e.target.value}));setPropre(generateProPresenterTemplate(extracted.title,e.target.value,extracted.lyrics))}}>
-                      {KEYS.map(k=><option key={k}>{k}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Tempo</label>
-                    <select value={extracted.tempo} onChange={e=>setExtracted(x=>({...x,tempo:e.target.value}))}>
-                      {TEMPOS.map(t=><option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-                {extracted.lyrics && (
-                  <div className="form-group">
-                    <label className="form-label">Lyrics (extracted)</label>
-                    <textarea value={extracted.lyrics} onChange={e=>{setExtracted(x=>({...x,lyrics:e.target.value}));setPropre(generateProPresenterTemplate(extracted.title,extracted.key,e.target.value))}} style={{ minHeight:120, width:'100%' }} />
-                  </div>
-                )}
-                <div style={{ display:'flex', gap:10, marginTop:4 }}>
-                  <button className="btn btn-ghost btn-sm" onClick={reset}>Start Over</button>
-                  <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Saving...':'Save to Library'}</button>
-                </div>
-              </div>
-            )}
+            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Option 2 — Upload a PDF</div>
+            <div className="upload-zone" onClick={()=>document.getElementById('pdf-input').click()}>
+              <div style={{ fontSize:32, marginBottom:10 }}>📄</div>
+              <div style={{ fontSize:14, fontWeight:500, marginBottom:4 }}>Click to upload a PDF</div>
+              <div style={{ fontSize:12, color:'var(--muted)' }}>AI will extract chords and lyrics automatically</div>
+              <input id="pdf-input" type="file" accept=".pdf" style={{ display:'none' }} onChange={e=>handleFile(e.target.files[0])} />
+            </div>
           </div>
 
           <div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>ProPresenter Template</div>
-            <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12 }}>
-              {step === 'review' ? 'Copy and paste this into ProPresenter.' : 'Upload a PDF to generate a ProPresenter import template.'}
+            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:12 }}>How it works</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              {[
+                ['🔗', 'Paste a URL', 'AI fetches the page and extracts chords and lyrics with section labels'],
+                ['📄', 'Upload a PDF', 'AI reads the PDF visually and pulls out all song data'],
+                ['✏️', 'Review and edit', 'Check the extracted info before saving'],
+                ['💾', 'Saved to library', 'Song is stored with PDF link, key, tempo, and full lyrics'],
+              ].map(([icon, title, desc]) => (
+                <div key={title} style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                  <div style={{ fontSize:20, width:28, flexShrink:0 }}>{icon}</div>
+                  <div>
+                    <div style={{ fontWeight:500, fontSize:13, marginBottom:2 }}>{title}</div>
+                    <div style={{ fontSize:12, color:'var(--muted)', lineHeight:1.5 }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="propre-box">{propre || '// Upload a PDF to generate template...'}</div>
-            {propre && (
-              <button className="btn btn-ghost btn-sm" style={{ marginTop:10 }} onClick={()=>{navigator.clipboard.writeText(propre);alert('Copied!')}}>
-                Copy Template
-              </button>
-            )}
           </div>
         </div>
       )}
+
+      {step === 'parsing' && (
+        <div style={{ textAlign:'center', padding:60, color:'var(--accent)' }}>
+          <div style={{ fontSize:36, marginBottom:16 }}>⏳</div>
+          <div style={{ fontSize:15, fontWeight:500 }}>AI is reading the song...</div>
+          <div style={{ fontSize:13, color:'var(--muted)', marginTop:6 }}>Extracting chords, lyrics, and key</div>
+        </div>
+      )}
+
+      {step === 'review' && extracted && (
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
+          <div className="card" style={{ marginTop:0 }}>
+            <div style={{ fontSize:11, color:'var(--muted)', marginBottom:14, textTransform:'uppercase', letterSpacing:'0.5px' }}>AI Extracted — Review and Edit</div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Song Title</label>
+                <input type="text" value={extracted.title} onChange={e=>setExtracted(x=>({...x,title:e.target.value}))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Artist</label>
+                <input type="text" value={extracted.artist} onChange={e=>setExtracted(x=>({...x,artist:e.target.value}))} />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Key</label>
+                <select value={extracted.key} onChange={e=>setExtracted(x=>({...x,key:e.target.value}))}>
+                  {KEYS.map(k=><option key={k}>{k}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tempo</label>
+                <select value={extracted.tempo} onChange={e=>setExtracted(x=>({...x,tempo:e.target.value}))}>
+                  {TEMPOS.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Lyrics with Chords</label>
+              <textarea value={extracted.lyrics} onChange={e=>setExtracted(x=>({...x,lyrics:e.target.value}))} style={{ minHeight:160, width:'100%', fontFamily:'monospace', fontSize:12 }} />
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button className="btn btn-ghost btn-sm" onClick={reset}>Start Over</button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Saving...':'Save to Library'}</button>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:12 }}>Preview</div>
+            <ChordDisplay lyrics={extracted.lyrics} />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function ChordDisplay({ lyrics }) {
+  if (!lyrics) return <div style={{ color:'var(--muted)', fontSize:13 }}>No lyrics yet</div>
+
+  const lines = lyrics.split('\n')
+  return (
+    <div style={{ fontFamily:'monospace', fontSize:14, lineHeight:2.2, background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:400, overflowY:'auto' }}>
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} style={{ height:8 }} />
+        if (/^\[(?!.*\s).*\]$/.test(line.trim()) && !line.includes(' ')) {
+          return <div key={i} style={{ color:'var(--accent2)', fontWeight:600, fontSize:12, letterSpacing:1, textTransform:'uppercase', marginTop:12, marginBottom:2, fontFamily:'var(--font-body)' }}>{line.trim().replace(/[\[\]]/g,'')}</div>
+        }
+        const parts = line.split(/(\[[^\]]+\])/)
+        return (
+          <div key={i} style={{ display:'flex', flexWrap:'wrap', alignItems:'flex-end', marginBottom:2 }}>
+            {parts.map((part, j) => {
+              if (/^\[[^\]]+\]$/.test(part)) {
+                return <span key={j} style={{ color:'var(--accent)', fontWeight:700, fontSize:12, marginRight:1, lineHeight:1, display:'inline-block', verticalAlign:'bottom', paddingBottom:2 }}>{part.slice(1,-1)}</span>
+              }
+              return <span key={j} style={{ color:'var(--text)', fontSize:14 }}>{part}</span>
+            })}
+          </div>
+        )
+      })}
     </div>
   )
 }

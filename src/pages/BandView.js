@@ -6,6 +6,32 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
+function ChordDisplay({ lyrics }) {
+  if (!lyrics) return null
+  const lines = lyrics.split('\n')
+  return (
+    <div style={{ textAlign:'left', width:'100%' }}>
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} style={{ height:6 }} />
+        if (/^\[[^\]]+\]$/.test(line.trim()) && !line.includes(' ')) {
+          return <div key={i} style={{ color:'#6c8fff', fontWeight:600, fontSize:11, letterSpacing:1.5, textTransform:'uppercase', marginTop:16, marginBottom:2 }}>{line.trim().replace(/[\[\]]/g,'')}</div>
+        }
+        const parts = line.split(/(\[[^\]]+\])/)
+        return (
+          <div key={i} style={{ display:'flex', flexWrap:'wrap', alignItems:'flex-end', marginBottom:4, lineHeight:1.8 }}>
+            {parts.map((part, j) => {
+              if (/^\[[^\]]+\]$/.test(part)) {
+                return <span key={j} style={{ color:'#6c8fff', fontWeight:700, fontSize:13, marginRight:2, display:'inline-block' }}>{part.slice(1,-1)}</span>
+              }
+              return <span key={j} style={{ color:'#333', fontSize:16 }}>{part}</span>
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function BandView({ weekSongs }) {
   const [idx, setIdx] = useState(0)
   const touchStartX = useRef(null)
@@ -63,7 +89,27 @@ export default function BandView({ weekSongs }) {
                   {current.tempo}
                 </span>
               </div>
-              {current.pdf_url ? (
-                <iframe src={current.pdf_url} title={current.title} style={{ width:'100%', height:'600px', border:'none', borderRadius:'12px', background:'#f5f5f5' }} />
-              ) : current.lyrics ? (
-                <div className="band-lyrics">{current.lyrics}</div>
+              {current.lyrics ? (
+                <div style={{ width:'100%', background:'#fafafa', borderRadius:12, padding:'16px 20px', maxHeight:420, overflowY:'auto' }}>
+                  <ChordDisplay lyrics={current.lyrics} />
+                </div>
+              ) : current.pdf_url ? (
+                <iframe src={current.pdf_url} title={current.title} style={{ width:'100%', height:'500px', border:'none', borderRadius:'12px' }} />
+              ) : (
+                <div style={{ background:'#f5f5f5', borderRadius:12, padding:24, color:'#aaa', fontSize:13 }}>No chord chart uploaded yet</div>
+              )}
+            </div>
+            <div className="band-nav">
+              <button onClick={prev} disabled={idx===0}>←</button>
+              <div className="band-dots">
+                {displaySongs.map((_,i) => <div key={i} className={i===idx ? 'band-dot active' : 'band-dot'} />)}
+              </div>
+              <button onClick={next} disabled={idx===displaySongs.length-1}>→</button>
+            </div>
+            <div style={{ textAlign:'center', marginTop:16, fontSize:12, color:'#aaa' }}>Swipe left or right to navigate songs</div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
