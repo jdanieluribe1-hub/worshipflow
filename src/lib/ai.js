@@ -1,5 +1,5 @@
 export async function parsePDFWithAI(base64PDF) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/api/parse-pdf', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -48,18 +48,4 @@ export function generateProPresenterTemplate(title, key, lyrics) {
   Song: ${title}
   Key: ${key}
   
-  HOW TO IMPORT:
-  1. Copy this entire block
-  2. In ProPresenter, go to File > Import > Text
-  3. Paste and confirm
--->
-<RVPresentationDocument>
-  <RVSlideGrouping name="${title} (Key of ${key})">
-${slides.map((s, i) => `    <RVDisplaySlide uuid="slide-${i + 1}">
-      <RVTextElement>
-        <NSString>${s}</NSString>
-      </RVTextElement>
-    </RVDisplaySlide>`).join('\n')}
-  </RVSlideGrouping>
-</RVPresentationDocument>`
-}
+  HOW TO I
