@@ -2,7 +2,10 @@ import React, { useState } from 'react'
 import { uploadPDF, addSong, updateSong } from '../lib/supabase'
 import { parsePDFWithAI } from '../lib/ai'
 
-const KEYS = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B']
+const KEYS = [
+  'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
+  'Cm','C#m','Dm','D#m','Em','Fm','F#m','Gm','G#m','Am','A#m','Bm',
+]
 const TEMPOS = ['Fast','Medium','Slow']
 
 export default function Upload({ refreshSongs }) {
