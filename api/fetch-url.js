@@ -110,7 +110,8 @@ export default async function handler(req, res) {
       textForAI = fullText.slice(0, 14000)
     }
 
-    console.log('[fetch-url] calling anthropic api')
+    const MODEL = 'claude-sonnet-4-6'
+    console.log('[fetch-url] calling anthropic api, model:', MODEL, 'key prefix:', process.env.ANTHROPIC_API_KEY?.slice(0, 10))
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -119,7 +120,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: MODEL,
         max_tokens: 3000,
         messages: [{
           role: 'user',
