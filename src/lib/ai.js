@@ -14,15 +14,7 @@ export async function parsePDFWithAI(base64PDF) {
           },
           {
             type: 'text',
-            text: `You are reading a worship song chord chart PDF. Extract the following and respond ONLY with a JSON object, no markdown, no preamble:
-{
-  "title": "song title",
-  "artist": "artist or writer name",
-  "key": "musical key like G, A, D, E, C, F, Bb, Eb etc",
-  "tempo": "Fast, Medium, or Slow based on context clues",
-  "lyrics": "full lyrics text only, no chord symbols, clean and formatted with line breaks"
-}
-If you cannot determine a field, use an empty string.`
+            text: 'You are reading a worship song chord chart PDF. Extract the following and respond ONLY with a JSON object, no markdown, no preamble: {"title": "song title", "artist": "artist or writer name", "key": "musical key like G, A, D, E, C, F, Bb, Eb etc", "tempo": "Fast, Medium, or Slow", "lyrics": "full lyrics text only, no chord symbols, formatted with line breaks"}. If you cannot determine a field, use an empty string.'
           }
         ]
       }]
@@ -39,13 +31,7 @@ If you cannot determine a field, use an empty string.`
 
 export function generateProPresenterTemplate(title, key, lyrics) {
   const slides = lyrics
-    ? lyrics.split('\n\n').map(section => section.trim()).filter(Boolean)
+    ? lyrics.split('\n\n').map(s => s.trim()).filter(Boolean)
     : ['[Verse 1]\nPaste lyrics here...', '[Chorus]\nPaste lyrics here...']
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  WorshipFlow ProPresenter Import Template
-  Song: ${title}
-  Key: ${key}
-  
-  HOW TO I
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<RVPresentationDocument>\n  <RVSlideGrouping name="' + title + ' (Key of ' + key + ')">\n' + slides.map((s, i) => '    <RVDisplaySlide uuid="slide-' + (i+1) + '">\n      <RVTextElement>\n        <NSString>' + s + '</NSString>\n      </RVTextElement>\n    </RVDisplaySlide>').join('\n') + '\n  </RVSlideGrouping>\n</RVPresentationDocument>'
+}
