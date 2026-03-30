@@ -5,33 +5,20 @@ const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// ── SONGS ──────────────────────────────────────────
 export async function getSongs() {
-  const { data, error } = await supabase
-    .from('songs')
-    .select('*')
-    .order('title')
+  const { data, error } = await supabase.from('songs').select('*').order('title')
   if (error) throw error
   return data
 }
 
 export async function addSong(song) {
-  const { data, error } = await supabase
-    .from('songs')
-    .insert([song])
-    .select()
-    .single()
+  const { data, error } = await supabase.from('songs').insert([song]).select().single()
   if (error) throw error
   return data
 }
 
 export async function updateSong(id, updates) {
-  const { data, error } = await supabase
-    .from('songs')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
+  const { data, error } = await supabase.from('songs').update(updates).eq('id', id).select().single()
   if (error) throw error
   return data
 }
@@ -54,53 +41,41 @@ export async function incrementPlays(songIds) {
   }
 }
 
-// ── SETS ───────────────────────────────────────────
 export async function getSets() {
-  const { data, error } = await supabase
-    .from('sets')
-    .select('*')
-    .order('service_date', { ascending: false })
+  const { data, error } = await supabase.from('sets').select('*').order('service_date', { ascending: false })
   if (error) throw error
   return data
 }
 
 export async function getSetByDate(date) {
-  const { data, error } = await supabase
-    .from('sets')
-    .select('*')
-    .eq('service_date', date)
-    .single()
+  const { data, error } = await supabase.from('sets').select('*').eq('service_date', date).single()
   if (error && error.code !== 'PGRST116') throw error
   return data || null
 }
 
 export async function upsertSet(serviceDate, songIds, notes = '') {
-  const { data, error } = await supabase
-    .from('sets')
-    .upsert({ service_date: serviceDate, song_ids: songIds, notes }, { onConflict: 'service_date' })
-    .select()
-    .single()
+  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, notes }, { onConflict: 'service_date' }).select().single()
   if (error) throw error
   return data
 }
 
 export async function finalizeSet(serviceDate, songIds) {
   await incrementPlays(songIds)
-  const { data, error } = await supabase
-    .from('sets')
-    .upsert({ service_date: serviceDate, song_ids: songIds, finalized: true }, { onConflict: 'service_date' })
-    .select()
-    .single()
+  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, finalized: true }, { onConflict: 'service_date' }).select().single()
   if (error) throw error
   return data
 }
 
-// ── PDF UPLOAD ─────────────────────────────────────
 export async function uploadPDF(file, songTitle) {
-  const fileName = `${Date.now()}-${songTitle.replace(/\s+/g, '-').toLowerCase()}.pdf`
-  const { data, error } = await supabase.storage
-    .from('chord-charts')
-    .upload(fileName, file, { contentType: 'application/pdf', upsert: true })
+  const safeName = songTitle
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]/g, '-')
+    .toLowerCase()
+    .replace(/-+/g, '-')
+    .slice(0, 50)
+  const fileName = `${Date.now()}-${safeName}.pdf`
+  const { data, error } = await supabase.storage.from('chord-charts').upload(fileName, file, { contentType: 'application/pdf', upsert: true })
   if (error) throw error
   const { data: urlData } = supabase.storage.from('chord-charts').getPublicUrl(fileName)
   return urlData.publicUrl
