@@ -31,12 +31,11 @@ export async function parsePDFWithAI(base64PDF) {
 
 export function generateProPresenterTemplate(title, key, lyrics) {
   if (!lyrics) return '<!-- No lyrics extracted -->'
-  const sectionRegex = /(\[[^\]]+\])/g
-  const parts = lyrics.split(sectionRegex).filter(s => s.trim())
+  const parts = lyrics.split(/(\[[^\]]+\])/).filter(s => s.trim())
   const slides = []
   let currentHeading = ''
   for (const part of parts) {
-    if (part.match(/^\[[^\]]+\]$/)) {
+    if (/^\[[^\]]+\]$/.test(part)) {
       currentHeading = part.trim()
     } else {
       const lines = part.trim()
@@ -49,6 +48,5 @@ export function generateProPresenterTemplate(title, key, lyrics) {
     })
   }
   const slideXml = slides.map((s, i) => '    <RVDisplaySlide uuid="slide-' + (i+1) + '">\n      <!-- ' + s.heading + ' -->\n      <RVTextElement>\n        <NSString>' + s.text + '</NSString>\n      </RVTextElement>\n    </RVDisplaySlide>').join('\n')
-  return '<?xml version="1.0" encoding="UTF-8"?>\n<!--\n  WorshipFlow ProPresenter Import\n  Song: ' + title + '\n  Key: ' + key + '\n-->\n<RVPresentationDocument>\n  <RVSlideGrouping name="' + title + ' (Key of ' + key + ')">\n' + slideXml + '\n  </RVSlideGrouping>\n</RVPresentationDocument>'
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<RVPresentationDocument>\n  <RVSlideGrouping name="' + title + ' (Key of ' + key + ')">\n' + slideXml + '\n  </RVSlideGrouping>\n</RVPresentationDocument>'
 }
-```
