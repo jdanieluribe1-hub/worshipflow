@@ -1,24 +1,64 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   res.setHeader('Access-Control-Allow-Origin', '*')
-  try {
-    const { url } = req.body
 
-    const pageRes = await fetch(url, {
-      redirect: 'follow',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,pt;q=0.7',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-      }
-    })
+  const { url } = req.body
+  console.log('[fetch-url] target url:', url)
+
+  try {
+    // Abort page fetch after 15 s so there is still time left for the AI call
+    const controller = new AbortController()
+    const fetchTimeout = setTimeout(() => controller.abort(), 15000)
+
+    let pageRes
+    try {
+      pageRes = await fetch(url, {
+        signal: controller.signal,
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9,es;q=0.8,pt;q=0.7',
+          'Referer': new URL(url).origin + '/',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      })
+    } catch (fetchErr) {
+      const reason = fetchErr.name === 'AbortError' ? 'Page fetch timed out after 15 s' : fetchErr.message
+      console.error('[fetch-url] page fetch failed:', reason)
+      return res.status(200).json({ error: 'Could not reach the page: ' + reason })
+    } finally {
+      clearTimeout(fetchTimeout)
+    }
+
+    console.log('[fetch-url] page status:', pageRes.status, 'url:', pageRes.url)
+
+    if (!pageRes.ok) {
+      return res.status(200).json({
+        error: `Site returned HTTP ${pageRes.status}. It may be blocking server requests.`,
+        _debug: { httpStatus: pageRes.status, finalUrl: pageRes.url },
+      })
+    }
 
     const html = await pageRes.text()
+    console.log('[fetch-url] html length:', html.length)
 
     if (html.length < 500) {
-      return res.status(200).json({ error: 'Page returned empty content — this site may require JavaScript rendering.' })
+      return res.status(200).json({
+        error: 'Page returned almost no content — this site may require JavaScript to render.',
+        _debug: { htmlLength: html.length, preview: html.slice(0, 200) },
+      })
+    }
+
+    // Detect anti-bot / Cloudflare challenge pages
+    const lowerHtml = html.toLowerCase()
+    if (
+      (lowerHtml.includes('cf-browser-verification') || lowerHtml.includes('just a moment')) &&
+      html.length < 20000
+    ) {
+      console.error('[fetch-url] cloudflare challenge detected')
+      return res.status(200).json({ error: 'Site is protected by Cloudflare bot detection. Try a different URL or paste the lyrics manually.' })
     }
 
     // Extract page title
@@ -28,6 +68,8 @@ export default async function handler(req, res) {
     // Extract <pre> blocks — where chord charts live on cifraclub, e-chords, etc.
     // Convert <b>Chord</b> → [Chord] to preserve chord markers with their spacing
     const preMatches = html.match(/<pre[^>]*>[\s\S]*?<\/pre>/gi) || []
+    console.log('[fetch-url] pre tag count:', preMatches.length)
+
     const preContent = preMatches
       .map(p =>
         p.replace(/<b[^>]*>([^<]+)<\/b>/g, '[$1]')
@@ -43,10 +85,10 @@ export default async function handler(req, res) {
 
     let textForAI
     if (preContent.length > 200) {
-      // Chord chart found in <pre> tags — use it directly
+      console.log('[fetch-url] using pre content, length:', preContent.length)
       textForAI = `Title from page: ${pageTitle}\n\nChord chart:\n${preContent.slice(0, 14000)}`
     } else {
-      // Fallback: strip scripts/styles but keep <b> chord markers before stripping tags
+      // Fallback: strip scripts/styles but convert <b>chord</b> before tag-stripping
       const fullText = html
         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -57,12 +99,18 @@ export default async function handler(req, res) {
         .replace(/\s+/g, ' ')
         .trim()
 
+      console.log('[fetch-url] no pre tags, falling back to full text, length:', fullText.length)
+
       if (fullText.length < 300) {
-        return res.status(200).json({ error: 'Page content appears empty — this site may require JavaScript rendering.' })
+        return res.status(200).json({
+          error: 'Page content appears empty — this site may require JavaScript rendering.',
+          _debug: { htmlLength: html.length, preTagCount: preMatches.length, textLength: fullText.length },
+        })
       }
       textForAI = fullText.slice(0, 14000)
     }
 
+    console.log('[fetch-url] calling anthropic api')
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -99,13 +147,21 @@ Rules:
 {"title":"song title","artist":"artist name","key":"e.g. Bb","tempo":"Fast, Medium, or Slow","lyrics":"full chord chart with inline [Chord] markers and [Section] labels"}
 
 Page content:
-${textForAI}`
-        }]
-      })
+${textForAI}`,
+        }],
+      }),
     })
+
+    if (!aiRes.ok) {
+      const errText = await aiRes.text()
+      console.error('[fetch-url] anthropic api error:', aiRes.status, errText.slice(0, 200))
+      return res.status(200).json({ error: `AI API error (${aiRes.status}). Check that ANTHROPIC_API_KEY is set in Vercel environment variables.` })
+    }
 
     const data = await aiRes.json()
     const text = data.content?.find(b => b.type === 'text')?.text || '{}'
+    console.log('[fetch-url] ai response preview:', text.slice(0, 100))
+
     try {
       const parsed = JSON.parse(text.replace(/```json|```/g, '').trim())
       if (!parsed.title && !parsed.lyrics) {
@@ -113,9 +169,11 @@ ${textForAI}`
       }
       return res.status(200).json(parsed)
     } catch {
-      return res.status(200).json({ error: 'Failed to parse AI response.' })
+      console.error('[fetch-url] json parse failed, raw text:', text.slice(0, 300))
+      return res.status(200).json({ error: 'AI returned an unexpected response format.' })
     }
   } catch (error) {
+    console.error('[fetch-url] unhandled error:', error.message)
     return res.status(500).json({ error: error.message })
   }
 }
