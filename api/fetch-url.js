@@ -119,7 +119,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 3000,
         messages: [{
           role: 'user',
@@ -154,8 +154,11 @@ ${textForAI}`,
 
     if (!aiRes.ok) {
       const errText = await aiRes.text()
-      console.error('[fetch-url] anthropic api error:', aiRes.status, errText.slice(0, 200))
-      return res.status(200).json({ error: `AI API error (${aiRes.status}). Check that ANTHROPIC_API_KEY is set in Vercel environment variables.` })
+      console.error('[fetch-url] anthropic api error:', aiRes.status, errText)
+      return res.status(200).json({
+        error: `AI API error (${aiRes.status}) — see _debug for full response.`,
+        _debug: { anthropicStatus: aiRes.status, anthropicError: errText },
+      })
     }
 
     const data = await aiRes.json()
