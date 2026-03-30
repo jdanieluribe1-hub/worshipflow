@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react'
-import { getSets, getSongs } from '../lib/supabase'
 
 function getNextSunday() {
   const d = new Date()
@@ -7,7 +6,7 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function BandView({ songs: propSongs, sets: propSets, weekSongIds, weekSongs }) {
+export default function BandView({ songs, weekSongIds, weekSongs }) {
   const [idx, setIdx] = useState(0)
   const touchStartX = useRef(null)
 
@@ -45,7 +44,6 @@ export default function BandView({ songs: propSongs, sets: propSets, weekSongIds
           </div>
         ) : (
           <>
-            {/* SONG TABS */}
             <div style={{ display:'flex', gap:8, marginBottom:20, overflowX:'auto', paddingBottom:4 }}>
               {displaySongs.map((s,i) => (
                 <button key={s.id} onClick={()=>setIdx(i)} style={{
@@ -60,35 +58,36 @@ export default function BandView({ songs: propSongs, sets: propSets, weekSongIds
               ))}
             </div>
 
-            {/* CARD */}
-            <div className="band-card"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
+            <div className="band-card" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
               <div className="band-song-num">Song {idx+1} of {displaySongs.length}</div>
               <div className="band-song-title">{current.title}</div>
               <div className="band-song-artist">{current.artist}</div>
-              <div className="band-key">
-                <span style={{ color:'#888', fontWeight:400 }}>Key of</span>
-                <span style={{ color:'#1a1a1a' }}>{current.key}</span>
-              </div>
-              <div style={{ marginBottom:16 }}>
-                <span style={{ display:'inline-flex', alignItems:'center', padding:'3px 10px', borderRadius:20, fontSize:12, fontWeight:500, background:`${tempoColor[current.tempo]}18`, color:tempoColor[current.tempo] }}>
+              <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:20, flexWrap:'wrap' }}>
+                <div className="band-key">
+                  <span style={{ color:'#888', fontWeight:400 }}>Key of</span>
+                  <span style={{ color:'#1a1a1a' }}>{current.key}</span>
+                </div>
+                <span style={{ display:'inline-flex', alignItems:'center', padding:'6px 14px', borderRadius:8, fontSize:13, fontWeight:500, background:`${tempoColor[current.tempo]}18`, color:tempoColor[current.tempo] }}>
                   {current.tempo}
                 </span>
               </div>
 
-              {current.lyrics ? (
-                <div className="band-lyrics">{current.lyrics}</div>
-              ) : current.pdf_url ? (
-                <div>
-                  <a href={current.pdf_url} target="_blank" rel="noreferrer" style={{
-                    display:'inline-flex', alignItems:'center', gap:6,
-                    padding:'10px 20px', borderRadius:10,
-                    background:'#f0f0f0', color:'#333', textDecoration:'none',
-                    fontSize:13, fontWeight:500
-                  }}>📄 View Chord Chart PDF</a>
+              {current.pdf_url ? (
+                <div style={{ width:'100%' }}>
+                  <iframe
+                    src={current.pdf_url}
+                    title={current.title}
+                    style={{
+                      width: '100%',
+                      height: '600px',
+                      border: 'none',
+                      borderRadius: '12px',
+                      background: '#f5f5f5'
+                    }}
+                  />
                 </div>
+              ) : current.lyrics ? (
+                <div className="band-lyrics">{current.lyrics}</div>
               ) : (
                 <div style={{ background:'#f5f5f5', borderRadius:12, padding:24, color:'#aaa', fontSize:13 }}>
                   No chord chart uploaded yet
@@ -96,7 +95,6 @@ export default function BandView({ songs: propSongs, sets: propSets, weekSongIds
               )}
             </div>
 
-            {/* NAVIGATION */}
             <div className="band-nav">
               <button onClick={prev} disabled={idx===0}>←</button>
               <div className="band-dots">
@@ -114,3 +112,4 @@ export default function BandView({ songs: propSongs, sets: propSets, weekSongIds
     </div>
   )
 }
+```
