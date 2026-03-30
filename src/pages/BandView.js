@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { getSongs, getSets } from '../lib/supabase'
 
 function getNextSunday() {
   const d = new Date()
@@ -71,13 +72,36 @@ function ChordDisplay({ lyrics }) {
   )
 }
 
-export default function BandView({ weekSongs }) {
+export default function BandView({ songs: propSongs = [], sets: propSets = [] }) {
+  const [selectedDate, setSelectedDate] = useState(getNextSunday)
   const [idx, setIdx] = useState(0)
+  const [localSongs, setLocalSongs] = useState([])
+  const [localSets, setLocalSets] = useState([])
   const touchStartX = useRef(null)
-  const displaySongs = weekSongs && weekSongs.length > 0 ? weekSongs : []
+
+  // Self-fetch when used on the public /band route (no props passed)
+  useEffect(() => {
+    if (!propSongs.length || !propSets.length) {
+      Promise.all([getSongs(), getSets()])
+        .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
+        .catch(() => {})
+    }
+  }, [propSongs.length, propSets.length])
+
+  const songs = propSongs.length ? propSongs : localSongs
+  const sets  = propSets.length  ? propSets  : localSets
+
+  // Find the set for the selected date and map song_ids → song objects (preserving order)
+  const selectedSet  = sets.find(s => s.service_date === selectedDate)
+  const displaySongs = selectedSet
+    ? selectedSet.song_ids.map(id => songs.find(s => s.id === id)).filter(Boolean)
+    : []
+
   const current = displaySongs[idx]
   const prev = () => setIdx(i => Math.max(0, i - 1))
   const next = () => setIdx(i => Math.min(displaySongs.length - 1, i + 1))
+
+  const handleDateChange = (e) => { setSelectedDate(e.target.value); setIdx(0) }
   const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
   const handleTouchEnd = (e) => {
     if (touchStartX.current === null) return
@@ -86,20 +110,30 @@ export default function BandView({ weekSongs }) {
     touchStartX.current = null
   }
   const tempoColor = { Fast: '#ef4444', Medium: '#d97706', Slow: '#3b82f6' }
-  const dateLabel = new Date(getNextSunday()+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})
+  const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
 
   return (
     <div className="band-page">
       <div className="band-topbar">
         <div className="band-logo">WorshipFlow</div>
-        <div className="band-week-label">{dateLabel}</div>
+        <label style={{ position:'relative', cursor:'pointer', userSelect:'none' }}>
+          <span className="band-week-label" style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:14 }}>📅</span>{dateLabel}
+          </span>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={handleDateChange}
+            style={{ position:'absolute', opacity:0, inset:0, cursor:'pointer', width:'100%', height:'100%' }}
+          />
+        </label>
       </div>
       <div className="band-content">
         {displaySongs.length === 0 ? (
           <div style={{ textAlign:'center', padding:'80px 20px', color:'#888' }}>
             <div style={{ fontSize:40, marginBottom:12 }}>🎸</div>
-            <div style={{ fontSize:16, fontWeight:600, color:'#333', marginBottom:6 }}>No set this week yet</div>
-            <div style={{ fontSize:14 }}>The director has not finalized this week's songs.</div>
+            <div style={{ fontSize:16, fontWeight:600, color:'#333', marginBottom:6 }}>No set for {dateLabel}</div>
+            <div style={{ fontSize:14 }}>No songs have been scheduled for this date yet.</div>
           </div>
         ) : (
           <>
