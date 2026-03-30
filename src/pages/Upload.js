@@ -227,26 +227,68 @@ export default function Upload({ refreshSongs }) {
   )
 }
 
+function parseLyricLine(line) {
+  // Split into alternating [Chord] and text segments, build two padded strings
+  // so chords sit directly above the syllable they fall on.
+  const parts = line.split(/(\[[^\]]+\])/)
+  let chordLine = ''
+  let lyricLine = ''
+  let pendingChord = null
+  for (const part of parts) {
+    if (/^\[[^\]]+\]$/.test(part)) {
+      const chord = part.slice(1, -1)
+      if (pendingChord !== null) {
+        // Two adjacent chords with no text between them
+        const w = pendingChord.length + 1
+        chordLine += pendingChord.padEnd(w)
+        lyricLine += ' '.repeat(w)
+      }
+      pendingChord = chord
+    } else {
+      if (pendingChord !== null) {
+        const w = Math.max(pendingChord.length + 1, part.length)
+        chordLine += pendingChord.padEnd(w)
+        lyricLine += part.padEnd(w)
+        pendingChord = null
+      } else {
+        chordLine += ' '.repeat(part.length)
+        lyricLine += part
+      }
+    }
+  }
+  if (pendingChord !== null) chordLine += pendingChord
+  return { chordLine, lyricLine: lyricLine.trimEnd() }
+}
+
+function isChordName(s) {
+  return /^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/.test(s)
+}
+
 export function ChordDisplay({ lyrics }) {
   if (!lyrics) return <div style={{ color:'var(--muted)', fontSize:13 }}>No lyrics yet</div>
 
   const lines = lyrics.split('\n')
   return (
-    <div style={{ fontFamily:'monospace', fontSize:14, lineHeight:2.2, background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:400, overflowY:'auto' }}>
+    <div style={{ fontFamily:'monospace', fontSize:13, background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:400, overflowY:'auto' }}>
       {lines.map((line, i) => {
-        if (!line.trim()) return <div key={i} style={{ height:8 }} />
-        if (/^\[(?!.*\s).*\]$/.test(line.trim()) && !line.includes(' ')) {
-          return <div key={i} style={{ color:'var(--accent2)', fontWeight:600, fontSize:12, letterSpacing:1, textTransform:'uppercase', marginTop:12, marginBottom:2, fontFamily:'var(--font-body)' }}>{line.trim().replace(/[\[\]]/g,'')}</div>
+        const trimmed = line.trim()
+        if (!trimmed) return <div key={i} style={{ height:8 }} />
+
+        // Section label: entire line is [Something] that isn't a chord name
+        if (/^\[[^\]]+\]$/.test(trimmed) && !isChordName(trimmed.slice(1, -1))) {
+          return <div key={i} style={{ color:'var(--accent2)', fontWeight:600, fontSize:11, letterSpacing:1, textTransform:'uppercase', marginTop:12, marginBottom:4, fontFamily:'var(--font-body)' }}>{trimmed.slice(1,-1)}</div>
         }
-        const parts = line.split(/(\[[^\]]+\])/)
+
+        // Pure lyric line with no chord markers
+        if (!/\[[^\]]+\]/.test(line)) {
+          return <div key={i} style={{ color:'var(--text)', whiteSpace:'pre-wrap', lineHeight:1.6, marginBottom:2 }}>{line}</div>
+        }
+
+        const { chordLine, lyricLine } = parseLyricLine(line)
         return (
-          <div key={i} style={{ display:'flex', flexWrap:'wrap', alignItems:'flex-end', marginBottom:2 }}>
-            {parts.map((part, j) => {
-              if (/^\[[^\]]+\]$/.test(part)) {
-                return <span key={j} style={{ color:'var(--accent)', fontWeight:700, fontSize:12, marginRight:1, lineHeight:1, display:'inline-block', verticalAlign:'bottom', paddingBottom:2 }}>{part.slice(1,-1)}</span>
-              }
-              return <span key={j} style={{ color:'var(--text)', fontSize:14 }}>{part}</span>
-            })}
+          <div key={i} style={{ marginBottom:6 }}>
+            <div style={{ color:'var(--accent)', fontWeight:700, whiteSpace:'pre', lineHeight:1.3 }}>{chordLine}</div>
+            <div style={{ color:'var(--text)', whiteSpace:'pre', lineHeight:1.5 }}>{lyricLine || '\u00A0'}</div>
           </div>
         )
       })}

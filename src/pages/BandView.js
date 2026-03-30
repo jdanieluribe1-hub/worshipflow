@@ -6,25 +6,64 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
+function parseLyricLine(line) {
+  const parts = line.split(/(\[[^\]]+\])/)
+  let chordLine = ''
+  let lyricLine = ''
+  let pendingChord = null
+  for (const part of parts) {
+    if (/^\[[^\]]+\]$/.test(part)) {
+      const chord = part.slice(1, -1)
+      if (pendingChord !== null) {
+        const w = pendingChord.length + 1
+        chordLine += pendingChord.padEnd(w)
+        lyricLine += ' '.repeat(w)
+      }
+      pendingChord = chord
+    } else {
+      if (pendingChord !== null) {
+        const w = Math.max(pendingChord.length + 1, part.length)
+        chordLine += pendingChord.padEnd(w)
+        lyricLine += part.padEnd(w)
+        pendingChord = null
+      } else {
+        chordLine += ' '.repeat(part.length)
+        lyricLine += part
+      }
+    }
+  }
+  if (pendingChord !== null) chordLine += pendingChord
+  return { chordLine, lyricLine: lyricLine.trimEnd() }
+}
+
+function isChordName(s) {
+  return /^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/.test(s)
+}
+
 function ChordDisplay({ lyrics }) {
   if (!lyrics) return null
   const lines = lyrics.split('\n')
   return (
-    <div style={{ textAlign:'left', width:'100%' }}>
+    <div style={{ textAlign:'left', width:'100%', fontFamily:'monospace', fontSize:14 }}>
       {lines.map((line, i) => {
-        if (!line.trim()) return <div key={i} style={{ height:6 }} />
-        if (/^\[[^\]]+\]$/.test(line.trim()) && !line.includes(' ')) {
-          return <div key={i} style={{ color:'#6c8fff', fontWeight:600, fontSize:11, letterSpacing:1.5, textTransform:'uppercase', marginTop:16, marginBottom:2 }}>{line.trim().replace(/[\[\]]/g,'')}</div>
+        const trimmed = line.trim()
+        if (!trimmed) return <div key={i} style={{ height:8 }} />
+
+        // Section label: entire line is [Something] that isn't a chord name
+        if (/^\[[^\]]+\]$/.test(trimmed) && !isChordName(trimmed.slice(1, -1))) {
+          return <div key={i} style={{ color:'#6c8fff', fontWeight:600, fontSize:11, letterSpacing:1.5, textTransform:'uppercase', marginTop:16, marginBottom:4 }}>{trimmed.slice(1,-1)}</div>
         }
-        const parts = line.split(/(\[[^\]]+\])/)
+
+        // Pure lyric line with no chord markers
+        if (!/\[[^\]]+\]/.test(line)) {
+          return <div key={i} style={{ color:'#333', whiteSpace:'pre-wrap', lineHeight:1.6, fontSize:16, marginBottom:2 }}>{line}</div>
+        }
+
+        const { chordLine, lyricLine } = parseLyricLine(line)
         return (
-          <div key={i} style={{ display:'flex', flexWrap:'wrap', alignItems:'flex-end', marginBottom:4, lineHeight:1.8 }}>
-            {parts.map((part, j) => {
-              if (/^\[[^\]]+\]$/.test(part)) {
-                return <span key={j} style={{ color:'#6c8fff', fontWeight:700, fontSize:13, marginRight:2, display:'inline-block' }}>{part.slice(1,-1)}</span>
-              }
-              return <span key={j} style={{ color:'#333', fontSize:16 }}>{part}</span>
-            })}
+          <div key={i} style={{ marginBottom:8 }}>
+            <div style={{ color:'#6c8fff', fontWeight:700, whiteSpace:'pre', lineHeight:1.3 }}>{chordLine}</div>
+            <div style={{ color:'#333', whiteSpace:'pre', lineHeight:1.5, fontSize:16 }}>{lyricLine || '\u00A0'}</div>
           </div>
         )
       })}
