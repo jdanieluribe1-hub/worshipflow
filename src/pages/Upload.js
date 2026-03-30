@@ -10,6 +10,7 @@ export default function Upload({ refreshSongs }) {
   const [extracted, setExtracted] = useState(null)
   const [pdfFile, setPdfFile] = useState(null)
   const [urlInput, setUrlInput] = useState('')
+  const [pasteText, setPasteText] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,6 +27,11 @@ export default function Upload({ refreshSongs }) {
         reader.readAsDataURL(file)
       })
       const result = await parsePDFWithAI(base64)
+      if (!result.title && !result.lyrics) {
+        setError('Could not extract song data from the PDF. Please try a different file or paste the lyrics manually.')
+        setStep('idle')
+        return
+      }
       setExtracted({ title: result.title || file.name.replace('.pdf',''), artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
       setStep('review')
     } catch(e) {
@@ -46,12 +52,23 @@ export default function Upload({ refreshSongs }) {
       })
       const result = await res.json()
       if (result.error) throw new Error(result.error)
+      if (!result.title && !result.lyrics) {
+        setError('Could not extract song data from that URL. Try a different link or paste the lyrics manually.')
+        setStep('idle')
+        return
+      }
       setExtracted({ title: result.title || '', artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
       setStep('review')
     } catch(e) {
       setError('Error fetching URL: ' + e.message)
       setStep('idle')
     }
+  }
+
+  const handlePaste = () => {
+    if (!pasteText.trim()) return alert('Please paste some lyrics or chord chart text.')
+    setExtracted({ title: '', artist: '', key: 'G', tempo: 'Medium', lyrics: pasteText.trim() })
+    setStep('review')
   }
 
   const handleSave = async () => {
@@ -78,7 +95,7 @@ export default function Upload({ refreshSongs }) {
     setSaving(false)
   }
 
-  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setError('') }
+  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setPasteText(''); setError('') }
 
   if (step === 'done') return (
     <div className="empty-state">
@@ -114,6 +131,22 @@ export default function Upload({ refreshSongs }) {
               <div style={{ fontSize:12, color:'var(--muted)' }}>AI will extract chords and lyrics automatically</div>
               <input id="pdf-input" type="file" accept=".pdf" style={{ display:'none' }} onChange={e=>handleFile(e.target.files[0])} />
             </div>
+
+            <div style={{ display:'flex', alignItems:'center', gap:12, margin:'24px 0' }}>
+              <div style={{ flex:1, height:1, background:'var(--border)' }} />
+              <div style={{ fontSize:12, color:'var(--muted)' }}>or</div>
+              <div style={{ flex:1, height:1, background:'var(--border)' }} />
+            </div>
+
+            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:12 }}>Option 3 — Paste Lyrics / Chords</div>
+            <div style={{ fontSize:13, color:'var(--muted)', marginBottom:10 }}>Paste any chord chart text and edit the details in the next step.</div>
+            <textarea
+              placeholder={'[Verse 1]\nAmazing [G]grace how [C]sweet the sound...'}
+              value={pasteText}
+              onChange={e=>setPasteText(e.target.value)}
+              style={{ width:'100%', minHeight:100, fontFamily:'monospace', fontSize:12, resize:'vertical', marginBottom:8 }}
+            />
+            <button className="btn btn-primary" onClick={handlePaste}>Review & Edit</button>
           </div>
 
           <div>
