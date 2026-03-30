@@ -2,9 +2,13 @@ import React, { useState } from 'react'
 import { addSong, deleteSong, updateSong } from '../lib/supabase'
 import { parsePDFWithAI } from '../lib/ai'
 
-const KEYS = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B']
+const KEYS = [
+  'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
+  'Cm','C#m','Dm','D#m','Em','Fm','F#m','Gm','G#m','Am','A#m','Bm',
+]
 const TEMPOS = ['Fast','Medium','Slow']
 const THEMES = ['Praise','Worship','Prayer','Communion','Offering','Closing','Opening','Christmas','Easter','Thanksgiving']
+const SPECIALTY = ['Contemporary','Traditional','Hymn','Spanish','Bilingual','Acoustic','Youth','Children','Advent']
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
@@ -15,6 +19,51 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [saving, setSaving] = useState(false)
   const [detailSong, setDetailSong] = useState(null)
   const [converting, setConverting] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({})
+
+  const openDetail = (s) => { setDetailSong(s); setEditing(false) }
+  const closeDetail = () => { setDetailSong(null); setEditing(false) }
+
+  const startEdit = () => {
+    setEditForm({
+      title:    detailSong.title    || '',
+      artist:   detailSong.artist   || '',
+      key:      detailSong.key      || 'G',
+      tempo:    detailSong.tempo    || 'Medium',
+      themes:   detailSong.themes   || [],
+      specialty:detailSong.specialty|| [],
+      notes:    detailSong.notes    || '',
+    })
+    setEditing(true)
+  }
+
+  const handleEditSave = async () => {
+    if (!editForm.title.trim()) return alert('Please enter a song title.')
+    setSaving(true)
+    try {
+      const updates = {
+        title:    editForm.title.trim(),
+        artist:   editForm.artist.trim(),
+        key:      editForm.key,
+        tempo:    editForm.tempo,
+        themes:   editForm.themes,
+        specialty:editForm.specialty,
+        notes:    editForm.notes,
+      }
+      await updateSong(detailSong.id, updates)
+      await refreshSongs()
+      setDetailSong(s => ({ ...s, ...updates }))
+      setEditing(false)
+    } catch (e) { alert('Error saving: ' + e.message) }
+    setSaving(false)
+  }
+
+  const toggleEditTheme = (t) =>
+    setEditForm(f => ({ ...f, themes: f.themes.includes(t) ? f.themes.filter(x=>x!==t) : [...f.themes, t] }))
+
+  const toggleEditSpecialty = (t) =>
+    setEditForm(f => ({ ...f, specialty: f.specialty.includes(t) ? f.specialty.filter(x=>x!==t) : [...f.specialty, t] }))
 
   const filtered = songs.filter(s => {
     if (filter.tempo !== 'all' && s.tempo !== filter.tempo) return false
@@ -77,7 +126,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
     if (!window.confirm('Delete this song?')) return
     await deleteSong(id)
     await refreshSongs()
-    setDetailSong(null)
+    closeDetail()
   }
 
   return (
@@ -110,7 +159,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       ) : filtered.map(s => {
         const inWeek = weekSongIds.includes(s.id)
         return (
-          <div key={s.id} className={`song-row ${inWeek?'selected':''}`} onClick={() => setDetailSong(s)}>
+          <div key={s.id} className={`song-row ${inWeek?'selected':''}`} onClick={() => openDetail(s)}>
             <div className="song-thumb">{tempoEmoji(s.tempo)}</div>
             <div className="song-info">
               <div className="song-title">{s.title}</div>
@@ -180,57 +229,114 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
 
       {/* DETAIL MODAL */}
       {detailSong && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setDetailSong(null)}>
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&!editing&&closeDetail()}>
           <div className="modal">
-            <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-              <div className="song-thumb" style={{ width:52,height:52,fontSize:22 }}>{tempoEmoji(detailSong.tempo)}</div>
-              <div>
-                <div style={{ fontFamily:'var(--font-head)',fontSize:20,fontWeight:700 }}>{detailSong.title}</div>
-                <div style={{ color:'var(--muted)',fontSize:13 }}>{detailSong.artist}</div>
-              </div>
-            </div>
-            <div style={{ display:'flex',gap:8,flexWrap:'wrap',marginBottom:16 }}>
-              <span className={`tag tag-${detailSong.tempo?.toLowerCase()}`}>{detailSong.tempo}</span>
-              <span className="tag tag-key">Key of {detailSong.key}</span>
-              {(detailSong.themes||[]).map(t=><span key={t} className="tag tag-theme">{t}</span>)}
-              {(detailSong.specialty||[]).map(t=><span key={t} className="tag tag-specialty">{t}</span>)}
-            </div>
-            {detailSong.notes && <div style={{ background:'var(--bg3)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--muted)',marginBottom:16 }}>{detailSong.notes}</div>}
-            <div style={{ marginBottom:16 }}>
-              <div className="form-label" style={{ marginBottom:8 }}>Play History</div>
-              <div className="grid-3">
-                {[['3 Weeks', detailSong.plays_3weeks],['3 Months',detailSong.plays_3months],['This Year',detailSong.plays_year]].map(([label,val])=>(
-                  <div key={label} className="stat-card card-sm">
-                    <div className="stat-label">{label}</div>
-                    <div className="stat-value" style={{ fontSize:22 }}>{val||0}</div>
+            {editing ? (
+              <>
+                <div className="modal-title">Edit Song</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Song Title</label>
+                    <input type="text" value={editForm.title} onChange={e=>setEditForm(f=>({...f,title:e.target.value}))} />
                   </div>
-                ))}
-              </div>
-            </div>
-            {detailSong.pdf_url && (
-              <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
-                <a href={detailSong.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄 View PDF</a>
-                {!detailSong.lyrics && (
-                  <button className="btn btn-ghost btn-sm" onClick={handleConvertPDF} disabled={converting}>
-                    {converting ? '⏳ Converting…' : '✨ Convert PDF to chord chart'}
-                  </button>
+                  <div className="form-group">
+                    <label className="form-label">Artist / Writer</label>
+                    <input type="text" value={editForm.artist} onChange={e=>setEditForm(f=>({...f,artist:e.target.value}))} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Key</label>
+                    <select value={editForm.key} onChange={e=>setEditForm(f=>({...f,key:e.target.value}))}>
+                      {KEYS.map(k=><option key={k}>{k}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Tempo</label>
+                    <select value={editForm.tempo} onChange={e=>setEditForm(f=>({...f,tempo:e.target.value}))}>
+                      {TEMPOS.map(t=><option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Themes</label>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:4 }}>
+                    {THEMES.map(t=>(
+                      <button key={t} className={`filter-btn ${editForm.themes.includes(t)?'active':''}`} onClick={()=>toggleEditTheme(t)}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Specialty</label>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:4 }}>
+                    {SPECIALTY.map(t=>(
+                      <button key={t} className={`filter-btn ${editForm.specialty.includes(t)?'active':''}`} onClick={()=>toggleEditSpecialty(t)}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Notes</label>
+                  <textarea value={editForm.notes} onChange={e=>setEditForm(f=>({...f,notes:e.target.value}))} placeholder="Theme, usage notes, specialty occasions..." />
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-ghost" onClick={()=>setEditing(false)}>Cancel</button>
+                  <button className="btn btn-primary" onClick={handleEditSave} disabled={saving}>{saving?'Saving…':'Save Changes'}</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
+                  <div className="song-thumb" style={{ width:52,height:52,fontSize:22 }}>{tempoEmoji(detailSong.tempo)}</div>
+                  <div>
+                    <div style={{ fontFamily:'var(--font-head)',fontSize:20,fontWeight:700 }}>{detailSong.title}</div>
+                    <div style={{ color:'var(--muted)',fontSize:13 }}>{detailSong.artist}</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex',gap:8,flexWrap:'wrap',marginBottom:16 }}>
+                  <span className={`tag tag-${detailSong.tempo?.toLowerCase()}`}>{detailSong.tempo}</span>
+                  <span className="tag tag-key">Key of {detailSong.key}</span>
+                  {(detailSong.themes||[]).map(t=><span key={t} className="tag tag-theme">{t}</span>)}
+                  {(detailSong.specialty||[]).map(t=><span key={t} className="tag tag-specialty">{t}</span>)}
+                </div>
+                {detailSong.notes && <div style={{ background:'var(--bg3)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--muted)',marginBottom:16 }}>{detailSong.notes}</div>}
+                <div style={{ marginBottom:16 }}>
+                  <div className="form-label" style={{ marginBottom:8 }}>Play History</div>
+                  <div className="grid-3">
+                    {[['3 Weeks',detailSong.plays_3weeks],['3 Months',detailSong.plays_3months],['This Year',detailSong.plays_year]].map(([label,val])=>(
+                      <div key={label} className="stat-card card-sm">
+                        <div className="stat-label">{label}</div>
+                        <div className="stat-value" style={{ fontSize:22 }}>{val||0}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {detailSong.pdf_url && (
+                  <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+                    <a href={detailSong.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄 View PDF</a>
+                    {!detailSong.lyrics && (
+                      <button className="btn btn-ghost btn-sm" onClick={handleConvertPDF} disabled={converting}>
+                        {converting ? '⏳ Converting…' : '✨ Convert PDF to chord chart'}
+                      </button>
+                    )}
+                  </div>
                 )}
-              </div>
+                {detailSong.lyrics && (
+                  <div style={{ marginBottom:16 }}>
+                    <div className="form-label" style={{ marginBottom:8 }}>Lyrics</div>
+                    <div style={{ background:'var(--bg3)',borderRadius:10,padding:'14px 16px',fontSize:13,lineHeight:1.8,color:'var(--text)',whiteSpace:'pre-wrap',maxHeight:200,overflowY:'auto' }}>{detailSong.lyrics}</div>
+                  </div>
+                )}
+                <div className="modal-footer">
+                  <button className="btn btn-red btn-sm" onClick={()=>handleDelete(detailSong.id)}>Delete</button>
+                  <div style={{ flex:1 }} />
+                  <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
+                  <button className="btn btn-ghost" onClick={closeDetail}>Close</button>
+                  <button className={`btn ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>{toggleWeek(detailSong.id,{stopPropagation:()=>{}});closeDetail()}}>
+                    {weekSongIds.includes(detailSong.id)?'✓ In This Week':'+ Add to This Week'}
+                  </button>
+                </div>
+              </>
             )}
-            {detailSong.lyrics && (
-              <div style={{ marginBottom:16 }}>
-                <div className="form-label" style={{ marginBottom:8 }}>Lyrics</div>
-                <div style={{ background:'var(--bg3)',borderRadius:10,padding:'14px 16px',fontSize:13,lineHeight:1.8,color:'var(--text)',whiteSpace:'pre-wrap',maxHeight:200,overflowY:'auto' }}>{detailSong.lyrics}</div>
-              </div>
-            )}
-            <div className="modal-footer">
-              <button className="btn btn-red btn-sm" onClick={()=>handleDelete(detailSong.id)}>Delete</button>
-              <div style={{ flex:1 }} />
-              <button className="btn btn-ghost" onClick={()=>setDetailSong(null)}>Close</button>
-              <button className={`btn ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>{toggleWeek(detailSong.id,{stopPropagation:()=>{}});setDetailSong(null)}}>
-                {weekSongIds.includes(detailSong.id)?'✓ In This Week':'+ Add to This Week'}
-              </button>
-            </div>
           </div>
         </div>
       )}
