@@ -66,6 +66,11 @@ export async function finalizeSet(serviceDate, songIds) {
   return data
 }
 
+export async function deleteSet(serviceDate) {
+  const { error } = await supabase.from('sets').delete().eq('service_date', serviceDate)
+  if (error) throw error
+}
+
 export async function uploadPDF(file, songTitle) {
   const safeName = songTitle
     .normalize('NFD')

@@ -1,13 +1,29 @@
 import React, { useState } from 'react'
+import { deleteSet } from '../lib/supabase'
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
 function dateKey(d) { return new Date(d).toISOString().slice(0,10) }
 
-export default function History({ songs, sets }) {
+export default function History({ songs, sets, refreshSets }) {
   const [view, setView] = useState('calendar')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedKey, setSelectedKey] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteSet = async () => {
+    if (!selectedKey) return
+    if (!window.confirm('Delete the set for ' + new Date(selectedKey + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await deleteSet(selectedKey)
+      await refreshSets()
+      setSelectedKey(null)
+    } catch (e) {
+      alert('Error deleting set: ' + e.message)
+    }
+    setDeleting(false)
+  }
 
   const historyMap = {}
   sets.forEach(s => { historyMap[s.service_date] = s })
@@ -153,6 +169,16 @@ export default function History({ songs, sets }) {
                   {selectedSet.notes && (
                     <div style={{ marginTop:12, padding:'10px 12px', background:'var(--bg3)', borderRadius:8, fontSize:12, color:'var(--muted)' }}>{selectedSet.notes}</div>
                   )}
+                  <div style={{ marginTop:16, paddingTop:14, borderTop:'1px solid var(--border)' }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={handleDeleteSet}
+                      disabled={deleting}
+                      style={{ color:'var(--red)', borderColor:'var(--red)', width:'100%' }}
+                    >
+                      {deleting ? 'Deleting…' : 'Delete This Set'}
+                    </button>
+                  </div>
                 </div>
               </>
             )}
