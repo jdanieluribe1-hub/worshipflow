@@ -14,7 +14,27 @@ export async function parsePDFWithAI(base64PDF) {
           },
           {
             type: 'text',
-            text: 'You are processing a worship song chord chart PDF. Extract clean song data. IMPORTANT: ignore all chord symbols (like G, Am, C/E, D/F#). Extract ONLY sung lyrics. Keep section labels like [Verse 1], [Chorus], [Bridge]. Song title is at the top - do NOT use the filename. Key is usually near the top. Respond ONLY with valid JSON, no markdown: {"title":"song title","artist":"artist name","key":"musical key e.g. Bb","tempo":"Fast, Medium, or Slow","lyrics":"full lyrics with [Section] labels, no chords"}'
+            text: `You are processing a worship song chord chart PDF. Extract the full song data including all chords.
+
+PDFs typically show chords above the lyric line they belong to (traditional tab style), aligned by spaces over the syllable they fall on. Convert this to INLINE [Chord] notation placed immediately before the syllable.
+
+Example — chords above lyrics in PDF:
+G              D     Em    C
+Amazing grace how sweet the sound
+
+Expected inline output:
+[Chorus]
+[G]Amazing [D]grace how [Em]sweet the [C]sound
+
+Rules:
+- Keep ALL chords — do not drop any
+- Place each chord inline before the word/syllable it falls on based on spacing
+- Use section labels like [Verse 1], [Chorus], [Bridge], [Intro], [Pre-Chorus]
+- Song title is at the top of the PDF — do NOT use the filename
+- The key is the most prominent chord (usually first chord of intro or verse)
+- If the key has a flat write it as e.g. "Bb" not "B♭"
+- Respond ONLY with valid JSON, no markdown:
+{"title":"song title","artist":"artist name","key":"musical key e.g. G, Bb","tempo":"Fast, Medium, or Slow","lyrics":"full chord chart with inline [Chord] markers and [Section] labels"}`
           }
         ]
       }]

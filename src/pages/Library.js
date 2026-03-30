@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { addSong, deleteSong } from '../lib/supabase'
+import { addSong, deleteSong, updateSong } from '../lib/supabase'
+import { parsePDFWithAI } from '../lib/ai'
 
 const KEYS = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B']
 const TEMPOS = ['Fast','Medium','Slow']
@@ -13,6 +14,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [form, setForm] = useState({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
   const [saving, setSaving] = useState(false)
   const [detailSong, setDetailSong] = useState(null)
+  const [converting, setConverting] = useState(false)
 
   const filtered = songs.filter(s => {
     if (filter.tempo !== 'all' && s.tempo !== filter.tempo) return false
@@ -40,6 +42,35 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       setForm({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
     } catch(e) { alert('Error saving song: ' + e.message) }
     setSaving(false)
+  }
+
+  const handleConvertPDF = async () => {
+    setConverting(true)
+    try {
+      const response = await fetch(detailSong.pdf_url)
+      const blob = await response.blob()
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader()
+        reader.onload = () => res(reader.result.split(',')[1])
+        reader.onerror = rej
+        reader.readAsDataURL(blob)
+      })
+      const result = await parsePDFWithAI(base64)
+      if (!result.lyrics) throw new Error('Could not extract lyrics from this PDF.')
+      const updates = {
+        lyrics: result.lyrics,
+        ...(result.key   ? { key:   result.key   } : {}),
+        ...(result.title ? { title: result.title } : {}),
+        ...(result.artist? { artist:result.artist} : {}),
+        ...(result.tempo ? { tempo: result.tempo } : {}),
+      }
+      await updateSong(detailSong.id, updates)
+      await refreshSongs()
+      setDetailSong(s => ({ ...s, ...updates }))
+    } catch (e) {
+      alert('Error converting PDF: ' + e.message)
+    }
+    setConverting(false)
   }
 
   const handleDelete = async (id) => {
@@ -177,8 +208,13 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
               </div>
             </div>
             {detailSong.pdf_url && (
-              <div style={{ marginBottom:16 }}>
-                <a href={detailSong.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄 View Chord Chart</a>
+              <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+                <a href={detailSong.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄 View PDF</a>
+                {!detailSong.lyrics && (
+                  <button className="btn btn-ghost btn-sm" onClick={handleConvertPDF} disabled={converting}>
+                    {converting ? '⏳ Converting…' : '✨ Convert PDF to chord chart'}
+                  </button>
+                )}
               </div>
             )}
             {detailSong.lyrics && (
