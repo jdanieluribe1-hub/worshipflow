@@ -75,6 +75,18 @@ export default function Settings({ spotifyConnected, setSpotifyConnected }) {
         </div>
       </div>
 
+      {/* SONG RECOMMENDATIONS LINK */}
+      <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Song Recommendations Link</div>
+      <div className="card" style={{ marginBottom:24 }}>
+        <div style={{ fontSize:13, color:'var(--muted)', marginBottom:10 }}>Share this link with your congregation. They can suggest songs, share the message behind them, and include a Spotify or YouTube link.</div>
+        <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+          <div style={{ flex:1, background:'var(--bg3)', borderRadius:8, padding:'9px 12px', fontSize:13, color:'var(--accent)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            {`${window.location.origin}/recommend`}
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={()=>{navigator.clipboard.writeText(`${window.location.origin}/recommend`);alert('Link copied!')}}>Copy</button>
+        </div>
+      </div>
+
       {/* CHURCH INFO */}
       <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Church Info</div>
       <div className="card">

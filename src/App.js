@@ -8,6 +8,8 @@ import History from './pages/History'
 import Upload from './pages/Upload'
 import BandView from './pages/BandView'
 import Settings from './pages/Settings'
+import Recommendations from './pages/Recommendations'
+import RecommendView from './pages/RecommendView'
 import './App.css'
 
 function SpotifyCallback({ onDone }) {
@@ -30,6 +32,7 @@ function Sidebar({ page, setPage, weekCount }) {
   const tools = [
     { id: 'upload', icon: '⬆', label: 'Upload Chart' },
     { id: 'bandview', icon: '🎸', label: 'Band View' },
+    { id: 'recommendations', icon: '💡', label: 'Recommendations' },
   ]
   return (
     <aside className="sidebar">
@@ -73,7 +76,8 @@ function AppShell() {
   const titles = {
     library: 'Song Library', thisweek: 'This Week',
     history: 'Play History', upload: 'Upload Chord Chart',
-    bandview: 'Band View', settings: 'Settings'
+    bandview: 'Band View', settings: 'Settings',
+    recommendations: 'Song Recommendations'
   }
 
   useEffect(() => {
@@ -116,6 +120,7 @@ function AppShell() {
           {page === 'history' && <History {...pageProps} />}
           {page === 'upload' && <Upload {...pageProps} />}
           {page === 'bandview' && <BandView {...pageProps} />}
+          {page === 'recommendations' && <Recommendations />}
           {page === 'settings' && <Settings {...pageProps} />}
         </div>
       </div>
@@ -130,6 +135,7 @@ export default function App() {
       <Routes>
         <Route path="/callback" element={<SpotifyCallback onDone={() => setSpotifyConnected(true)} />} />
         <Route path="/band" element={<BandViewPublic />} />
+        <Route path="/recommend" element={<RecommendView />} />
         <Route path="*" element={<AppShell />} />
       </Routes>
     </BrowserRouter>

@@ -266,6 +266,50 @@ textarea { resize: vertical; min-height: 80px; }
 .band-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; transition: all 0.2s; }
 .band-dot.active { background: #6c8fff; width: 22px; border-radius: 4px; }
 
+/* RECOMMEND PAGE (public form) */
+.rec-page {
+  background: #f7f6f2; min-height: 100vh;
+  font-family: var(--font-body); color: #1a1a1a;
+}
+.rec-topbar {
+  background: #fff; border-bottom: 1px solid rgba(0,0,0,0.08);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+}
+.rec-logo { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.rec-label { font-size: 12px; color: #888; }
+.rec-content { padding: 32px 20px; max-width: 480px; margin: 0 auto; }
+.rec-card {
+  background: #fff; border-radius: 20px; padding: 28px;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+}
+.rec-form-group { margin-bottom: 18px; }
+.rec-label-text {
+  display: block; font-size: 12px; font-weight: 600; color: #555;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px;
+}
+.rec-input {
+  width: 100%; box-sizing: border-box;
+  border: 1.5px solid #e8e8e8; border-radius: 10px;
+  padding: 11px 14px; font-size: 14px; font-family: var(--font-body);
+  color: #1a1a1a; background: #fafafa; outline: none; transition: border-color 0.15s;
+}
+.rec-input:focus { border-color: #6c8fff; background: #fff; }
+.rec-textarea { resize: vertical; min-height: 100px; }
+.rec-link-badge {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 5px;
+  pointer-events: none;
+}
+.rec-btn {
+  display: inline-block; border: none; border-radius: 10px; padding: 12px 22px;
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font-body);
+  background: #f0f0f0; color: #1a1a1a; transition: background 0.15s;
+}
+.rec-btn:hover { background: #e4e4e4; }
+.rec-btn-primary { background: #6c8fff; color: #fff; width: 100%; text-align: center; }
+.rec-btn-primary:hover { background: #5577ee; }
+.rec-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* CALENDAR */
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cal-day-label { text-align: center; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 0 10px; font-weight: 500; }

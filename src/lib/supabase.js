@@ -71,6 +71,23 @@ export async function deleteSet(serviceDate) {
   if (error) throw error
 }
 
+export async function submitRecommendation(songName, reason, link) {
+  const { data, error } = await supabase.from('song_recommendations').insert([{ song_name: songName, reason, link }]).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function getRecommendations() {
+  const { data, error } = await supabase.from('song_recommendations').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function deleteRecommendation(id) {
+  const { error } = await supabase.from('song_recommendations').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function uploadPDF(file, songTitle) {
   const safeName = songTitle
     .normalize('NFD')
