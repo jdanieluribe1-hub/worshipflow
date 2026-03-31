@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { addSong, deleteSong, updateSong } from '../lib/supabase'
-import { parsePDFWithAI } from '../lib/ai'
+import { parsePDFWithAI, generateProPresenterTemplate } from '../lib/ai'
 
 const KEYS = [
   'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
@@ -22,8 +22,10 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
 
-  const openDetail = (s) => { setDetailSong(s); setEditing(false) }
-  const closeDetail = () => { setDetailSong(null); setEditing(false) }
+  const [proPresenterXml, setProPresenterXml] = useState(null)
+
+  const openDetail = (s) => { setDetailSong(s); setEditing(false); setProPresenterXml(null) }
+  const closeDetail = () => { setDetailSong(null); setEditing(false); setProPresenterXml(null) }
 
   const startEdit = () => {
     setEditForm({
@@ -324,6 +326,31 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                   <div style={{ marginBottom:16 }}>
                     <div className="form-label" style={{ marginBottom:8 }}>Lyrics</div>
                     <div style={{ background:'var(--bg3)',borderRadius:10,padding:'14px 16px',fontSize:13,lineHeight:1.8,color:'var(--text)',whiteSpace:'pre-wrap',maxHeight:200,overflowY:'auto' }}>{detailSong.lyrics}</div>
+                  </div>
+                )}
+                {detailSong.lyrics && (
+                  <div style={{ marginBottom:16 }}>
+                    <div className="form-label" style={{ marginBottom:8 }}>ProPresenter</div>
+                    {!proPresenterXml ? (
+                      <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(generateProPresenterTemplate(detailSong.title, detailSong.key, detailSong.lyrics))}>
+                        Generate ProPresenter File
+                      </button>
+                    ) : (
+                      <>
+                        <div className="propre-box">{proPresenterXml}</div>
+                        <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(proPresenterXml); alert('Copied!') }}>Copy XML</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => {
+                            const blob = new Blob([proPresenterXml], { type: 'text/xml' })
+                            const a = document.createElement('a')
+                            a.href = URL.createObjectURL(blob)
+                            a.download = `${detailSong.title.replace(/[^a-zA-Z0-9]/g,'-')}.pro`
+                            a.click()
+                          }}>Download .pro</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(null)}>Hide</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
                 <div className="modal-footer">
