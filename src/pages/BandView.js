@@ -109,6 +109,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
     if (Math.abs(diff) > 50) { diff > 0 ? next() : prev() }
     touchStartX.current = null
   }
+  const [expanded, setExpanded] = useState(false)
   const tempoColor = { Fast: '#ef4444', Medium: '#d97706', Slow: '#3b82f6' }
   const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
 
@@ -163,8 +164,11 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
                 </span>
               </div>
               {current.lyrics ? (
-                <div style={{ width:'100%', background:'#fafafa', borderRadius:12, padding:'16px 20px', maxHeight:420, overflowY:'auto' }}>
-                  <ChordDisplay lyrics={current.lyrics} />
+                <div style={{ width:'100%', position:'relative' }}>
+                  <button onClick={() => setExpanded(true)} style={{ position:'absolute', top:10, right:10, zIndex:1, background:'rgba(0,0,0,0.06)', border:'none', borderRadius:7, padding:'5px 9px', cursor:'pointer', fontSize:14, color:'#555' }} title="Expand">⤢</button>
+                  <div style={{ background:'#fafafa', borderRadius:12, padding:'16px 20px', maxHeight:420, overflowY:'auto' }}>
+                    <ChordDisplay lyrics={current.lyrics} />
+                  </div>
                 </div>
               ) : current.pdf_url ? (
                 <iframe src={current.pdf_url} title={current.title} style={{ width:'100%', height:'500px', border:'none', borderRadius:'12px' }} />
@@ -183,6 +187,39 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
           </>
         )}
       </div>
+
+      {expanded && current && (
+        <div
+          style={{ position:'fixed', inset:0, background:'#f7f6f2', zIndex:9999, display:'flex', flexDirection:'column' }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div style={{ background:'#fff', borderBottom:'1px solid rgba(0,0,0,0.08)', padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontFamily:'var(--font-head)', fontWeight:700, fontSize:16, color:'#1a1a1a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{current.title}</div>
+              <div style={{ fontSize:12, color:'#888' }}>Key of {current.key} · {current.tempo}</div>
+            </div>
+            <button onClick={prev} disabled={idx===0} style={{ background:'none', border:'1.5px solid #e0e0e0', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'#333', flexShrink:0 }}>←</button>
+            <button onClick={next} disabled={idx===displaySongs.length-1} style={{ background:'none', border:'1.5px solid #e0e0e0', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'#333', flexShrink:0 }}>→</button>
+            <button onClick={() => setExpanded(false)} style={{ background:'none', border:'1.5px solid #e0e0e0', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13, fontWeight:600, color:'#555', flexShrink:0, fontFamily:'inherit' }}>✕ Close</button>
+          </div>
+          <div style={{ background:'#fff', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'8px 16px', display:'flex', gap:8, overflowX:'auto', flexShrink:0 }}>
+            {displaySongs.map((s,i) => (
+              <button key={s.id} onClick={() => setIdx(i)} style={{
+                padding:'5px 13px', borderRadius:20, border:'1.5px solid',
+                borderColor: i===idx ? '#6c8fff' : '#e0e0e0',
+                background: i===idx ? '#6c8fff' : '#fff',
+                color: i===idx ? '#fff' : '#555',
+                fontSize:12, fontWeight:500, cursor:'pointer',
+                whiteSpace:'nowrap', fontFamily:'inherit', flexShrink:0
+              }}>{i+1}. {s.title}</button>
+            ))}
+          </div>
+          <div style={{ flex:1, overflowY:'auto', padding:'20px 24px' }}>
+            <ChordDisplay lyrics={current.lyrics} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
