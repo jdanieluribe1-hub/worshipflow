@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { upsertSet, finalizeSet } from '../lib/supabase'
-import { syncWeeklyPlaylist, isSpotifyConnected } from '../lib/spotify'
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
@@ -12,14 +11,13 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, spotifyConnected }) {
+export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage }) {
   const [serviceDate, setServiceDate] = useState(getNextSunday())
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
-  const [syncing, setSyncing] = useState(false)
   const [waModal, setWaModal] = useState(false)
-  const [spotifyUrl, setSpotifyUrl] = useState(null)
+  const [songSpotifyUrls, setSongSpotifyUrls] = useState({})
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
   const med = weekSongs.filter(s=>s.tempo==='Medium').length
@@ -45,27 +43,21 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       await refreshSets()
       setWeekSongIds([])
       setNotes('')
+      setSongSpotifyUrls({})
       alert('Set finalized! Play counts updated.')
     } catch(e) { alert('Error: ' + e.message) }
     setFinalizing(false)
-  }
-
-  const syncSpotify = async () => {
-    if (!isSpotifyConnected()) return alert('Connect Spotify in Settings first.')
-    setSyncing(true)
-    try {
-      const url = await syncWeeklyPlaylist(weekSongs, serviceDate)
-      setSpotifyUrl(url)
-      alert('Spotify playlist synced!')
-    } catch(e) { alert('Spotify error: ' + e.message) }
-    setSyncing(false)
   }
 
   const waMessage = () => {
     const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
     const bandLink = `${window.location.origin}/band`
     const recommendLink = `${window.location.origin}/recommend`
-    return `*Worship Set — ${date}* 🎵\n\n${weekSongs.map((s,i)=>`${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}`).join('\n\n')}\n\n📋 Chord Charts & Lyrics:\n${bandLink}${spotifyUrl?`\n\n🎵 Spotify Playlist:\n${spotifyUrl}`:''}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
+    const songLines = weekSongs.map((s,i) => {
+      const spotifyLink = songSpotifyUrls[s.id]
+      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}${spotifyLink ? `\n   🎵 ${spotifyLink}` : ''}`
+    }).join('\n\n')
+    return `*Worship Set — ${date}* 🎵\n\n${songLines}\n\n📋 Chord Charts & Lyrics:\n${bandLink}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
   }
 
   return (
@@ -99,16 +91,39 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
           <div style={{ marginBottom:8 }}>
             <div className="form-label" style={{ marginBottom:8 }}>Set Order</div>
             {weekSongs.map((s,i) => (
-              <div key={s.id} className="week-song">
-                <div className="week-order">{i+1}</div>
-                <div className="song-thumb" style={{ width:38,height:38 }}>{tempoEmoji(s.tempo)}</div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:500,fontSize:14 }}>{s.title}</div>
-                  <div style={{ fontSize:12,color:'var(--muted)' }}>{s.artist} · Key of {s.key}</div>
+              <div key={s.id} className="week-song" style={{ flexWrap:'wrap', gap:8 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0 }}>
+                  <div className="week-order">{i+1}</div>
+                  <div className="song-thumb" style={{ width:38,height:38 }}>{tempoEmoji(s.tempo)}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:500,fontSize:14 }}>{s.title}</div>
+                    <div style={{ fontSize:12,color:'var(--muted)' }}>{s.artist} · Key of {s.key}</div>
+                  </div>
+                  <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
+                  {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄</a>}
+                  <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)' }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
                 </div>
-                <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
-                {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄</a>}
-                <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)' }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
+                <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
+                  <a
+                    href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-ghost btn-sm"
+                    style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}
+                  >
+                    Search Spotify
+                  </a>
+                  <input
+                    type="url"
+                    placeholder="Paste Spotify link..."
+                    value={songSpotifyUrls[s.id] || ''}
+                    onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))}
+                    style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }}
+                  />
+                  {songSpotifyUrls[s.id] && (
+                    <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -123,17 +138,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
           <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
             <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving?'Saving...':'💾 Save Set'}</button>
             <button className="btn btn-gold" onClick={()=>setWaModal(true)}>📱 WhatsApp Message</button>
-            <button className="btn btn-ghost" onClick={syncSpotify} disabled={syncing} style={{ color:'#1DB954' }}>
-              {syncing?'Syncing...':'🎵 Sync Spotify'}
-            </button>
             <button className="btn btn-primary" onClick={finalize} disabled={finalizing}>{finalizing?'Finalizing...':'✓ Finalize & Log Plays'}</button>
           </div>
-
-          {spotifyUrl && (
-            <div style={{ marginTop:12, padding:'10px 14px', background:'rgba(29,185,84,0.1)', borderRadius:8, fontSize:13 }}>
-              Spotify playlist synced. <a href={spotifyUrl} target="_blank" rel="noreferrer" style={{ color:'#1DB954' }}>Open playlist →</a>
-            </div>
-          )}
         </>
       )}
 
