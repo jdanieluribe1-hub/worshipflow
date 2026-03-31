@@ -64,7 +64,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const waMessage = () => {
     const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
     const bandLink = `${window.location.origin}/band`
-    return `*Worship Set — ${date}* 🎵\n\n${weekSongs.map((s,i)=>`${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}`).join('\n\n')}\n\n📋 Chord Charts & Lyrics:\n${bandLink}${spotifyUrl?`\n\n🎵 Spotify Playlist:\n${spotifyUrl}`:''}\n\nSee you Sunday! 🙌`
+    const recommendLink = `${window.location.origin}/recommend`
+    return `*Worship Set — ${date}* 🎵\n\n${weekSongs.map((s,i)=>`${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}`).join('\n\n')}\n\n📋 Chord Charts & Lyrics:\n${bandLink}${spotifyUrl?`\n\n🎵 Spotify Playlist:\n${spotifyUrl}`:''}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
   }
 
   return (
