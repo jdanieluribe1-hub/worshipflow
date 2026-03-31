@@ -49,21 +49,34 @@ Rules:
   }
 }
 
+// Removes inline chord markers like [G], [Am], [C/E], [Bb] but keeps section labels like [Chorus]
+function isChordToken(s) {
+  return /^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add|2|4|5|6|7|9|11|13)*(\/[A-G][#b]?)?$/.test(s)
+}
+
+export function stripChords(lyrics) {
+  return lyrics
+    .replace(/\[([^\]]+)\]/g, (match, inner) => isChordToken(inner.trim()) ? '' : match)
+    .replace(/ {2,}/g, ' ')
+    .split('\n').map(l => l.trimEnd()).join('\n')
+}
+
 export function generateProPresenterTemplate(title, key, lyrics) {
   if (!lyrics) return '<!-- No lyrics extracted -->'
-  const parts = lyrics.split(/(\[[^\]]+\])/).filter(s => s.trim())
+  const clean = stripChords(lyrics)
+  const parts = clean.split(/(\[[^\]]+\])/).filter(s => s.trim())
   const slides = []
   let currentHeading = ''
   for (const part of parts) {
     if (/^\[[^\]]+\]$/.test(part)) {
-      currentHeading = part.trim()
+      currentHeading = part.trim().slice(1, -1)
     } else {
       const lines = part.trim()
       if (lines) slides.push({ heading: currentHeading, text: lines })
     }
   }
   if (slides.length === 0) {
-    lyrics.split('\n\n').filter(s => s.trim()).forEach((s, i) => {
+    clean.split('\n\n').filter(s => s.trim()).forEach((s, i) => {
       slides.push({ heading: 'Section ' + (i + 1), text: s.trim() })
     })
   }

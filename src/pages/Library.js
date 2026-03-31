@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { addSong, deleteSong, updateSong } from '../lib/supabase'
-import { parsePDFWithAI, generateProPresenterTemplate } from '../lib/ai'
+import { parsePDFWithAI, generateProPresenterTemplate, stripChords } from '../lib/ai'
 
 const KEYS = [
   'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
@@ -337,9 +337,9 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                       </button>
                     ) : (
                       <>
-                        <div className="propre-box">{proPresenterXml}</div>
+                        <div className="propre-box">{stripChords(detailSong.lyrics)}</div>
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(proPresenterXml); alert('Copied!') }}>Copy XML</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(stripChords(detailSong.lyrics)); alert('Copied!') }}>Copy Text</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => {
                             const blob = new Blob([proPresenterXml], { type: 'text/xml' })
                             const a = document.createElement('a')
