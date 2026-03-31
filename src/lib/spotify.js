@@ -198,9 +198,9 @@ export async function syncWeeklyPlaylist(songs, serviceDate) {
   }
 
   if (!playlistId) {
-    console.log('[spotify] Creating new playlist for user', userId)
+    console.log('[spotify] Creating new playlist via /v1/me/playlists')
     const playlist = await spotifyFetch(
-      `https://api.spotify.com/v1/users/${userId}/playlists`,
+      'https://api.spotify.com/v1/me/playlists',
       {
         method: 'POST',
         body: JSON.stringify({
