@@ -233,9 +233,24 @@ export async function syncWeeklyPlaylist(songs, serviceDate) {
     )
   }
 
-  console.log('[spotify] Replacing playlist tracks:', trackUris.length, 'track(s)')
+  console.log(
+    `[spotify] ${trackUris.length} of ${songs.length} songs found. URIs:`,
+    trackUris
+  )
+
+  // Clear existing tracks first so repeated syncs don't accumulate duplicates.
+  // PUT with an empty array replaces the snapshot; if this 403s too, the issue
+  // is a Development Mode permission restriction, not specific to PUT vs POST.
+  console.log('[spotify] Clearing existing playlist tracks')
   await spotifyFetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
     method: 'PUT',
+    body: JSON.stringify({ uris: [] }),
+  })
+
+  // POST appends tracks (avoids the broader PUT-replace 403 on some app configs)
+  console.log('[spotify] Adding', trackUris.length, 'track(s) via POST')
+  await spotifyFetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+    method: 'POST',
     body: JSON.stringify({ uris: trackUris }),
   })
 
