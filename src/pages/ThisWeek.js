@@ -18,6 +18,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [finalizing, setFinalizing] = useState(false)
   const [waModal, setWaModal] = useState(false)
   const [songSpotifyUrls, setSongSpotifyUrls] = useState({})
+  const [songYoutubeUrls, setSongYoutubeUrls] = useState({})
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
   const med = weekSongs.filter(s=>s.tempo==='Medium').length
@@ -44,6 +45,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       setWeekSongIds([])
       setNotes('')
       setSongSpotifyUrls({})
+      setSongYoutubeUrls({})
       alert('Set finalized! Play counts updated.')
     } catch(e) { alert('Error: ' + e.message) }
     setFinalizing(false)
@@ -55,7 +57,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     const recommendLink = `${window.location.origin}/recommend`
     const songLines = weekSongs.map((s,i) => {
       const spotifyLink = songSpotifyUrls[s.id]
-      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}${spotifyLink ? `\n   🎵 ${spotifyLink}` : ''}`
+      const youtubeLink = songYoutubeUrls[s.id]
+      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}${spotifyLink ? `\n   🎵 ${spotifyLink}` : ''}${youtubeLink ? `\n   ▶️ ${youtubeLink}` : ''}`
     }).join('\n\n')
     return `*Worship Set — ${date}* 🎵\n\n${songLines}\n\n📋 Chord Charts & Lyrics:\n${bandLink}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
   }
@@ -106,8 +109,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
                   <a
                     href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`}
-                    target="_blank"
-                    rel="noreferrer"
+                    target="_blank" rel="noreferrer"
                     className="btn btn-ghost btn-sm"
                     style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}
                   >
@@ -122,6 +124,26 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                   />
                   {songSpotifyUrls[s.id] && (
                     <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>
+                  )}
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
+                  <a
+                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`}
+                    target="_blank" rel="noreferrer"
+                    className="btn btn-ghost btn-sm"
+                    style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}
+                  >
+                    Search YouTube
+                  </a>
+                  <input
+                    type="url"
+                    placeholder="Paste YouTube link..."
+                    value={songYoutubeUrls[s.id] || ''}
+                    onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))}
+                    style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }}
+                  />
+                  {songYoutubeUrls[s.id] && (
+                    <a href={songYoutubeUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#FF0000', flexShrink:0 }}>▶</a>
                   )}
                 </div>
               </div>
