@@ -59,6 +59,20 @@ function AppShell() {
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
   const [loading, setLoading] = useState(true)
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('wf_theme') || 'dark'
+    if (saved === 'light') document.documentElement.classList.add('light-mode')
+    return saved
+  })
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-mode')
+    } else {
+      document.documentElement.classList.remove('light-mode')
+    }
+    localStorage.setItem('wf_theme', theme)
+  }, [theme])
   const titles = {
     library: 'Song Library', thisweek: 'This Week',
     history: 'Play History', upload: 'Upload Chord Chart',
@@ -82,6 +96,7 @@ function AppShell() {
   const pageProps = {
     songs, sets, weekSongIds, weekSongs,
     setWeekSongIds, refreshSongs, refreshSets,
+    theme, setTheme,
   }
 
   if (loading) return (

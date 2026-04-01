@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-export default function Settings() {
+export default function Settings({ theme, setTheme }) {
   const [churchName, setChurchName] = useState(localStorage.getItem('wf_church_name') || '')
   const [directorName, setDirectorName] = useState(localStorage.getItem('wf_director_name') || '')
   const [saved, setSaved] = useState(false)
@@ -16,6 +16,31 @@ export default function Settings() {
 
   return (
     <div style={{ maxWidth:560 }}>
+
+      {/* APPEARANCE */}
+      <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Appearance</div>
+      <div className="card" style={{ marginBottom:24 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:500 }}>Theme</div>
+            <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>Choose how WorshipFlow looks</div>
+          </div>
+          <div style={{ display:'flex', gap:6 }}>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`btn btn-sm ${theme === 'dark' ? 'btn-primary' : 'btn-ghost'}`}
+            >
+              🌙 Dark
+            </button>
+            <button
+              onClick={() => setTheme('light')}
+              className={`btn btn-sm ${theme === 'light' ? 'btn-primary' : 'btn-ghost'}`}
+            >
+              ☀️ Light
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* CONNECTIONS */}
       <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Connections</div>

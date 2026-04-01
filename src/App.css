@@ -25,6 +25,25 @@
   --r2: 16px;
 }
 
+html.light-mode {
+  --bg: #f4f5f7;
+  --bg2: #ffffff;
+  --bg3: #eceef2;
+  --bg4: #e2e4ea;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #1a1c24;
+  --muted: #6b7280;
+  --accent: #4f6ef7;
+  --accent2: #7c3aed;
+  --gold: #d97706;
+  --green: #16a34a;
+  --red: #dc2626;
+  --fast: #dc2626;
+  --medium: #d97706;
+  --slow: #2563eb;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
