@@ -10,7 +10,7 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function BandView({ songs: propSongs = [], sets: propSets = [] }) {
+export default function BandView({ songs: propSongs = [], sets: propSets = [], public: isPublic = false }) {
   const [selectedDate, setSelectedDate] = useState(getNextSunday)
   const [idx, setIdx] = useState(0)
   const [localSongs, setLocalSongs] = useState([])
@@ -19,7 +19,10 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
   const [expanded, setExpanded] = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('wf_band_theme') || 'dark'
-    if (saved === 'light') document.documentElement.classList.add('light-mode')
+    if (isPublic) {
+      if (saved === 'light') document.documentElement.classList.add('light-mode')
+      else document.documentElement.classList.remove('light-mode')
+    }
     return saved
   })
   const touchStartX = useRef(null)
@@ -28,8 +31,10 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
     localStorage.setItem('wf_band_theme', next)
-    if (next === 'light') document.documentElement.classList.add('light-mode')
-    else document.documentElement.classList.remove('light-mode')
+    if (isPublic) {
+      if (next === 'light') document.documentElement.classList.add('light-mode')
+      else document.documentElement.classList.remove('light-mode')
+    }
   }
 
   // Self-fetch when used on the public /band route (no props passed)
@@ -96,13 +101,13 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               style={{ position:'absolute', opacity:0, inset:0, cursor:'pointer', width:'100%', height:'100%' }}
             />
           </label>
-          <button
+          {isPublic && <button
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, padding:'4px', color:'var(--muted)', lineHeight:1 }}
           >
             {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
+          </button>}
         </div>
       </div>
       <div className="band-content">
