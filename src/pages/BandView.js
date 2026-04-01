@@ -85,9 +85,9 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
       </div>
       <div className="band-content">
         {displaySongs.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'80px 20px', color:'#888' }}>
+          <div style={{ textAlign:'center', padding:'80px 20px', color:'var(--muted)' }}>
             <div style={{ fontSize:40, marginBottom:12 }}>🎸</div>
-            <div style={{ fontSize:16, fontWeight:600, color:'#333', marginBottom:6 }}>No set for {dateLabel}</div>
+            <div style={{ fontSize:16, fontWeight:600, color:'var(--text)', marginBottom:6 }}>No set for {dateLabel}</div>
             <div style={{ fontSize:14 }}>No songs have been scheduled for this date yet.</div>
           </div>
         ) : (
@@ -96,9 +96,9 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               {displaySongs.map((s,i) => (
                 <button key={s.id} onClick={()=>setIdx(i)} style={{
                   padding:'6px 14px', borderRadius:20, border:'1.5px solid',
-                  borderColor: i===idx ? '#6c8fff' : '#e0e0e0',
-                  background: i===idx ? '#6c8fff' : '#fff',
-                  color: i===idx ? '#fff' : '#555',
+                  borderColor: i===idx ? 'var(--accent)' : 'var(--border2)',
+                  background: i===idx ? 'var(--accent)' : 'var(--bg3)',
+                  color: i===idx ? '#fff' : 'var(--muted)',
                   fontSize:12, fontWeight:500, cursor:'pointer',
                   whiteSpace:'nowrap', fontFamily:'inherit', flexShrink:0
                 }}>{i+1}. {s.title}</button>
@@ -110,8 +110,8 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               <div className="band-song-artist">{current.artist}</div>
               <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:20, flexWrap:'wrap' }}>
                 <div className="band-key">
-                  <span style={{ color:'#888', fontWeight:400 }}>{currentTransposedKey === 'Numbers' ? '' : 'Key of'}</span>
-                  <span style={{ color:'#1a1a1a' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : currentTransposedKey}</span>
+                  <span style={{ color:'var(--muted)', fontWeight:400 }}>{currentTransposedKey === 'Numbers' ? '' : 'Key of'}</span>
+                  <span style={{ color:'var(--text)' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : currentTransposedKey}</span>
                 </div>
                 <span style={{ display:'inline-flex', alignItems:'center', padding:'6px 14px', borderRadius:8, fontSize:13, fontWeight:500, background: (tempoColor[current.tempo] || '#888') + '18', color: tempoColor[current.tempo] || '#888' }}>
                   {current.tempo}
@@ -123,22 +123,22 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
                     originalKey={current.key}
                     transposedKey={currentTransposedKey}
                     onChange={(newKey) => handleTransposeChange(current.id, newKey)}
-                    selectStyle={{ background:'#f0f0f0', border:'1px solid #ccc', color:'#1a1a1a' }}
-                    labelStyle={{ color:'#555' }}
+                    selectStyle={{ background:'var(--bg4)', border:'1px solid var(--border2)', color:'var(--text)' }}
+                    labelStyle={{ color:'var(--muted)' }}
                   />
                 </div>
               )}
               {current.lyrics ? (
                 <div style={{ width:'100%', position:'relative' }}>
-                  <button onClick={() => setExpanded(true)} style={{ position:'absolute', top:10, right:10, zIndex:1, background:'rgba(0,0,0,0.06)', border:'none', borderRadius:7, padding:'5px 9px', cursor:'pointer', fontSize:14, color:'#555' }} title="Expand">⤢</button>
-                  <div style={{ background:'#fafafa', borderRadius:12, padding:'16px 20px', maxHeight:420, overflowY:'auto' }}>
-                    <ChordDisplay lyrics={currentLyrics} chordColor="#6c8fff" lyricColor="#333" />
+                  <button onClick={() => setExpanded(true)} style={{ position:'absolute', top:10, right:10, zIndex:1, background:'rgba(255,255,255,0.08)', border:'none', borderRadius:7, padding:'5px 9px', cursor:'pointer', fontSize:14, color:'var(--muted)' }} title="Expand">⤢</button>
+                  <div style={{ background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:420, overflowY:'auto' }}>
+                    <ChordDisplay lyrics={currentLyrics} chordColor="var(--accent)" lyricColor="var(--text)" />
                   </div>
                 </div>
               ) : current.pdf_url ? (
                 <iframe src={current.pdf_url} title={current.title} style={{ width:'100%', height:'500px', border:'none', borderRadius:'12px' }} />
               ) : (
-                <div style={{ background:'#f5f5f5', borderRadius:12, padding:24, color:'#aaa', fontSize:13 }}>No chord chart uploaded yet</div>
+                <div style={{ background:'var(--bg3)', borderRadius:12, padding:24, color:'var(--muted)', fontSize:13 }}>No chord chart uploaded yet</div>
               )}
             </div>
             <div className="band-nav">
@@ -148,21 +148,21 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               </div>
               <button onClick={next} disabled={idx===displaySongs.length-1}>→</button>
             </div>
-            <div style={{ textAlign:'center', marginTop:16, fontSize:12, color:'#aaa' }}>Swipe left or right to navigate songs</div>
+            <div style={{ textAlign:'center', marginTop:16, fontSize:12, color:'var(--muted)' }}>Swipe left or right to navigate songs</div>
           </>
         )}
       </div>
 
       {expanded && current && (
         <div
-          style={{ position:'fixed', inset:0, background:'#f7f6f2', zIndex:9999, display:'flex', flexDirection:'column' }}
+          style={{ position:'fixed', inset:0, background:'var(--bg)', zIndex:9999, display:'flex', flexDirection:'column' }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <div style={{ background:'#fff', borderBottom:'1px solid rgba(0,0,0,0.08)', padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
+          <div style={{ background:'var(--bg2)', borderBottom:'1px solid var(--border)', padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontFamily:'var(--font-head)', fontWeight:700, fontSize:16, color:'#1a1a1a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{current.title}</div>
-              <div style={{ fontSize:12, color:'#888' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : `Key of ${currentTransposedKey}`} · {current.tempo}</div>
+              <div style={{ fontFamily:'var(--font-head)', fontWeight:700, fontSize:16, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{current.title}</div>
+              <div style={{ fontSize:12, color:'var(--muted)' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : `Key of ${currentTransposedKey}`} · {current.tempo}</div>
             </div>
             <TransposeControl
               originalKey={current.key}
@@ -171,24 +171,24 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               selectStyle={{ background:'#f0f0f0', border:'1px solid #ccc', color:'#1a1a1a' }}
               labelStyle={{ color:'#555' }}
             />
-            <button onClick={prev} disabled={idx===0} style={{ background:'none', border:'1.5px solid #e0e0e0', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'#333', flexShrink:0 }}>←</button>
-            <button onClick={next} disabled={idx===displaySongs.length-1} style={{ background:'none', border:'1.5px solid #e0e0e0', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'#333', flexShrink:0 }}>→</button>
-            <button onClick={() => setExpanded(false)} style={{ background:'none', border:'1.5px solid #e0e0e0', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13, fontWeight:600, color:'#555', flexShrink:0, fontFamily:'inherit' }}>✕ Close</button>
+            <button onClick={prev} disabled={idx===0} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'var(--text)', flexShrink:0 }}>←</button>
+            <button onClick={next} disabled={idx===displaySongs.length-1} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'var(--text)', flexShrink:0 }}>→</button>
+            <button onClick={() => setExpanded(false)} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13, fontWeight:600, color:'var(--muted)', flexShrink:0, fontFamily:'inherit' }}>✕ Close</button>
           </div>
-          <div style={{ background:'#fff', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'8px 16px', display:'flex', gap:8, overflowX:'auto', flexShrink:0 }}>
+          <div style={{ background:'var(--bg2)', borderBottom:'1px solid var(--border)', padding:'8px 16px', display:'flex', gap:8, overflowX:'auto', flexShrink:0 }}>
             {displaySongs.map((s,i) => (
               <button key={s.id} onClick={() => setIdx(i)} style={{
                 padding:'5px 13px', borderRadius:20, border:'1.5px solid',
-                borderColor: i===idx ? '#6c8fff' : '#e0e0e0',
-                background: i===idx ? '#6c8fff' : '#fff',
-                color: i===idx ? '#fff' : '#555',
+                borderColor: i===idx ? 'var(--accent)' : 'var(--border2)',
+                background: i===idx ? 'var(--accent)' : 'var(--bg3)',
+                color: i===idx ? '#fff' : 'var(--muted)',
                 fontSize:12, fontWeight:500, cursor:'pointer',
                 whiteSpace:'nowrap', fontFamily:'inherit', flexShrink:0
               }}>{i+1}. {s.title}</button>
             ))}
           </div>
           <div style={{ flex:1, overflowY:'auto', padding:'20px 24px' }}>
-            <ChordDisplay lyrics={currentLyrics} chordColor="#6c8fff" lyricColor="#333" />
+            <ChordDisplay lyrics={currentLyrics} chordColor="var(--accent)" lyricColor="var(--text)" />
           </div>
         </div>
       )}
