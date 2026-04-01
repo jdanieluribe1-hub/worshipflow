@@ -1,5 +1,8 @@
 import React, { useState } from 'react'
 import { upsertSet, finalizeSet } from '../lib/supabase'
+import { transposeLyrics } from '../lib/transpose'
+import ChordDisplay from '../components/ChordDisplay'
+import TransposeControl from '../components/TransposeControl'
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
@@ -19,10 +22,29 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [waModal, setWaModal] = useState(false)
   const [songSpotifyUrls, setSongSpotifyUrls] = useState({})
   const [songYoutubeUrls, setSongYoutubeUrls] = useState({})
+  const [dragIdx, setDragIdx] = useState(null)
+  const [dragOverIdx, setDragOverIdx] = useState(null)
+  const [keyOverrides, setKeyOverrides] = useState({})
+  const [previewSong, setPreviewSong] = useState(null)
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
   const med = weekSongs.filter(s=>s.tempo==='Medium').length
   const slow = weekSongs.filter(s=>s.tempo==='Slow').length
+
+  const effectiveKey = (s) => keyOverrides[s.id] || s.key
+
+  const handleDragStart = (i) => setDragIdx(i)
+  const handleDragOver = (e, i) => { e.preventDefault(); setDragOverIdx(i) }
+  const handleDrop = (i) => {
+    if (dragIdx === null || dragIdx === i) { setDragIdx(null); setDragOverIdx(null); return }
+    const newIds = [...weekSongIds]
+    const [removed] = newIds.splice(dragIdx, 1)
+    newIds.splice(i, 0, removed)
+    setWeekSongIds(newIds)
+    setDragIdx(null)
+    setDragOverIdx(null)
+  }
+  const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null) }
 
   const saveSet = async () => {
     if (!weekSongIds.length) return alert('Add some songs first.')
@@ -58,7 +80,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     const songLines = weekSongs.map((s,i) => {
       const spotifyLink = songSpotifyUrls[s.id]
       const youtubeLink = songYoutubeUrls[s.id]
-      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${s.key} | ${s.tempo}${spotifyLink ? `\n   🎵 ${spotifyLink}` : ''}${youtubeLink ? `\n   ▶️ ${youtubeLink}` : ''}`
+      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${effectiveKey(s)} | ${s.tempo}${spotifyLink ? `\n   🎵 ${spotifyLink}` : ''}${youtubeLink ? `\n   ▶️ ${youtubeLink}` : ''}`
     }).join('\n\n')
     return `*Worship Set — ${date}* 🎵\n\n${songLines}\n\n📋 Chord Charts & Lyrics:\n${bandLink}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
   }
@@ -92,16 +114,35 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       ) : (
         <>
           <div style={{ marginBottom:8 }}>
-            <div className="form-label" style={{ marginBottom:8 }}>Set Order</div>
+            <div className="form-label" style={{ marginBottom:8 }}>Set Order <span style={{ fontSize:11, color:'var(--muted)', fontWeight:400 }}>— drag to reorder</span></div>
             {weekSongs.map((s,i) => (
-              <div key={s.id} className="week-song" style={{ flexWrap:'wrap', gap:8 }}>
+              <div
+                key={s.id}
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={(e) => handleDragOver(e, i)}
+                onDrop={() => handleDrop(i)}
+                onDragEnd={handleDragEnd}
+                style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s' }}
+              >
+              <div className="week-song" style={{
+                flexWrap:'wrap', gap:8,
+                outline: dragOverIdx === i && dragIdx !== i ? '2px solid var(--accent)' : 'none',
+                borderRadius:10, cursor:'grab',
+              }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0 }}>
-                  <div className="week-order">{i+1}</div>
+                  <div className="week-order" style={{ cursor:'grab', userSelect:'none' }}>{i+1}</div>
                   <div className="song-thumb" style={{ width:38,height:38 }}>{tempoEmoji(s.tempo)}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontWeight:500,fontSize:14 }}>{s.title}</div>
-                    <div style={{ fontSize:12,color:'var(--muted)' }}>{s.artist} · Key of {s.key}</div>
+                    <div style={{ fontSize:12,color:'var(--muted)' }}>{s.artist}</div>
                   </div>
+                  <TransposeControl
+                    originalKey={s.key}
+                    transposedKey={effectiveKey(s)}
+                    onChange={(newKey) => setKeyOverrides(p => ({ ...p, [s.id]: newKey }))}
+                  />
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => setPreviewSong(s)} title="Preview chord chart">👁</button>
                   <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
                   {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄</a>}
                   <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)' }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
@@ -147,6 +188,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                   )}
                 </div>
               </div>
+              </div>
             ))}
           </div>
 
@@ -163,6 +205,46 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
             <button className="btn btn-primary" onClick={finalize} disabled={finalizing}>{finalizing?'Finalizing...':'✓ Finalize & Log Plays'}</button>
           </div>
         </>
+      )}
+
+      {previewSong && (
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setPreviewSong(null)}>
+          <div className="modal" style={{ maxWidth:560 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div>
+                <div style={{ fontFamily:'var(--font-head)', fontSize:18, fontWeight:700 }}>{previewSong.title}</div>
+                <div style={{ fontSize:13, color:'var(--muted)' }}>{previewSong.artist}</div>
+              </div>
+              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                <span className="tag tag-key">Key of {effectiveKey(previewSong)}</span>
+                <span className={`tag tag-${previewSong.tempo?.toLowerCase()}`}>{previewSong.tempo}</span>
+              </div>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <TransposeControl
+                originalKey={previewSong.key}
+                transposedKey={effectiveKey(previewSong)}
+                onChange={(newKey) => setKeyOverrides(p => ({ ...p, [previewSong.id]: newKey }))}
+              />
+            </div>
+            {previewSong.lyrics ? (
+              <ChordDisplay
+                lyrics={
+                  keyOverrides[previewSong.id] && keyOverrides[previewSong.id] !== previewSong.key
+                    ? transposeLyrics(previewSong.lyrics, previewSong.key, keyOverrides[previewSong.id])
+                    : previewSong.lyrics
+                }
+              />
+            ) : previewSong.pdf_url ? (
+              <iframe src={previewSong.pdf_url} title={previewSong.title} style={{ width:'100%', height:400, border:'none', borderRadius:10 }} />
+            ) : (
+              <div style={{ textAlign:'center', padding:32, color:'var(--muted)', fontSize:13 }}>No chord chart available</div>
+            )}
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={()=>setPreviewSong(null)}>Close</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {waModal && (

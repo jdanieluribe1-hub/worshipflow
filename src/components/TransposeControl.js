@@ -1,11 +1,11 @@
 import React from 'react'
 import { TRANSPOSE_KEYS } from '../lib/transpose'
 
-export default function TransposeControl({ originalKey, transposedKey, onChange, selectStyle }) {
+export default function TransposeControl({ originalKey, transposedKey, onChange, selectStyle, labelStyle }) {
   const normOriginal = originalKey?.includes('/') ? originalKey.split('/')[0] : originalKey
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-      <span style={{ fontSize:12, color:'var(--muted)', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px' }}>
+      <span style={{ fontSize:12, color:'var(--muted)', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', ...labelStyle }}>
         Transpose
       </span>
       <select
