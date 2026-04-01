@@ -17,7 +17,20 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
   const [localSets, setLocalSets] = useState([])
   const [transposedKeys, setTransposedKeys] = useState({})
   const [expanded, setExpanded] = useState(false)
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('wf_theme') || 'dark'
+    if (saved === 'light') document.documentElement.classList.add('light-mode')
+    return saved
+  })
   const touchStartX = useRef(null)
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    localStorage.setItem('wf_theme', next)
+    if (next === 'light') document.documentElement.classList.add('light-mode')
+    else document.documentElement.classList.remove('light-mode')
+  }
 
   // Self-fetch when used on the public /band route (no props passed)
   useEffect(() => {
@@ -71,17 +84,26 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
     <div className="band-page">
       <div className="band-topbar">
         <div className="band-logo">WorshipFlow</div>
-        <label style={{ position:'relative', cursor:'pointer', userSelect:'none' }}>
-          <span className="band-week-label" style={{ display:'flex', alignItems:'center', gap:6 }}>
-            <span style={{ fontSize:14 }}>📅</span>{dateLabel}
-          </span>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={handleDateChange}
-            style={{ position:'absolute', opacity:0, inset:0, cursor:'pointer', width:'100%', height:'100%' }}
-          />
-        </label>
+        <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+          <label style={{ position:'relative', cursor:'pointer', userSelect:'none' }}>
+            <span className="band-week-label" style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:14 }}>📅</span>{dateLabel}
+            </span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={handleDateChange}
+              style={{ position:'absolute', opacity:0, inset:0, cursor:'pointer', width:'100%', height:'100%' }}
+            />
+          </label>
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, padding:'4px', color:'var(--muted)', lineHeight:1 }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+        </div>
       </div>
       <div className="band-content">
         {displaySongs.length === 0 ? (
