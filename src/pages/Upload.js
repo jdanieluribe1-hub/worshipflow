@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
-import { uploadPDF, addSong, updateSong } from '../lib/supabase'
+import { uploadPDF, addSong } from '../lib/supabase'
 import { parsePDFWithAI } from '../lib/ai'
+import { transposeLyrics } from '../lib/transpose'
+import ChordDisplay from '../components/ChordDisplay'
+import TransposeControl from '../components/TransposeControl'
 
 const KEYS = [
   'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
@@ -16,6 +19,7 @@ export default function Upload({ refreshSongs }) {
   const [pasteText, setPasteText] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [transposedKey, setTransposedKey] = useState(null)
 
   const handleFile = async (file) => {
     if (!file || file.type !== 'application/pdf') return alert('Please upload a PDF file.')
@@ -36,6 +40,7 @@ export default function Upload({ refreshSongs }) {
         return
       }
       setExtracted({ title: result.title || file.name.replace('.pdf',''), artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
+      setTransposedKey(result.key || 'G')
       setStep('review')
     } catch(e) {
       setError('Error parsing PDF: ' + e.message)
@@ -61,6 +66,7 @@ export default function Upload({ refreshSongs }) {
         return
       }
       setExtracted({ title: result.title || '', artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
+      setTransposedKey(result.key || 'G')
       setStep('review')
     } catch(e) {
       setError('Error fetching URL: ' + e.message)
@@ -71,6 +77,7 @@ export default function Upload({ refreshSongs }) {
   const handlePaste = () => {
     if (!pasteText.trim()) return alert('Please paste some lyrics or chord chart text.')
     setExtracted({ title: '', artist: '', key: 'G', tempo: 'Medium', lyrics: pasteText.trim() })
+    setTransposedKey('G')
     setStep('review')
   }
 
@@ -80,13 +87,18 @@ export default function Upload({ refreshSongs }) {
     try {
       let pdf_url = null
       if (pdfFile) pdf_url = await uploadPDF(pdfFile, extracted.title)
+      const origKey = extracted.key || 'G'
+      const activeKey = transposedKey || origKey
+      const lyricsToSave = (transposedKey && transposedKey !== origKey)
+        ? transposeLyrics(extracted.lyrics, origKey, transposedKey)
+        : extracted.lyrics
       await addSong({
         title: extracted.title.trim(),
         artist: extracted.artist.trim(),
-        key: extracted.key,
+        key: activeKey,
         tempo: extracted.tempo,
         themes: [], specialty: [], notes: '',
-        lyrics: extracted.lyrics,
+        lyrics: lyricsToSave,
         pdf_url,
         plays_3weeks: 0, plays_3months: 0, plays_year: 0
       })
@@ -98,7 +110,7 @@ export default function Upload({ refreshSongs }) {
     setSaving(false)
   }
 
-  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setPasteText(''); setError('') }
+  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setPasteText(''); setError(''); setTransposedKey(null) }
 
   if (step === 'done') return (
     <div className="empty-state">
@@ -182,119 +194,64 @@ export default function Upload({ refreshSongs }) {
         </div>
       )}
 
-      {step === 'review' && extracted && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
-          <div className="card" style={{ marginTop:0 }}>
-            <div style={{ fontSize:11, color:'var(--muted)', marginBottom:14, textTransform:'uppercase', letterSpacing:'0.5px' }}>AI Extracted — Review and Edit</div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Song Title</label>
-                <input type="text" value={extracted.title} onChange={e=>setExtracted(x=>({...x,title:e.target.value}))} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Artist</label>
-                <input type="text" value={extracted.artist} onChange={e=>setExtracted(x=>({...x,artist:e.target.value}))} />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Key</label>
-                <select value={extracted.key} onChange={e=>setExtracted(x=>({...x,key:e.target.value}))}>
-                  {KEYS.map(k=><option key={k}>{k}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Tempo</label>
-                <select value={extracted.tempo} onChange={e=>setExtracted(x=>({...x,tempo:e.target.value}))}>
-                  {TEMPOS.map(t=><option key={t}>{t}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Lyrics with Chords</label>
-              <textarea value={extracted.lyrics} onChange={e=>setExtracted(x=>({...x,lyrics:e.target.value}))} style={{ minHeight:160, width:'100%', fontFamily:'monospace', fontSize:12 }} />
-            </div>
-            <div style={{ display:'flex', gap:10 }}>
-              <button className="btn btn-ghost btn-sm" onClick={reset}>Start Over</button>
-              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Saving...':'Save to Library'}</button>
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:12 }}>Preview</div>
-            <ChordDisplay lyrics={extracted.lyrics} />
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function parseLyricLine(line) {
-  // Split into alternating [Chord] and text segments, build two padded strings
-  // so chords sit directly above the syllable they fall on.
-  const parts = line.split(/(\[[^\]]+\])/)
-  let chordLine = ''
-  let lyricLine = ''
-  let pendingChord = null
-  for (const part of parts) {
-    if (/^\[[^\]]+\]$/.test(part)) {
-      const chord = part.slice(1, -1)
-      if (pendingChord !== null) {
-        // Two adjacent chords with no text between them
-        const w = pendingChord.length + 1
-        chordLine += pendingChord.padEnd(w)
-        lyricLine += ' '.repeat(w)
-      }
-      pendingChord = chord
-    } else {
-      if (pendingChord !== null) {
-        const w = Math.max(pendingChord.length + 1, part.length)
-        chordLine += pendingChord.padEnd(w)
-        lyricLine += part.padEnd(w)
-        pendingChord = null
-      } else {
-        chordLine += ' '.repeat(part.length)
-        lyricLine += part
-      }
-    }
-  }
-  if (pendingChord !== null) chordLine += pendingChord
-  return { chordLine, lyricLine: lyricLine.trimEnd() }
-}
-
-function isChordName(s) {
-  return /^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/.test(s)
-}
-
-export function ChordDisplay({ lyrics }) {
-  if (!lyrics) return <div style={{ color:'var(--muted)', fontSize:13 }}>No lyrics yet</div>
-
-  const lines = lyrics.split('\n')
-  return (
-    <div style={{ fontFamily:'monospace', fontSize:13, background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:400, overflowY:'auto' }}>
-      {lines.map((line, i) => {
-        const trimmed = line.trim()
-        if (!trimmed) return <div key={i} style={{ height:8 }} />
-
-        // Section label: entire line is [Something] that isn't a chord name
-        if (/^\[[^\]]+\]$/.test(trimmed) && !isChordName(trimmed.slice(1, -1))) {
-          return <div key={i} style={{ color:'var(--accent2)', fontWeight:600, fontSize:11, letterSpacing:1, textTransform:'uppercase', marginTop:12, marginBottom:4, fontFamily:'var(--font-body)' }}>{trimmed.slice(1,-1)}</div>
-        }
-
-        // Pure lyric line with no chord markers
-        if (!/\[[^\]]+\]/.test(line)) {
-          return <div key={i} style={{ color:'var(--text)', whiteSpace:'pre-wrap', lineHeight:1.6, marginBottom:2 }}>{line}</div>
-        }
-
-        const { chordLine, lyricLine } = parseLyricLine(line)
+      {step === 'review' && extracted && (() => {
+        const origKey = extracted.key || 'G'
+        const activeKey = transposedKey || origKey
+        const displayLyrics = (transposedKey && transposedKey !== origKey)
+          ? transposeLyrics(extracted.lyrics, origKey, transposedKey)
+          : extracted.lyrics
         return (
-          <div key={i} style={{ marginBottom:6 }}>
-            <div style={{ color:'var(--accent)', fontWeight:700, whiteSpace:'pre', lineHeight:1.3 }}>{chordLine}</div>
-            <div style={{ color:'var(--text)', whiteSpace:'pre', lineHeight:1.5 }}>{lyricLine || '\u00A0'}</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:28, alignItems:'start' }}>
+            <div className="card" style={{ marginTop:0 }}>
+              <div style={{ fontSize:11, color:'var(--muted)', marginBottom:14, textTransform:'uppercase', letterSpacing:'0.5px' }}>AI Extracted — Review and Edit</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Song Title</label>
+                  <input type="text" value={extracted.title} onChange={e=>setExtracted(x=>({...x,title:e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Artist</label>
+                  <input type="text" value={extracted.artist} onChange={e=>setExtracted(x=>({...x,artist:e.target.value}))} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Key</label>
+                  <select value={extracted.key} onChange={e=>{ setExtracted(x=>({...x,key:e.target.value})); setTransposedKey(e.target.value) }}>
+                    {KEYS.map(k=><option key={k}>{k}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tempo</label>
+                  <select value={extracted.tempo} onChange={e=>setExtracted(x=>({...x,tempo:e.target.value}))}>
+                    {TEMPOS.map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <TransposeControl
+                  originalKey={extracted.key}
+                  transposedKey={activeKey}
+                  onChange={setTransposedKey}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Lyrics with Chords</label>
+                <textarea value={extracted.lyrics} onChange={e=>setExtracted(x=>({...x,lyrics:e.target.value}))} style={{ minHeight:160, width:'100%', fontFamily:'monospace', fontSize:12 }} />
+              </div>
+              <div style={{ display:'flex', gap:10 }}>
+                <button className="btn btn-ghost btn-sm" onClick={reset}>Start Over</button>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving?'Saving...':'Save to Library'}</button>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:12 }}>Preview</div>
+              <ChordDisplay lyrics={displayLyrics} />
+            </div>
           </div>
         )
-      })}
+      })()}
     </div>
   )
 }

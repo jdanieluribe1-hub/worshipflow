@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import { addSong, deleteSong, updateSong } from '../lib/supabase'
 import { parsePDFWithAI, generateProPresenterTemplate, stripChords } from '../lib/ai'
+import { transposeLyrics } from '../lib/transpose'
+import ChordDisplay from '../components/ChordDisplay'
+import TransposeControl from '../components/TransposeControl'
 
 const KEYS = [
   'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
@@ -21,11 +24,12 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [converting, setConverting] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
+  const [viewTransposedKey, setViewTransposedKey] = useState(null)
 
   const [proPresenterXml, setProPresenterXml] = useState(null)
 
-  const openDetail = (s) => { setDetailSong(s); setEditing(false); setProPresenterXml(null) }
-  const closeDetail = () => { setDetailSong(null); setEditing(false); setProPresenterXml(null) }
+  const openDetail = (s) => { setDetailSong(s); setEditing(false); setViewTransposedKey(null); setProPresenterXml(null) }
+  const closeDetail = () => { setDetailSong(null); setEditing(false); setViewTransposedKey(null); setProPresenterXml(null) }
 
   const startEdit = () => {
     setEditForm({
@@ -129,6 +133,20 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
     await deleteSong(id)
     await refreshSongs()
     closeDetail()
+  }
+
+  const handleSaveTransposedKey = async () => {
+    if (!viewTransposedKey || !detailSong) return
+    setSaving(true)
+    try {
+      const newLyrics = transposeLyrics(detailSong.lyrics, detailSong.key, viewTransposedKey)
+      const updates = { key: viewTransposedKey, lyrics: newLyrics }
+      await updateSong(detailSong.id, updates)
+      await refreshSongs()
+      setDetailSong(s => ({ ...s, ...updates }))
+      setViewTransposedKey(null)
+    } catch(e) { alert('Error saving: ' + e.message) }
+    setSaving(false)
   }
 
   return (
@@ -300,6 +318,15 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                   {(detailSong.themes||[]).map(t=><span key={t} className="tag tag-theme">{t}</span>)}
                   {(detailSong.specialty||[]).map(t=><span key={t} className="tag tag-specialty">{t}</span>)}
                 </div>
+                {detailSong.lyrics && (
+                  <div style={{ marginBottom:16 }}>
+                    <TransposeControl
+                      originalKey={detailSong.key}
+                      transposedKey={viewTransposedKey || detailSong.key}
+                      onChange={setViewTransposedKey}
+                    />
+                  </div>
+                )}
                 {detailSong.notes && <div style={{ background:'var(--bg3)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--muted)',marginBottom:16 }}>{detailSong.notes}</div>}
                 <div style={{ marginBottom:16 }}>
                   <div className="form-label" style={{ marginBottom:8 }}>Play History</div>
@@ -325,7 +352,13 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                 {detailSong.lyrics && (
                   <div style={{ marginBottom:16 }}>
                     <div className="form-label" style={{ marginBottom:8 }}>Lyrics</div>
-                    <div style={{ background:'var(--bg3)',borderRadius:10,padding:'14px 16px',fontSize:13,lineHeight:1.8,color:'var(--text)',whiteSpace:'pre-wrap',maxHeight:200,overflowY:'auto' }}>{detailSong.lyrics}</div>
+                    <ChordDisplay
+                      lyrics={
+                        viewTransposedKey && viewTransposedKey !== detailSong.key
+                          ? transposeLyrics(detailSong.lyrics, detailSong.key, viewTransposedKey)
+                          : detailSong.lyrics
+                      }
+                    />
                   </div>
                 )}
                 {detailSong.lyrics && (
@@ -356,6 +389,11 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                 <div className="modal-footer">
                   <button className="btn btn-red btn-sm" onClick={()=>handleDelete(detailSong.id)}>Delete</button>
                   <div style={{ flex:1 }} />
+                  {viewTransposedKey && viewTransposedKey !== detailSong.key && (
+                    <button className="btn btn-ghost btn-sm" onClick={handleSaveTransposedKey} disabled={saving}>
+                      {saving ? 'Saving…' : `Save as ${viewTransposedKey}`}
+                    </button>
+                  )}
                   <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
                   <button className="btn btn-ghost" onClick={closeDetail}>Close</button>
                   <button className={`btn ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>{toggleWeek(detailSong.id,{stopPropagation:()=>{}});closeDetail()}}>
