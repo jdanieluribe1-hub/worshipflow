@@ -77,7 +77,7 @@ function AppShell() {
   const refreshSongs = () => getSongs().then(s => setSongs(s || []))
   const refreshSets = () => getSets().then(s => setSets(s || []))
 
-  const weekSongs = songs.filter(s => weekSongIds.includes(s.id))
+  const weekSongs = weekSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
 
   const pageProps = {
     songs, sets, weekSongIds, weekSongs,
@@ -101,7 +101,7 @@ function AppShell() {
         <div className="content">
           {page === 'library' && <Library {...pageProps} />}
           {page === 'thisweek' && <ThisWeek {...pageProps} setPage={setPage} />}
-          {page === 'history' && <History {...pageProps} />}
+          {page === 'history' && <History {...pageProps} setPage={setPage} />}
           {page === 'upload' && <Upload {...pageProps} />}
           {page === 'bandview' && <BandView {...pageProps} />}
           {page === 'recommendations' && <Recommendations />}

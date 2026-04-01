@@ -1,15 +1,26 @@
 import React, { useState } from 'react'
-import { deleteSet } from '../lib/supabase'
+import { deleteSet, upsertSet } from '../lib/supabase'
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
-function dateKey(d) { return new Date(d).toISOString().slice(0,10) }
-
-export default function History({ songs, sets, refreshSets }) {
+export default function History({ songs, sets, refreshSets, setPage }) {
   const [view, setView] = useState('calendar')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedKey, setSelectedKey] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [duplicateDate, setDuplicateDate] = useState('')
+  const [duplicating, setDuplicating] = useState(false)
+
+  const today = new Date(); today.setHours(0,0,0,0)
+
+  const historyMap = {}
+  sets.forEach(s => { historyMap[s.service_date] = s })
+
+  const selectedSet = selectedKey ? historyMap[selectedKey] : null
+  const selectedSongs = selectedSet ? (selectedSet.song_ids||[]).map(id=>songs.find(s=>s.id===id)).filter(Boolean) : []
+  const effectiveKey = (s) => selectedSet?.key_overrides?.[s.id] || s.key
+
+  const isPast = selectedKey ? new Date(selectedKey + 'T12:00:00') < today : false
 
   const handleDeleteSet = async () => {
     if (!selectedKey) return
@@ -25,8 +36,20 @@ export default function History({ songs, sets, refreshSets }) {
     setDeleting(false)
   }
 
-  const historyMap = {}
-  sets.forEach(s => { historyMap[s.service_date] = s })
+  const handleDuplicateSet = async () => {
+    if (!selectedSet || !duplicateDate) return
+    if (historyMap[duplicateDate] && !window.confirm(`A set already exists for ${duplicateDate}. Overwrite it?`)) return
+    setDuplicating(true)
+    try {
+      await upsertSet(duplicateDate, selectedSet.song_ids, selectedSet.notes || '', selectedSet.key_overrides || {})
+      await refreshSets()
+      setDuplicateDate('')
+      alert('Set duplicated to ' + new Date(duplicateDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + '!')
+    } catch (e) {
+      alert('Error duplicating set: ' + e.message)
+    }
+    setDuplicating(false)
+  }
 
   const sorted = [...songs].sort((a,b)=>(b.plays_year||0)-(a.plays_year||0))
   const topSong = sorted[0]
@@ -34,16 +57,12 @@ export default function History({ songs, sets, refreshSets }) {
   // Calendar
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
-  const today = new Date(); today.setHours(0,0,0,0)
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month+1, 0).getDate()
   const daysInPrev = new Date(year, month, 0).getDate()
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
   const changeMonth = dir => { const d = new Date(currentDate); d.setMonth(d.getMonth()+dir); setCurrentDate(d) }
-
-  const selectedSet = selectedKey ? historyMap[selectedKey] : null
-  const selectedSongs = selectedSet ? (selectedSet.song_ids||[]).map(id=>songs.find(s=>s.id===id)).filter(Boolean) : []
 
   const renderCalCell = (d, fullDate, otherMonth) => {
     const key = fullDate.toISOString().slice(0,10)
@@ -52,6 +71,7 @@ export default function History({ songs, sets, refreshSets }) {
     const isSelected = selectedKey === key
     const entry = historyMap[key]
     const songCount = entry ? (entry.song_ids||[]).length : 0
+    const cellIsPast = fullDate < today
 
     let cls = 'cal-cell'
     if (otherMonth) cls += ' other-month'
@@ -63,6 +83,7 @@ export default function History({ songs, sets, refreshSets }) {
       <div key={key} className={cls} onClick={() => hasSet && setSelectedKey(isSelected ? null : key)}>
         <div className="cal-date">{d}</div>
         {hasSet && <><div className="cal-dot"/><div className="cal-count">{songCount}</div></>}
+        {hasSet && cellIsPast && <div style={{ fontSize:8, color:'var(--muted)', lineHeight:1 }}>🔒</div>}
       </div>
     )
   }
@@ -102,7 +123,6 @@ export default function History({ songs, sets, refreshSets }) {
         </div>
       </div>
 
-      {/* VIEW TOGGLE */}
       <div style={{ display:'flex', gap:8, marginBottom:24 }}>
         <button className={`filter-btn ${view==='calendar'?'active':''}`} onClick={()=>setView('calendar')}>📅 Calendar</button>
         <button className={`filter-btn ${view==='frequency'?'active':''}`} onClick={()=>setView('frequency')}>📊 Frequency</button>
@@ -127,7 +147,6 @@ export default function History({ songs, sets, refreshSets }) {
             </div>
           </div>
 
-          {/* DETAIL PANEL */}
           <div className="card" style={{ padding:0, overflow:'hidden' }}>
             {!selectedSet ? (
               <div className="empty-state">
@@ -137,11 +156,14 @@ export default function History({ songs, sets, refreshSets }) {
             ) : (
               <>
                 <div style={{ padding:'16px 20px', background:'var(--bg3)', borderBottom:'1px solid var(--border)' }}>
-                  <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:700 }}>
-                    {new Date(selectedKey+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:700, flex:1 }}>
+                      {new Date(selectedKey+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
+                    </div>
+                    {isPast && <span title="Past set — locked" style={{ fontSize:14 }}>🔒</span>}
                   </div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:3 }}>
-                    {selectedSongs.length} songs · Keys: {[...new Set(selectedSongs.map(s=>s.key))].join(', ')||'—'}
+                    {selectedSongs.length} songs · Keys: {[...new Set(selectedSongs.map(s=>effectiveKey(s)))].join(', ')||'—'}
                   </div>
                 </div>
                 <div style={{ padding:'14px 20px' }}>
@@ -163,21 +185,52 @@ export default function History({ songs, sets, refreshSets }) {
                         <div style={{ fontWeight:500,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{s.title}</div>
                         <div style={{ fontSize:11,color:'var(--muted)' }}>{s.artist}</div>
                       </div>
-                      <span className="tag tag-key" style={{ fontSize:10 }}>{s.key}</span>
+                      <span className="tag tag-key" style={{ fontSize:10 }}>{effectiveKey(s)}</span>
                     </div>
                   ))}
                   {selectedSet.notes && (
                     <div style={{ marginTop:12, padding:'10px 12px', background:'var(--bg3)', borderRadius:8, fontSize:12, color:'var(--muted)' }}>{selectedSet.notes}</div>
                   )}
-                  <div style={{ marginTop:16, paddingTop:14, borderTop:'1px solid var(--border)' }}>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={handleDeleteSet}
-                      disabled={deleting}
-                      style={{ color:'var(--red)', borderColor:'var(--red)', width:'100%' }}
-                    >
-                      {deleting ? 'Deleting…' : 'Delete This Set'}
-                    </button>
+
+                  <div style={{ marginTop:16, paddingTop:14, borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:8 }}>
+                    {/* Duplicate */}
+                    <div style={{ display:'flex', gap:6 }}>
+                      <input
+                        type="date"
+                        value={duplicateDate}
+                        onChange={e => setDuplicateDate(e.target.value)}
+                        style={{ flex:1, fontSize:12, padding:'5px 8px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }}
+                      />
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={handleDuplicateSet}
+                        disabled={duplicating || !duplicateDate}
+                        style={{ whiteSpace:'nowrap' }}
+                      >
+                        {duplicating ? 'Copying…' : 'Duplicate to date'}
+                      </button>
+                    </div>
+
+                    {/* Future-only actions */}
+                    {!isPast && (
+                      <>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setPage('thisweek')}
+                          style={{ width:'100%' }}
+                        >
+                          Edit in This Week
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={handleDeleteSet}
+                          disabled={deleting}
+                          style={{ color:'var(--red)', borderColor:'var(--red)', width:'100%' }}
+                        >
+                          {deleting ? 'Deleting…' : 'Delete This Set'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </>
