@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { upsertSet, finalizeSet } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
@@ -14,7 +14,7 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage }) {
+export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [] }) {
   const [serviceDate, setServiceDate] = useState(getNextSunday())
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -26,6 +26,11 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [dragOverIdx, setDragOverIdx] = useState(null)
   const [keyOverrides, setKeyOverrides] = useState({})
   const [previewSong, setPreviewSong] = useState(null)
+
+  useEffect(() => {
+    const savedSet = sets.find(s => s.service_date === serviceDate)
+    setKeyOverrides(savedSet?.key_overrides || {})
+  }, [serviceDate, sets])
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
   const med = weekSongs.filter(s=>s.tempo==='Medium').length
@@ -50,7 +55,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!weekSongIds.length) return alert('Add some songs first.')
     setSaving(true)
     try {
-      await upsertSet(serviceDate, weekSongIds, notes)
+      await upsertSet(serviceDate, weekSongIds, notes, keyOverrides)
       await refreshSets()
       alert('Set saved!')
     } catch(e) { alert('Error: ' + e.message) }
@@ -62,12 +67,13 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!window.confirm(`Finalize this set and log plays for ${serviceDate}?`)) return
     setFinalizing(true)
     try {
-      await finalizeSet(serviceDate, weekSongIds)
+      await finalizeSet(serviceDate, weekSongIds, keyOverrides)
       await refreshSets()
       setWeekSongIds([])
       setNotes('')
       setSongSpotifyUrls({})
       setSongYoutubeUrls({})
+      setKeyOverrides({})
       alert('Set finalized! Play counts updated.')
     } catch(e) { alert('Error: ' + e.message) }
     setFinalizing(false)

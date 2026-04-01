@@ -15,7 +15,7 @@ export default function TransposeControl({ originalKey, transposedKey, onChange,
       >
         {TRANSPOSE_KEYS.map(k => (
           <option key={k} value={k}>
-            {k === normOriginal ? `${k} (Original)` : k}
+            {k === normOriginal ? `${k} (Original)` : k === 'Numbers' ? '# Numbers' : k}
           </option>
         ))}
       </select>

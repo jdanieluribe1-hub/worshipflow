@@ -7,8 +7,36 @@ const NOTE_MAP = {
 const FLAT_KEY_ROOTS = new Set(['F','Bb','Eb','Ab','Db','Gb','Dm','Gm','Cm','Fm','Bbm','Ebm'])
 
 export const TRANSPOSE_KEYS = [
-  'C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'
+  'C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B',
+  'Numbers'
 ]
+
+const SCALE_DEGREES = { 0:'1', 1:'b2', 2:'2', 3:'b3', 4:'3', 5:'4', 6:'b5', 7:'5', 8:'b6', 9:'6', 10:'b7', 11:'7' }
+
+export function chordToNashville(chord, fromKey) {
+  const keyRoot = (fromKey?.includes('/') ? fromKey.split('/')[0] : fromKey)?.replace(/m$/, '')
+  const keyIdx = noteIndex(keyRoot)
+  if (keyIdx === -1) return chord
+  let i = (chord.length > 1 && (chord[1] === '#' || chord[1] === 'b')) ? 2 : 1
+  const root = chord.slice(0, i)
+  let suffix = chord.slice(i)
+  let bassNote = null
+  const slashIdx = suffix.lastIndexOf('/')
+  if (slashIdx !== -1) {
+    const rawBass = suffix.slice(slashIdx + 1)
+    if (/^[A-G][#b]?$/.test(rawBass)) { bassNote = rawBass; suffix = suffix.slice(0, slashIdx) }
+  }
+  const rootDeg = SCALE_DEGREES[(noteIndex(root) - keyIdx + 12) % 12]
+  const bassDeg = bassNote ? SCALE_DEGREES[(noteIndex(bassNote) - keyIdx + 12) % 12] : null
+  return rootDeg + suffix + (bassDeg ? '/' + bassDeg : '')
+}
+
+export function convertLyricsToNashville(lyrics, fromKey) {
+  if (!lyrics || !fromKey) return lyrics
+  return lyrics.replace(/\[([^\]]+)\]/g, (match, inner) =>
+    isChordName(inner) ? '[' + chordToNashville(inner, fromKey) + ']' : match
+  )
+}
 
 export function noteIndex(note) {
   return NOTE_MAP[note] ?? -1
@@ -61,7 +89,9 @@ export function isChordName(s) {
 }
 
 export function transposeLyrics(lyrics, fromKey, toKey) {
-  if (!lyrics || !fromKey || !toKey || fromKey === toKey) return lyrics
+  if (!lyrics || !fromKey || !toKey) return lyrics
+  if (toKey === 'Numbers') return convertLyricsToNashville(lyrics, fromKey)
+  if (fromKey === toKey) return lyrics
   const semitones = getSemitones(fromKey, toKey)
   if (semitones === 0) return lyrics
   const flats = usesFlats(toKey)

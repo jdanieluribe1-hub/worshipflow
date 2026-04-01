@@ -389,11 +389,6 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                 <div className="modal-footer">
                   <button className="btn btn-red btn-sm" onClick={()=>handleDelete(detailSong.id)}>Delete</button>
                   <div style={{ flex:1 }} />
-                  {viewTransposedKey && viewTransposedKey !== detailSong.key && (
-                    <button className="btn btn-ghost btn-sm" onClick={handleSaveTransposedKey} disabled={saving}>
-                      {saving ? 'Saving…' : `Save as ${viewTransposedKey}`}
-                    </button>
-                  )}
                   <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
                   <button className="btn btn-ghost" onClick={closeDetail}>Close</button>
                   <button className={`btn ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>{toggleWeek(detailSong.id,{stopPropagation:()=>{}});closeDetail()}}>

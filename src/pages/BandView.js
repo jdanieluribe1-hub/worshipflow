@@ -36,6 +36,10 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
     ? selectedSet.song_ids.map(id => songs.find(s => s.id === id)).filter(Boolean)
     : []
 
+  useEffect(() => {
+    setTransposedKeys(selectedSet?.key_overrides || {})
+  }, [selectedSet])
+
   const current = displaySongs[idx]
   const prev = () => setIdx(i => Math.max(0, i - 1))
   const next = () => setIdx(i => Math.min(displaySongs.length - 1, i + 1))
@@ -56,9 +60,12 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
   const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
 
   const currentTransposedKey = current ? (transposedKeys[current.id] || current.key) : null
-  const currentLyrics = (current && transposedKeys[current.id] && transposedKeys[current.id] !== current.key)
-    ? transposeLyrics(current.lyrics, current.key, transposedKeys[current.id])
-    : current?.lyrics
+  const currentLyrics = (() => {
+    if (!current?.lyrics) return current?.lyrics
+    const override = transposedKeys[current.id]
+    if (!override || override === current.key) return current.lyrics
+    return transposeLyrics(current.lyrics, current.key, override)
+  })()
 
   return (
     <div className="band-page">
@@ -103,8 +110,8 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               <div className="band-song-artist">{current.artist}</div>
               <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:20, flexWrap:'wrap' }}>
                 <div className="band-key">
-                  <span style={{ color:'#888', fontWeight:400 }}>Key of</span>
-                  <span style={{ color:'#1a1a1a' }}>{currentTransposedKey}</span>
+                  <span style={{ color:'#888', fontWeight:400 }}>{currentTransposedKey === 'Numbers' ? '' : 'Key of'}</span>
+                  <span style={{ color:'#1a1a1a' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : currentTransposedKey}</span>
                 </div>
                 <span style={{ display:'inline-flex', alignItems:'center', padding:'6px 14px', borderRadius:8, fontSize:13, fontWeight:500, background: (tempoColor[current.tempo] || '#888') + '18', color: tempoColor[current.tempo] || '#888' }}>
                   {current.tempo}
@@ -155,7 +162,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
           <div style={{ background:'#fff', borderBottom:'1px solid rgba(0,0,0,0.08)', padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontFamily:'var(--font-head)', fontWeight:700, fontSize:16, color:'#1a1a1a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{current.title}</div>
-              <div style={{ fontSize:12, color:'#888' }}>Key of {currentTransposedKey} · {current.tempo}</div>
+              <div style={{ fontSize:12, color:'#888' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : `Key of ${currentTransposedKey}`} · {current.tempo}</div>
             </div>
             <TransposeControl
               originalKey={current.key}
