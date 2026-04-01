@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { getSongs, getSets } from './lib/supabase'
-import { exchangeCodeForToken } from './lib/spotify'
 import Library from './pages/Library'
 import ThisWeek from './pages/ThisWeek'
 import History from './pages/History'
@@ -11,17 +10,6 @@ import Settings from './pages/Settings'
 import Recommendations from './pages/Recommendations'
 import RecommendView from './pages/RecommendView'
 import './App.css'
-
-function SpotifyCallback({ onDone }) {
-  const navigate = useNavigate()
-  useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('code')
-    if (code) {
-      exchangeCodeForToken(code).then(() => { onDone(); navigate('/settings') })
-    }
-  }, [])
-  return <div style={{ padding: 40, color: '#fff' }}>Connecting Spotify...</div>
-}
 
 function Sidebar({ page, setPage, weekCount }) {
   const nav = [
@@ -71,8 +59,6 @@ function AppShell() {
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
   const [loading, setLoading] = useState(true)
-  const [spotifyConnected, setSpotifyConnected] = useState(false)
-
   const titles = {
     library: 'Song Library', thisweek: 'This Week',
     history: 'Play History', upload: 'Upload Chord Chart',
@@ -86,7 +72,6 @@ function AppShell() {
       setSets(sets || [])
       setLoading(false)
     }).catch(() => setLoading(false))
-    setSpotifyConnected(!!localStorage.getItem('spotify_access_token'))
   }, [])
 
   const refreshSongs = () => getSongs().then(s => setSongs(s || []))
@@ -97,7 +82,6 @@ function AppShell() {
   const pageProps = {
     songs, sets, weekSongIds, weekSongs,
     setWeekSongIds, refreshSongs, refreshSets,
-    spotifyConnected, setSpotifyConnected
   }
 
   if (loading) return (
@@ -129,11 +113,9 @@ function AppShell() {
 }
 
 export default function App() {
-  const [spotifyConnected, setSpotifyConnected] = useState(false)
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/callback" element={<SpotifyCallback onDone={() => setSpotifyConnected(true)} />} />
         <Route path="/band" element={<BandViewPublic />} />
         <Route path="/recommend" element={<RecommendView />} />
         <Route path="*" element={<AppShell />} />
