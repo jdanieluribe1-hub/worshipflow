@@ -177,36 +177,25 @@ export default function Home({ songs, sets, setPage }) {
             )
           })}
         </div>
-      </div>
 
-      {/* RIGHT — QUICK ACTIONS + TOP SONGS */}
-      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-
-        {/* QUICK ACTIONS */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-          <div
-            className="card"
-            onClick={()=>setPage('upload')}
-            style={{ cursor:'pointer', padding:28, textAlign:'center', transition:'transform 0.12s', userSelect:'none' }}
-            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
-            onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}
-          >
-            <div style={{ fontSize:38, marginBottom:12 }}>⬆</div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:4 }}>Upload Chart</div>
+        {/* UPLOAD CHART */}
+        <div
+          className="card"
+          onClick={()=>setPage('upload')}
+          style={{ cursor:'pointer', padding:24, display:'flex', alignItems:'center', gap:16, transition:'transform 0.12s', userSelect:'none' }}
+          onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
+          onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}
+        >
+          <div style={{ fontSize:32, flexShrink:0 }}>⬆</div>
+          <div>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:2 }}>Upload Chart</div>
             <div style={{ fontSize:12, color:'var(--muted)' }}>Add a new song from PDF or URL</div>
           </div>
-          <div
-            className="card"
-            onClick={()=>setPage('library')}
-            style={{ cursor:'pointer', padding:28, textAlign:'center', transition:'transform 0.12s', userSelect:'none' }}
-            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'}
-            onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}
-          >
-            <div style={{ fontSize:38, marginBottom:12 }}>♪</div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:4 }}>Song Library</div>
-            <div style={{ fontSize:12, color:'var(--muted)' }}>{songs.length} songs in your library</div>
-          </div>
         </div>
+      </div>
+
+      {/* RIGHT — TOP SONGS + LIBRARY */}
+      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
         {/* TOP PLAYED THIS YEAR */}
         <div className="card" style={{ padding:20 }}>
