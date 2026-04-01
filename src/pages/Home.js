@@ -26,7 +26,8 @@ export default function Home({ songs, sets, setPage }) {
     .sort((a,b) => a.service_date.localeCompare(b.service_date))
     .slice(0, 5)
 
-  const topSongs = [...songs].sort((a,b) => (b.plays_year||0)-(a.plays_year||0)).slice(0,10)
+  const topSongs = [...songs].sort((a,b) => (b.plays_year||0)-(a.plays_year||0)).slice(0,5)
+  const librarySongs = [...songs].sort((a,b) => a.title.localeCompare(b.title)).slice(0,10)
   const maxPlays = topSongs[0]?.plays_year || 1
 
   const year = calDate.getFullYear()
@@ -228,6 +229,34 @@ export default function Home({ songs, sets, setPage }) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* SONG LIBRARY PREVIEW */}
+        <div className="card" style={{ padding:20 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700 }}>Song Library</div>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setPage('library')}>View all →</button>
+          </div>
+          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>First 10 of {songs.length} songs</div>
+          {librarySongs.length === 0 ? (
+            <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:16 }}>No songs yet</div>
+          ) : librarySongs.map((s, i) => (
+            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'7px 0', borderBottom: i < librarySongs.length-1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width:32, height:32, borderRadius:7, background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
+                {s.tempo==='Fast'?'⚡':s.tempo==='Medium'?'♩':'🎶'}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:13, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.title}</div>
+                <div style={{ fontSize:11, color:'var(--muted)' }}>{s.artist}</div>
+              </div>
+              <span className="tag tag-key" style={{ fontSize:10, flexShrink:0 }}>{s.key}</span>
+            </div>
+          ))}
+          {songs.length > 10 && (
+            <button className="btn btn-ghost btn-sm" style={{ width:'100%', marginTop:10 }} onClick={()=>setPage('library')}>
+              + {songs.length - 10} more songs in library
+            </button>
+          )}
         </div>
       </div>
     </div>
