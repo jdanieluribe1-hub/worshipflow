@@ -190,8 +190,8 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               originalKey={current.key}
               transposedKey={currentTransposedKey}
               onChange={(newKey) => handleTransposeChange(current.id, newKey)}
-              selectStyle={{ background:'#f0f0f0', border:'1px solid #ccc', color:'#1a1a1a' }}
-              labelStyle={{ color:'#555' }}
+              selectStyle={{ background:'var(--bg4)', border:'1px solid var(--border2)', color:'var(--text)' }}
+              labelStyle={{ color:'var(--muted)' }}
             />
             <button onClick={prev} disabled={idx===0} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'var(--text)', flexShrink:0 }}>←</button>
             <button onClick={next} disabled={idx===displaySongs.length-1} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'var(--text)', flexShrink:0 }}>→</button>
@@ -209,7 +209,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               }}>{i+1}. {s.title}</button>
             ))}
           </div>
-          <div style={{ flex:1, overflowY:'auto', padding:'20px 24px' }}>
+          <div style={{ flex:1, overflowY:'auto', padding:'20px 24px', background:'var(--bg2)' }}>
             <ChordDisplay lyrics={currentLyrics} chordColor="var(--accent)" lyricColor="var(--text)" />
           </div>
         </div>

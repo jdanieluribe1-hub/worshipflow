@@ -22,6 +22,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [waModal, setWaModal] = useState(false)
   const [songSpotifyUrls, setSongSpotifyUrls] = useState({})
   const [songYoutubeUrls, setSongYoutubeUrls] = useState({})
+  const [songAppleMusicUrls, setSongAppleMusicUrls] = useState({})
   const [dragIdx, setDragIdx] = useState(null)
   const [dragOverIdx, setDragOverIdx] = useState(null)
   const [keyOverrides, setKeyOverrides] = useState({})
@@ -30,6 +31,10 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   useEffect(() => {
     const savedSet = sets.find(s => s.service_date === serviceDate)
     setKeyOverrides(savedSet?.key_overrides || {})
+    const links = savedSet?.music_links || {}
+    setSongSpotifyUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.spotify || ''])))
+    setSongYoutubeUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.youtube || ''])))
+    setSongAppleMusicUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.apple || ''])))
   }, [serviceDate, sets])
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
@@ -37,6 +42,16 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const slow = weekSongs.filter(s=>s.tempo==='Slow').length
 
   const effectiveKey = (s) => keyOverrides[s.id] || s.key
+
+  const buildMusicLinks = () => {
+    const ml = {}
+    weekSongIds.forEach(id => {
+      if (songSpotifyUrls[id] || songYoutubeUrls[id] || songAppleMusicUrls[id]) {
+        ml[id] = { spotify: songSpotifyUrls[id] || '', youtube: songYoutubeUrls[id] || '', apple: songAppleMusicUrls[id] || '' }
+      }
+    })
+    return ml
+  }
 
   const handleDragStart = (i) => setDragIdx(i)
   const handleDragOver = (e, i) => { e.preventDefault(); setDragOverIdx(i) }
@@ -55,7 +70,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!weekSongIds.length) return alert('Add some songs first.')
     setSaving(true)
     try {
-      await upsertSet(serviceDate, weekSongIds, notes, keyOverrides)
+      await upsertSet(serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks())
       await refreshSets()
       alert('Set saved!')
     } catch(e) { alert('Error: ' + e.message) }
@@ -67,26 +82,32 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!window.confirm(`Finalize this set and log plays for ${serviceDate}?`)) return
     setFinalizing(true)
     try {
-      await finalizeSet(serviceDate, weekSongIds, keyOverrides)
+      await finalizeSet(serviceDate, weekSongIds, keyOverrides, buildMusicLinks())
       await refreshSets()
       setWeekSongIds([])
       setNotes('')
       setSongSpotifyUrls({})
       setSongYoutubeUrls({})
+      setSongAppleMusicUrls({})
       setKeyOverrides({})
       alert('Set finalized! Play counts updated.')
     } catch(e) { alert('Error: ' + e.message) }
     setFinalizing(false)
   }
 
-  const waMessage = () => {
+  const waMessage = (overrides = {}) => {
+    const ids = overrides.songIds || weekSongIds
+    const keys = overrides.keyOverrides || keyOverrides
+    const spotify = overrides.spotify || songSpotifyUrls
+    const youtube = overrides.youtube || songYoutubeUrls
+    const apple = overrides.apple || songAppleMusicUrls
+    const useSongs = ids.map(id => songs.find(s => s.id === id)).filter(Boolean)
     const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
     const bandLink = `${window.location.origin}/band`
     const recommendLink = `${window.location.origin}/recommend`
-    const songLines = weekSongs.map((s,i) => {
-      const spotifyLink = songSpotifyUrls[s.id]
-      const youtubeLink = songYoutubeUrls[s.id]
-      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${effectiveKey(s)} | ${s.tempo}${spotifyLink ? `\n   🎵 ${spotifyLink}` : ''}${youtubeLink ? `\n   ▶️ ${youtubeLink}` : ''}`
+    const songLines = useSongs.map((s,i) => {
+      const eff = keys[s.id] || s.key
+      return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${eff} | ${s.tempo}${spotify[s.id] ? `\n   🎵 ${spotify[s.id]}` : ''}${youtube[s.id] ? `\n   ▶️ ${youtube[s.id]}` : ''}${apple[s.id] ? `\n   🍎 ${apple[s.id]}` : ''}`
     }).join('\n\n')
     return `*Worship Set — ${date}* 🎵\n\n${songLines}\n\n📋 Chord Charts & Lyrics:\n${bandLink}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
   }
@@ -114,7 +135,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       {weekSongs.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📅</div>
-          <div className="empty-text">No songs added yet<br />Go to the Library and press "+ Week" on songs</div>
+          <div className="empty-text">No songs added yet<br />Go to the Library and press "+ Set" on songs</div>
           <button className="btn btn-ghost" style={{ marginTop:16 }} onClick={()=>setPage('library')}>Go to Library</button>
         </div>
       ) : (
@@ -154,44 +175,19 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                   <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)' }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
-                  <a
-                    href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`}
-                    target="_blank" rel="noreferrer"
-                    className="btn btn-ghost btn-sm"
-                    style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}
-                  >
-                    Search Spotify
-                  </a>
-                  <input
-                    type="url"
-                    placeholder="Paste Spotify link..."
-                    value={songSpotifyUrls[s.id] || ''}
-                    onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))}
-                    style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }}
-                  />
-                  {songSpotifyUrls[s.id] && (
-                    <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>
-                  )}
+                  <a href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}>Search Spotify</a>
+                  <input type="url" placeholder="Paste Spotify link..." value={songSpotifyUrls[s.id] || ''} onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                  {songSpotifyUrls[s.id] && <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>}
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
-                  <a
-                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`}
-                    target="_blank" rel="noreferrer"
-                    className="btn btn-ghost btn-sm"
-                    style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}
-                  >
-                    Search YouTube
-                  </a>
-                  <input
-                    type="url"
-                    placeholder="Paste YouTube link..."
-                    value={songYoutubeUrls[s.id] || ''}
-                    onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))}
-                    style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }}
-                  />
-                  {songYoutubeUrls[s.id] && (
-                    <a href={songYoutubeUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#FF0000', flexShrink:0 }}>▶</a>
-                  )}
+                  <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}>Search YouTube</a>
+                  <input type="url" placeholder="Paste YouTube link..." value={songYoutubeUrls[s.id] || ''} onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                  {songYoutubeUrls[s.id] && <a href={songYoutubeUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#FF0000', flexShrink:0 }}>▶</a>}
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
+                  <a href={`https://music.apple.com/search?term=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#fc3c44', whiteSpace:'nowrap', flexShrink:0 }}>Search Apple Music</a>
+                  <input type="url" placeholder="Paste Apple Music link..." value={songAppleMusicUrls[s.id] || ''} onChange={e => setSongAppleMusicUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                  {songAppleMusicUrls[s.id] && <a href={songAppleMusicUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#fc3c44', flexShrink:0 }}>▶</a>}
                 </div>
               </div>
               </div>

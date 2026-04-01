@@ -53,15 +53,15 @@ export async function getSetByDate(date) {
   return data || null
 }
 
-export async function upsertSet(serviceDate, songIds, notes = '', keyOverrides = {}) {
-  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides }, { onConflict: 'service_date' }).select().single()
+export async function upsertSet(serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}) {
+  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks }, { onConflict: 'service_date' }).select().single()
   if (error) throw error
   return data
 }
 
-export async function finalizeSet(serviceDate, songIds, keyOverrides = {}) {
+export async function finalizeSet(serviceDate, songIds, keyOverrides = {}, musicLinks = {}) {
   await incrementPlays(songIds)
-  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides }, { onConflict: 'service_date' }).select().single()
+  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks }, { onConflict: 'service_date' }).select().single()
   if (error) throw error
   return data
 }

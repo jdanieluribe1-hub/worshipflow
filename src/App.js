@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { getSongs, getSets } from './lib/supabase'
+import Home from './pages/Home'
 import Library from './pages/Library'
 import ThisWeek from './pages/ThisWeek'
 import History from './pages/History'
@@ -13,8 +14,9 @@ import './App.css'
 
 function Sidebar({ page, setPage, weekCount }) {
   const nav = [
+    { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'library', icon: '♪', label: 'Song Library' },
-    { id: 'thisweek', icon: '📅', label: 'This Week', badge: weekCount },
+    { id: 'thisweek', icon: '📅', label: 'Set Builder', badge: weekCount },
     { id: 'history', icon: '📊', label: 'Play History' },
   ]
   const tools = [
@@ -54,7 +56,7 @@ function Sidebar({ page, setPage, weekCount }) {
 }
 
 function AppShell() {
-  const [page, setPage] = useState('library')
+  const [page, setPage] = useState('home')
   const [songs, setSongs] = useState([])
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
@@ -74,7 +76,7 @@ function AppShell() {
     localStorage.setItem('wf_theme', theme)
   }, [theme])
   const titles = {
-    library: 'Song Library', thisweek: 'This Week',
+    home: 'Dashboard', library: 'Song Library', thisweek: 'Set Builder',
     history: 'Play History', upload: 'Upload Chord Chart',
     bandview: 'Band View', settings: 'Settings',
     recommendations: 'Song Recommendations'
@@ -114,6 +116,7 @@ function AppShell() {
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
         <div className="content">
+          {page === 'home' && <Home {...pageProps} setPage={setPage} />}
           {page === 'library' && <Library {...pageProps} />}
           {page === 'thisweek' && <ThisWeek {...pageProps} setPage={setPage} />}
           {page === 'history' && <History {...pageProps} setPage={setPage} />}
