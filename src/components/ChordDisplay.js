@@ -31,7 +31,7 @@ function parseLyricLine(line) {
   return { chordLine, lyricLine: lyricLine.trimEnd() }
 }
 
-export default function ChordDisplay({ lyrics, chordColor, lyricColor }) {
+export default function ChordDisplay({ lyrics, chordColor, lyricColor, containerStyle }) {
   const cc = chordColor || 'var(--accent)'
   const lc = lyricColor  || 'var(--text)'
 
@@ -39,7 +39,7 @@ export default function ChordDisplay({ lyrics, chordColor, lyricColor }) {
 
   const lines = lyrics.split('\n')
   return (
-    <div style={{ fontFamily:'monospace', fontSize:13, background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:400, overflowY:'auto' }}>
+    <div style={{ fontFamily:'monospace', fontSize:13, background:'var(--bg3)', borderRadius:12, padding:'16px 20px', maxHeight:400, overflowY:'auto', ...containerStyle }}>
       {lines.map((line, i) => {
         const trimmed = line.trim()
         if (!trimmed) return <div key={i} style={{ height:8 }} />

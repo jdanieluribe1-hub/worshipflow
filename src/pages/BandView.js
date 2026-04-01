@@ -209,8 +209,13 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
               }}>{i+1}. {s.title}</button>
             ))}
           </div>
-          <div style={{ flex:1, overflowY:'auto', padding:'20px 24px', background:'var(--bg2)' }}>
-            <ChordDisplay lyrics={currentLyrics} chordColor="var(--accent)" lyricColor="var(--text)" />
+          <div style={{ flex:1, overflowY:'auto', background:'var(--bg2)' }}>
+            <ChordDisplay
+              lyrics={currentLyrics}
+              chordColor="var(--accent)"
+              lyricColor="var(--text)"
+              containerStyle={{ background:'transparent', borderRadius:0, maxHeight:'none', overflowY:'visible', padding:'24px 32px', fontSize:15 }}
+            />
           </div>
         </div>
       )}
