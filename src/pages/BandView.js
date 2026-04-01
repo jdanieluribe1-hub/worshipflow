@@ -18,7 +18,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
   const [transposedKeys, setTransposedKeys] = useState({})
   const [expanded, setExpanded] = useState(false)
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('wf_theme') || 'dark'
+    const saved = localStorage.getItem('wf_band_theme') || 'dark'
     if (saved === 'light') document.documentElement.classList.add('light-mode')
     return saved
   })
@@ -27,7 +27,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [] })
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
-    localStorage.setItem('wf_theme', next)
+    localStorage.setItem('wf_band_theme', next)
     if (next === 'light') document.documentElement.classList.add('light-mode')
     else document.documentElement.classList.remove('light-mode')
   }
