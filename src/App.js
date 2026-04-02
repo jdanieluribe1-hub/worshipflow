@@ -57,7 +57,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
           )}
           {iconsOnly && <div className="logo-title" style={{ fontSize: 14, textAlign: 'center' }}>WF</div>}
           <button className="sidebar-toggle-btn" onClick={onToggle} title="Toggle sidebar">
-            {mode === 'full' ? '‹‹' : mode === 'icons' ? '›' : '›'}
+            {mode === 'full' ? '‹‹' : '››'}
           </button>
         </div>
 
@@ -161,7 +161,7 @@ function AppShell() {
   const refreshSets  = () => getSets(activeChurch.id).then(s => setSets(s || []))
 
   const cycleSidebar = () => {
-    setSidebarMode(m => m === 'full' ? 'icons' : m === 'icons' ? 'hidden' : 'full')
+    setSidebarMode(m => m === 'full' ? 'icons' : 'full')
   }
 
   const titles = {
@@ -209,11 +209,7 @@ function AppShell() {
           <button className="hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
             <span /><span /><span />
           </button>
-          {/* Desktop show-sidebar button (only when hidden) */}
-          {sidebarMode === 'hidden' && (
-            <button className="sidebar-show-btn" onClick={cycleSidebar} title="Show sidebar">›› </button>
-          )}
-          <div className="topbar-title">{titles[page]}</div>
+<div className="topbar-title">{titles[page]}</div>
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
         <div className="content">

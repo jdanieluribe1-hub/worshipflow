@@ -74,7 +74,6 @@ body {
   flex-shrink: 0;
 }
 .sidebar-icons { width: 56px; min-width: 56px; }
-.sidebar-hidden { width: 0; min-width: 0; border-right: none; }
 
 .logo {
   padding: 20px 14px 16px;
@@ -94,13 +93,6 @@ body {
 .sidebar-toggle-btn:hover { background: var(--bg3); color: var(--text); }
 .sidebar-icons .sidebar-toggle-btn { width: 32px; padding: 3px 0; text-align: center; }
 
-.sidebar-show-btn {
-  background: none; border: 1px solid var(--border2); color: var(--muted);
-  border-radius: 6px; padding: 4px 8px; font-size: 13px; cursor: pointer;
-  margin-right: 8px; transition: all 0.15s; font-family: monospace;
-  flex-shrink: 0;
-}
-.sidebar-show-btn:hover { background: var(--bg3); color: var(--text); }
 
 .nav { padding: 12px 8px; flex: 1; overflow-y: auto; overflow-x: hidden; }
 .sidebar-icons .nav { padding: 12px 6px; }
@@ -152,7 +144,7 @@ body {
   .app { flex-direction: column; }
 
   /* Sidebar becomes a fixed drawer */
-  .sidebar, .sidebar-icons, .sidebar-hidden {
+  .sidebar, .sidebar-icons {
     position: fixed !important;
     top: 0; left: 0; bottom: 0;
     width: 260px !important; min-width: 260px !important;
@@ -166,7 +158,7 @@ body {
   .sidebar-overlay { display: block; }
 
   /* Hide desktop toggle button on mobile */
-  .sidebar-toggle-btn, .sidebar-show-btn { display: none; }
+  .sidebar-toggle-btn { display: none; }
 
   /* Icons mode becomes full on mobile (it's a drawer) */
   .sidebar-icons .logo { flex-direction: row; padding: 20px 14px 16px; justify-content: space-between; }
