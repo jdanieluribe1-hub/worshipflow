@@ -142,6 +142,7 @@ body {
 /* MOBILE */
 @media (max-width: 768px) {
   .app { flex-direction: column; }
+  .home-grid { grid-template-columns: 1fr !important; }
 
   /* Sidebar becomes a fixed drawer */
   .sidebar, .sidebar-icons {

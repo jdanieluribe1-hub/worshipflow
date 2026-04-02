@@ -63,7 +63,7 @@ export default function Home({ songs, sets, setPage, profile }) {
         )}
       </div>
 
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, alignItems:'start' }}>
+    <div className="home-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, alignItems:'start' }}>
 
       {/* LEFT — CALENDAR + COMING UP */}
       <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
