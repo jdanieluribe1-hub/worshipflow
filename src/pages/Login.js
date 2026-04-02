@@ -174,7 +174,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 32, fontSize: 11, color: 'var(--muted)', opacity: 0.6, letterSpacing: '0.03em' }}>
+      <div style={{ position: 'fixed', bottom: 16, left: 0, right: 0, textAlign: 'center', fontSize: 10, color: 'var(--muted)', opacity: 0.5, letterSpacing: '0.03em', pointerEvents: 'none' }}>
         © {new Date().getFullYear()} WorshipFlow · Designed &amp; built by Daniel Uribe
       </div>
     </div>
