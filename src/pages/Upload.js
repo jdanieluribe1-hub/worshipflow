@@ -11,7 +11,7 @@ const KEYS = [
 ]
 const TEMPOS = ['Fast','Medium','Slow']
 
-export default function Upload({ refreshSongs, user }) {
+export default function Upload({ refreshSongs, activeChurch }) {
   const [step, setStep] = useState('idle')
   const [extracted, setExtracted] = useState(null)
   const [pdfFile, setPdfFile] = useState(null)
@@ -101,7 +101,7 @@ export default function Upload({ refreshSongs, user }) {
         lyrics: lyricsToSave,
         pdf_url,
         plays_3weeks: 0, plays_3months: 0, plays_year: 0,
-        user_id: user?.id,
+        church_id: activeChurch?.id,
       })
       await refreshSongs()
       setStep('done')

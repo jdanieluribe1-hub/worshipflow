@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { submitRecommendation } from '../lib/supabase'
 
 function detectLinkType(url) {
@@ -9,7 +10,9 @@ function detectLinkType(url) {
 }
 
 export default function RecommendView() {
-  const churchName = localStorage.getItem('wf_church_name') || 'Worship Flow'
+  const [searchParams] = useSearchParams()
+  const churchId = searchParams.get('church')
+  const churchName = searchParams.get('name') || 'Worship Flow'
 
   const [songName, setSongName] = useState('')
   const [reason, setReason] = useState('')
@@ -26,7 +29,7 @@ export default function RecommendView() {
     setSubmitting(true)
     setError(null)
     try {
-      await submitRecommendation(songName.trim(), reason.trim(), link.trim())
+      await submitRecommendation(songName.trim(), reason.trim(), link.trim(), churchId)
       setSubmitted(true)
     } catch (err) {
       setError('Something went wrong. Please try again.')

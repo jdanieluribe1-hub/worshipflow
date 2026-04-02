@@ -13,9 +13,10 @@ import Recommendations from './pages/Recommendations'
 import RecommendView from './pages/RecommendView'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
+import JoinChurch from './pages/JoinChurch'
 import './App.css'
 
-function Sidebar({ page, setPage, weekCount }) {
+function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveChurch }) {
   const nav = [
     { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'library', icon: '♪', label: 'Song Library' },
@@ -49,6 +50,34 @@ function Sidebar({ page, setPage, weekCount }) {
             {n.label}
           </button>
         ))}
+        {churches && churches.length > 1 && (
+          <>
+            <div className="nav-section">Church</div>
+            <div style={{ padding: '0 8px 8px' }}>
+              <select
+                value={activeChurch?.id || ''}
+                onChange={e => {
+                  const c = churches.find(ch => ch.id === e.target.value)
+                  if (c) setActiveChurch(c)
+                }}
+                style={{
+                  width: '100%',
+                  background: 'var(--bg3)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '7px 10px',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                {churches.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
         <div className="nav-section">Settings</div>
         <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => setPage('settings')}>
           <span className="nav-icon">⚙</span> Settings
@@ -59,7 +88,7 @@ function Sidebar({ page, setPage, weekCount }) {
 }
 
 function AppShell() {
-  const { user, profile, loading: authLoading } = useAuth()
+  const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [page, setPage] = useState('home')
   const [songs, setSongs] = useState([])
@@ -82,17 +111,17 @@ function AppShell() {
   }, [theme])
 
   useEffect(() => {
-    if (!user) return
+    if (!activeChurch?.id) return
     setDataLoading(true)
-    Promise.all([getSongs(user.id), getSets(user.id)]).then(([s, st]) => {
+    Promise.all([getSongs(activeChurch.id), getSets(activeChurch.id)]).then(([s, st]) => {
       setSongs(s || [])
       setSets(st || [])
       setDataLoading(false)
     }).catch(() => setDataLoading(false))
-  }, [user])
+  }, [activeChurch?.id])
 
-  const refreshSongs = () => getSongs(user.id).then(s => setSongs(s || []))
-  const refreshSets  = () => getSets(user.id).then(s => setSets(s || []))
+  const refreshSongs = () => getSongs(activeChurch.id).then(s => setSongs(s || []))
+  const refreshSets  = () => getSets(activeChurch.id).then(s => setSets(s || []))
 
   const titles = {
     home: 'Dashboard', library: 'Song Library', thisweek: 'Set Builder',
@@ -116,6 +145,7 @@ function AppShell() {
     songs, sets, weekSongIds, weekSongs,
     setWeekSongIds, refreshSongs, refreshSets,
     theme, setTheme, profile, user,
+    activeChurch, churches,
   }
 
   if (dataLoading) return (
@@ -126,7 +156,7 @@ function AppShell() {
 
   return (
     <div className="app">
-      <Sidebar page={page} setPage={setPage} weekCount={weekSongIds.length} />
+      <Sidebar page={page} setPage={setPage} weekCount={weekSongIds.length} churches={churches} activeChurch={activeChurch} setActiveChurch={setActiveChurch} />
       <div className="main">
         <div className="topbar">
           <div className="topbar-title">{titles[page]}</div>
@@ -156,6 +186,7 @@ export default function App() {
           <Route path="/band" element={<BandViewPublic />} />
           <Route path="/recommend" element={<RecommendView />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/join/:token" element={<JoinChurch />} />
           <Route path="*" element={<AppShell />} />
         </Routes>
       </AuthProvider>

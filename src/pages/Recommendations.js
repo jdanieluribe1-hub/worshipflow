@@ -8,7 +8,7 @@ function linkIcon(url) {
   return { label: 'Link', color: 'var(--accent)' }
 }
 
-export default function Recommendations({ user }) {
+export default function Recommendations({ activeChurch }) {
   const [recs, setRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -17,7 +17,7 @@ export default function Recommendations({ user }) {
     if (!user) return
     setLoading(true)
     try {
-      const data = await getRecommendations(user.id)
+      const data = await getRecommendations(activeChurch?.id)
       setRecs(data)
     } catch (e) {
       setError(e.message)
@@ -25,7 +25,7 @@ export default function Recommendations({ user }) {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [user])
+  useEffect(() => { load() }, [activeChurch?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id) => {
     if (!window.confirm('Remove this recommendation?')) return

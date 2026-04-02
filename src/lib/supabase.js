@@ -50,13 +50,90 @@ export async function updateProfile(userId, { name, churchName }) {
   return data
 }
 
+export async function setActiveChurchDB(userId, churchId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ active_church_id: churchId })
+    .eq('id', userId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// ─── Churches ────────────────────────────────────────────────────────────────
+
+export async function getChurches(userId) {
+  const { data, error } = await supabase
+    .from('church_members')
+    .select('role, joined_at, churches(*)')
+    .eq('user_id', userId)
+  if (error) throw error
+  return (data || []).map(row => ({ ...row.churches, role: row.role, joined_at: row.joined_at }))
+}
+
+export async function createChurch(name) {
+  const { data, error } = await supabase.rpc('create_church_for_user', { church_name: name })
+  if (error) throw error
+  return data
+}
+
+export async function getChurchMembers(churchId) {
+  const { data, error } = await supabase
+    .from('church_members')
+    .select('role, joined_at, profiles(id, name, church_name)')
+    .eq('church_id', churchId)
+  if (error) throw error
+  return (data || []).map(row => ({
+    ...row.profiles,
+    role: row.role,
+    joined_at: row.joined_at,
+  }))
+}
+
+export async function updateMemberRole(churchId, userId, role) {
+  const { error } = await supabase
+    .from('church_members')
+    .update({ role })
+    .eq('church_id', churchId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function removeMember(churchId, userId) {
+  const { error } = await supabase
+    .from('church_members')
+    .delete()
+    .eq('church_id', churchId)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function getChurchByInviteToken(token) {
+  const { data, error } = await supabase.rpc('get_church_by_invite_token', { token })
+  if (error) throw error
+  return (data || [])[0] || null
+}
+
+export async function joinChurchByToken(token) {
+  const { data, error } = await supabase.rpc('join_church_by_token', { token })
+  if (error) throw error
+  return data
+}
+
+export async function regenerateInviteToken(churchId) {
+  const { data, error } = await supabase.rpc('regenerate_invite_token', { cid: churchId })
+  if (error) throw error
+  return data
+}
+
 // ─── Songs ───────────────────────────────────────────────────────────────────
 
-export async function getSongs(userId) {
+export async function getSongs(churchId) {
   const { data, error } = await supabase
     .from('songs')
     .select('*')
-    .eq('user_id', userId)
+    .eq('church_id', churchId)
     .order('title')
   if (error) throw error
   return data
@@ -94,33 +171,33 @@ export async function incrementPlays(songIds) {
 
 // ─── Sets ────────────────────────────────────────────────────────────────────
 
-export async function getSets(userId) {
+export async function getSets(churchId) {
   const { data, error } = await supabase
     .from('sets')
     .select('*')
-    .eq('user_id', userId)
+    .eq('church_id', churchId)
     .order('service_date', { ascending: false })
   if (error) throw error
   return data
 }
 
-export async function getSetByDate(userId, date) {
+export async function getSetByDate(churchId, date) {
   const { data, error } = await supabase
     .from('sets')
     .select('*')
-    .eq('user_id', userId)
+    .eq('church_id', churchId)
     .eq('service_date', date)
     .single()
   if (error && error.code !== 'PGRST116') throw error
   return data || null
 }
 
-export async function upsertSet(userId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}) {
+export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}) {
   const { data, error } = await supabase
     .from('sets')
     .upsert(
-      { user_id: userId, service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks },
-      { onConflict: 'user_id,service_date' }
+      { church_id: churchId, service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks },
+      { onConflict: 'church_id,service_date' }
     )
     .select()
     .single()
@@ -128,13 +205,13 @@ export async function upsertSet(userId, serviceDate, songIds, notes = '', keyOve
   return data
 }
 
-export async function finalizeSet(userId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}) {
+export async function finalizeSet(churchId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}) {
   await incrementPlays(songIds)
   const { data, error } = await supabase
     .from('sets')
     .upsert(
-      { user_id: userId, service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks },
-      { onConflict: 'user_id,service_date' }
+      { church_id: churchId, service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks },
+      { onConflict: 'church_id,service_date' }
     )
     .select()
     .single()
@@ -142,28 +219,30 @@ export async function finalizeSet(userId, serviceDate, songIds, keyOverrides = {
   return data
 }
 
-export async function deleteSet(userId, serviceDate) {
+export async function deleteSet(churchId, serviceDate) {
   const { error } = await supabase
     .from('sets')
     .delete()
-    .eq('user_id', userId)
+    .eq('church_id', churchId)
     .eq('service_date', serviceDate)
   if (error) throw error
 }
 
 // ─── Recommendations ─────────────────────────────────────────────────────────
 
-export async function submitRecommendation(songName, reason, link) {
-  const { data, error } = await supabase.from('song_recommendations').insert([{ song_name: songName, reason, link }]).select().single()
+export async function submitRecommendation(songName, reason, link, churchId) {
+  const payload = { song_name: songName, reason, link }
+  if (churchId) payload.church_id = churchId
+  const { data, error } = await supabase.from('song_recommendations').insert([payload]).select().single()
   if (error) throw error
   return data
 }
 
-export async function getRecommendations(userId) {
+export async function getRecommendations(churchId) {
   const { data, error } = await supabase
     .from('song_recommendations')
     .select('*')
-    .eq('user_id', userId)
+    .eq('church_id', churchId)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
