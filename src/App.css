@@ -151,6 +151,8 @@ body {
   .week-song { padding: 12px; }
   .stat-card { padding: 12px; }
   .history-cal-grid { grid-template-columns: 1fr !important; }
+  .home-grid > * { min-width: 0; width: 100%; }
+  .home-grid .card { padding: 14px !important; box-sizing: border-box; width: 100%; }
   .transpose-label { display: none; }
 
   /* Sidebar becomes a fixed drawer */

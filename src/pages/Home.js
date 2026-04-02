@@ -66,10 +66,10 @@ export default function Home({ songs, sets, setPage, profile }) {
     <div className="home-grid" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, alignItems:'start' }}>
 
       {/* LEFT — CALENDAR + COMING UP */}
-      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:20, minWidth:0 }}>
 
         {/* CALENDAR */}
-        <div className="card" style={{ padding:24, overflow:'hidden' }}>
+        <div className="card home-cal-card" style={{ padding:24, overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, gap:8 }}>
             <div style={{ fontFamily:'var(--font-head)', fontSize:17, fontWeight:700, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
               {calDate.toLocaleDateString('en-US',{month:'long',year:'numeric'})}
@@ -206,7 +206,7 @@ export default function Home({ songs, sets, setPage, profile }) {
       </div>
 
       {/* RIGHT — TOP SONGS + LIBRARY */}
-      <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:20, minWidth:0 }}>
 
         {/* TOP PLAYED THIS YEAR */}
         <div className="card" style={{ padding:20 }}>
