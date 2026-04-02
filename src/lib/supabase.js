@@ -87,16 +87,9 @@ export async function createChurch(name) {
 }
 
 export async function getChurchMembers(churchId) {
-  const { data, error } = await supabase
-    .from('church_members')
-    .select('role, joined_at, profiles(id, name, church_name)')
-    .eq('church_id', churchId)
+  const { data, error } = await supabase.rpc('get_church_members', { cid: churchId })
   if (error) throw error
-  return (data || []).map(row => ({
-    ...row.profiles,
-    role: row.role,
-    joined_at: row.joined_at,
-  }))
+  return data || []
 }
 
 export async function updateMemberRole(churchId, userId, role) {

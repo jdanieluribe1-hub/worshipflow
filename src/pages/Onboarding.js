@@ -48,10 +48,27 @@ export default function Onboarding() {
     }
   }
 
-  const handleStep1 = (e) => {
+  const handleStep1 = async (e) => {
     e.preventDefault()
     if (!name.trim()) { setError('Please enter your name'); return }
     setError('')
+    // If arriving via invite link, auto-join immediately after name entry — skip step 2
+    if (pendingJoinToken) {
+      setLoading(true)
+      try {
+        const token = extractToken(pendingJoinToken)
+        const profile = await createProfile(user.id, name.trim(), churchName.trim())
+        await joinChurchByToken(token)
+        const church = await getChurchByInviteToken(token)
+        if (church) await setActiveChurchDB(user.id, church.id)
+        const result = await refreshChurches()
+        setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
+      } catch (err) {
+        setError(err.message || 'Something went wrong')
+        setLoading(false)
+      }
+      return
+    }
     setStep(2)
   }
 
@@ -107,16 +124,18 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* Step indicator */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
-          {[1, 2].map(s => (
-            <div key={s} style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: step === s ? 'var(--accent)' : 'var(--border)',
-              transition: 'background 0.2s',
-            }} />
-          ))}
-        </div>
+        {/* Step indicator — only show 2 dots when not on an invite link */}
+        {!pendingJoinToken && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
+            {[1, 2].map(s => (
+              <div key={s} style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: step === s ? 'var(--accent)' : 'var(--border)',
+                transition: 'background 0.2s',
+              }} />
+            ))}
+          </div>
+        )}
 
         <div className="card" style={{ padding: 32 }}>
           {step === 1 && (
