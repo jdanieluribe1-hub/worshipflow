@@ -174,11 +174,14 @@ body {
   .sidebar-icons .nav-icon { width: 18px; font-size: 15px; }
   .sidebar-icons .nav { padding: 12px 8px; }
 
-  .hamburger { display: flex; }
+  .hamburger { display: none; }
 
-  .topbar { padding: 12px 16px; min-height: 56px; }
+  .topbar { padding: 12px 16px; min-height: 56px; justify-content: center; }
   .topbar-title { font-size: 17px; }
-  .content { padding: 16px; padding-bottom: 80px; }
+  .topbar-title-desktop { display: none; }
+  .topbar-title-mobile { display: block; text-align: center; font-size: 18px; }
+  .topbar-actions { position: absolute; right: 16px; }
+  .content { padding: 16px; padding-bottom: 80px; overflow-x: hidden; }
 
   /* Bottom nav */
   .bottom-nav {
@@ -216,10 +219,11 @@ body {
 /* TOPBAR */
 .topbar {
   background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 16px 28px; display: flex; align-items: center;
+  padding: 16px 28px; display: flex; align-items: center; position: relative;
   justify-content: space-between; min-height: 64px;
 }
 .topbar-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+.topbar-title-mobile { display: none; }
 .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
 /* BUTTONS */

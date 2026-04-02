@@ -205,11 +205,8 @@ function AppShell() {
       />
       <div className="main">
         <div className="topbar">
-          {/* Mobile hamburger */}
-          <button className="hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
-            <span /><span /><span />
-          </button>
-<div className="topbar-title">{titles[page]}</div>
+          <div className="topbar-title topbar-title-desktop">{titles[page]}</div>
+          <div className="topbar-title topbar-title-mobile">WorshipFlow</div>
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
         <div className="content">
