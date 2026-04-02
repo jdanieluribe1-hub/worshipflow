@@ -50,7 +50,8 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
       justifyContent: 'center',
       background: 'var(--bg)',
       padding: 20,
-      paddingTop: '6vh',
+      paddingTop: '2vh',
+      alignItems: 'flex-start',
     }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
         {/* Logo */}
@@ -123,7 +124,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                style={{ width: '100%' }}
+                style={{ width: '100%', fontSize: 16, padding: '14px 16px' }}
                 autoComplete="email"
               />
             </div>
@@ -135,7 +136,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                style={{ width: '100%' }}
+                style={{ width: '100%', fontSize: 16, padding: '14px 16px' }}
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 minLength={6}
               />
