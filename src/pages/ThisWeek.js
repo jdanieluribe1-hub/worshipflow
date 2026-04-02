@@ -153,40 +153,45 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s' }}
               >
               <div className="week-song" style={{
-                flexWrap:'wrap', gap:8,
+                flexDirection:'column', gap:0,
                 outline: dragOverIdx === i && dragIdx !== i ? '2px solid var(--accent)' : 'none',
                 borderRadius:10, cursor:'grab',
               }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0 }}>
-                  <div className="week-order" style={{ cursor:'grab', userSelect:'none' }}>{i+1}</div>
-                  <div className="song-thumb" style={{ width:38,height:38 }}>{tempoEmoji(s.tempo)}</div>
+                {/* Row 1: number + thumb + title/artist + remove */}
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div className="week-order" style={{ cursor:'grab', userSelect:'none', flexShrink:0 }}>{i+1}</div>
+                  <div className="song-thumb" style={{ width:36,height:36,flexShrink:0 }}>{tempoEmoji(s.tempo)}</div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontWeight:500,fontSize:14 }}>{s.title}</div>
+                    <div style={{ fontWeight:600,fontSize:14,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{s.title}</div>
                     <div style={{ fontSize:12,color:'var(--muted)' }}>{s.artist}</div>
                   </div>
+                  <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)', flexShrink:0 }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
+                </div>
+                {/* Row 2: transpose + controls */}
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, paddingLeft:44, flexWrap:'wrap' }}>
                   <TransposeControl
                     originalKey={s.key}
                     transposedKey={effectiveKey(s)}
                     onChange={(newKey) => setKeyOverrides(p => ({ ...p, [s.id]: newKey }))}
                   />
-                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => setPreviewSong(s)} title="Preview chord chart">👁</button>
                   <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => setPreviewSong(s)} title="Preview chord chart">👁</button>
                   {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄</a>}
-                  <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)' }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
-                  <a href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}>Search Spotify</a>
-                  <input type="url" placeholder="Paste Spotify link..." value={songSpotifyUrls[s.id] || ''} onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                {/* Rows 3-5: music links */}
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, paddingLeft:44 }}>
+                  <a href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}>Spotify</a>
+                  <input type="url" placeholder="Paste link..." value={songSpotifyUrls[s.id] || ''} onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songSpotifyUrls[s.id] && <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>}
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
-                  <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}>Search YouTube</a>
-                  <input type="url" placeholder="Paste YouTube link..." value={songYoutubeUrls[s.id] || ''} onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, paddingLeft:44 }}>
+                  <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}>YouTube</a>
+                  <input type="url" placeholder="Paste link..." value={songYoutubeUrls[s.id] || ''} onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songYoutubeUrls[s.id] && <a href={songYoutubeUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#FF0000', flexShrink:0 }}>▶</a>}
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6, width:'100%', paddingLeft:54 }}>
-                  <a href={`https://music.apple.com/search?term=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#fc3c44', whiteSpace:'nowrap', flexShrink:0 }}>Search Apple Music</a>
-                  <input type="url" placeholder="Paste Apple Music link..." value={songAppleMusicUrls[s.id] || ''} onChange={e => setSongAppleMusicUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, paddingLeft:44 }}>
+                  <a href={`https://music.apple.com/search?term=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#fc3c44', whiteSpace:'nowrap', flexShrink:0 }}>Apple</a>
+                  <input type="url" placeholder="Paste link..." value={songAppleMusicUrls[s.id] || ''} onChange={e => setSongAppleMusicUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songAppleMusicUrls[s.id] && <a href={songAppleMusicUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#fc3c44', flexShrink:0 }}>▶</a>}
                 </div>
               </div>
@@ -201,10 +206,12 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
 
           <div className="divider" />
 
-          <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-            <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving?'Saving...':'💾 Save Set'}</button>
-            <button className="btn btn-gold" onClick={()=>setWaModal(true)}>📱 WhatsApp Message</button>
-            <button className="btn btn-primary" onClick={finalize} disabled={finalizing}>{finalizing?'Finalizing...':'✓ Finalize & Log Plays'}</button>
+          <div className="set-actions">
+            <div className="set-actions-row">
+              <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving?'Saving...':'💾 Save Set'}</button>
+              <button className="btn btn-gold" onClick={()=>setWaModal(true)}>📱 WhatsApp</button>
+            </div>
+            <button className="btn btn-primary set-finalize-btn" onClick={finalize} disabled={finalizing}>{finalizing?'Finalizing...':'✓ Finalize & Log Plays'}</button>
           </div>
         </>
       )}
