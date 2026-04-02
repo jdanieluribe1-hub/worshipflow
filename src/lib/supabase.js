@@ -15,6 +15,9 @@ export const signIn = (email, password) =>
 
 export const signOut = () => supabase.auth.signOut()
 
+export const signInWithGoogle = () =>
+  supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+
 export const getSession = () => supabase.auth.getSession()
 
 // ─── Profiles ────────────────────────────────────────────────────────────────
