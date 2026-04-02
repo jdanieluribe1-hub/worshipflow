@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
     })
 
     return () => subscription.unsubscribe()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   function setProfile(p) {
     setProfileState(p)

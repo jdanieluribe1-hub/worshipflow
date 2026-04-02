@@ -25,7 +25,7 @@ export default function Recommendations({ activeChurch }) {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [activeChurch?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [activeChurch?.id])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Remove this recommendation?')) return
