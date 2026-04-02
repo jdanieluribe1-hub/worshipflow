@@ -173,6 +173,10 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
           </div>
         </div>
       </div>
+
+      <div style={{ textAlign: 'center', marginTop: 32, fontSize: 11, color: 'var(--muted)', opacity: 0.6, letterSpacing: '0.03em' }}>
+        © {new Date().getFullYear()} WorshipFlow · Designed &amp; built by Daniel Uribe
+      </div>
     </div>
   )
 }

@@ -294,6 +294,10 @@ export default function Settings({ theme, setTheme, user }) {
           </button>
         </div>
       </div>
+
+      <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: 11, color: 'var(--muted)', opacity: 0.6, letterSpacing: '0.03em' }}>
+        © {new Date().getFullYear()} WorshipFlow · Designed &amp; built by Daniel Uribe
+      </div>
     </div>
   )
 }
