@@ -42,6 +42,10 @@ export default function Settings({ theme, setTheme, user }) {
     ? `${window.location.origin}/band/${church.band_token}`
     : `${window.location.origin}/band`
 
+  const recommendLink = church?.id
+    ? `${window.location.origin}/recommend?church=${church.id}&name=${encodeURIComponent(church.name || '')}`
+    : `${window.location.origin}/recommend`
+
   const inviteLink = church?.invite_token
     ? `${window.location.origin}/join/${church.invite_token}`
     : ''
@@ -133,9 +137,9 @@ export default function Settings({ theme, setTheme, user }) {
         <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>Share with your congregation so they can suggest songs.</div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {`${window.location.origin}/recommend?church=${activeChurch?.id}&name=${encodeURIComponent(activeChurch?.name || '')}`}
+            {recommendLink}
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/recommend`); alert('Copied!') }}>Copy</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert('Copied!') }}>Copy</button>
         </div>
       </div>
 
