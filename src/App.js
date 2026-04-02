@@ -155,11 +155,20 @@ export default function App() {
           <Route path="/band/:token" element={<BandViewPublic />} />
           <Route path="/band" element={<BandViewPublic />} />
           <Route path="/recommend" element={<RecommendView />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<AppShell />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
   )
+}
+
+function SignupPage() {
+  const { user, profile, loading } = useAuth()
+  if (loading) return null
+  if (user && profile) { window.location.replace('/'); return null }
+  if (user && !profile) return <Onboarding />
+  return <Login onNeedsOnboarding={() => {}} defaultMode="signup" />
 }
 
 function BandViewPublic() {
