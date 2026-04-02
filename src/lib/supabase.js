@@ -18,6 +18,11 @@ export const signOut = () => supabase.auth.signOut()
 export const signInWithGoogle = () =>
   supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
 
+export async function deleteOwnAccount() {
+  const { error } = await supabase.rpc('delete_own_account')
+  if (error) throw error
+}
+
 export const getSession = () => supabase.auth.getSession()
 
 // ─── Profiles ────────────────────────────────────────────────────────────────

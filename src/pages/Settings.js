@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, regenerateInviteToken } from '../lib/supabase'
+import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, regenerateInviteToken, deleteOwnAccount } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Settings({ theme, setTheme, user }) {
@@ -50,8 +50,27 @@ export default function Settings({ theme, setTheme, user }) {
     ? `${window.location.origin}/join/${church.invite_token}`
     : ''
 
+  const [deletingAccount, setDeletingAccount] = useState(false)
+
   const handleSignOut = async () => {
     await signOut()
+  }
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      'This will permanently delete your account and all data associated with it. This cannot be undone.\n\nAre you sure?'
+    )
+    if (!confirmed) return
+    const doubleConfirmed = window.confirm('Last chance — delete your account forever?')
+    if (!doubleConfirmed) return
+    setDeletingAccount(true)
+    try {
+      await deleteOwnAccount()
+      await signOut()
+    } catch (e) {
+      alert('Error deleting account: ' + e.message)
+      setDeletingAccount(false)
+    }
   }
 
   const handleRegenerateInvite = async () => {
@@ -243,7 +262,7 @@ export default function Settings({ theme, setTheme, user }) {
 
       {/* ACCOUNT */}
       <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Account</div>
-      <div className="card">
+      <div className="card" style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 500 }}>Signed in as</div>
@@ -251,6 +270,27 @@ export default function Settings({ theme, setTheme, user }) {
           </div>
           <button className="btn btn-ghost btn-sm" onClick={handleSignOut} style={{ color: '#ef4444' }}>
             Sign Out
+          </button>
+        </div>
+      </div>
+
+      {/* DANGER ZONE */}
+      <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#ef4444' }}>Danger Zone</div>
+      <div className="card" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 500 }}>Delete Account</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+              Permanently deletes your account and all associated data. This cannot be undone.
+            </div>
+          </div>
+          <button
+            className="btn btn-sm"
+            onClick={handleDeleteAccount}
+            disabled={deletingAccount}
+            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', flexShrink: 0 }}
+          >
+            {deletingAccount ? 'Deleting...' : 'Delete Account'}
           </button>
         </div>
       </div>
