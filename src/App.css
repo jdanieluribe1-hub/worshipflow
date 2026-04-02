@@ -180,8 +180,8 @@ body {
 
   .topbar { padding: 12px 16px; min-height: 56px; justify-content: center; }
   .topbar-title { font-size: 17px; }
-  .topbar-title-desktop { display: none; }
-  .topbar-title-mobile { display: block; text-align: center; font-size: 18px; }
+  .topbar-title-desktop { display: none !important; }
+  .topbar-title-mobile { display: block !important; text-align: center; font-size: 18px; }
   .topbar-actions { position: absolute; right: 16px; }
   .content { padding: 16px; padding-bottom: 80px; overflow-x: hidden; }
 

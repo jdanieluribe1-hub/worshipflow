@@ -69,12 +69,12 @@ export default function Home({ songs, sets, setPage, profile }) {
       <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
         {/* CALENDAR */}
-        <div className="card" style={{ padding:24 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:17, fontWeight:700 }}>
+        <div className="card" style={{ padding:24, overflow:'hidden' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, gap:8 }}>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:17, fontWeight:700, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
               {calDate.toLocaleDateString('en-US',{month:'long',year:'numeric'})}
             </div>
-            <div style={{ display:'flex', gap:6 }}>
+            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
               <button className="btn btn-ghost btn-sm" onClick={()=>changeMonth(-1)}>‹</button>
               <button className="btn btn-ghost btn-sm" onClick={()=>{setCalDate(new Date())}}>Today</button>
               <button className="btn btn-ghost btn-sm" onClick={()=>changeMonth(1)}>›</button>
