@@ -15,7 +15,7 @@ const SPECIALTY = ['Contemporary','Traditional','Hymn','Spanish','Bilingual','Ac
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
-export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs }) {
+export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, user }) {
   const [filter, setFilter] = useState({ tempo: 'all', key: 'all', search: '' })
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
@@ -91,7 +91,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
     if (!form.title.trim()) return alert('Please enter a song title.')
     setSaving(true)
     try {
-      await addSong({ title: form.title.trim(), artist: form.artist.trim(), key: form.key, tempo: form.tempo, themes: form.themes, specialty: [], notes: form.notes, plays_3weeks: 0, plays_3months: 0, plays_year: 0 })
+      await addSong({ title: form.title.trim(), artist: form.artist.trim(), key: form.key, tempo: form.tempo, themes: form.themes, specialty: [], notes: form.notes, plays_3weeks: 0, plays_3months: 0, plays_year: 0, user_id: user?.id })
       await refreshSongs()
       setModal(null)
       setForm({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })

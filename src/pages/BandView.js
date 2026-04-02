@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { getSongs, getSets } from '../lib/supabase'
+import { useParams } from 'react-router-dom'
+import { getSongs, getSets, getSongsForBand, getSetsForBand } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
@@ -11,6 +12,8 @@ function getNextSunday() {
 }
 
 export default function BandView({ songs: propSongs = [], sets: propSets = [], public: isPublic = false }) {
+  const params = useParams()
+  const token = params.token || null
   const [selectedDate, setSelectedDate] = useState(getNextSunday)
   const [idx, setIdx] = useState(0)
   const [localSongs, setLocalSongs] = useState([])
@@ -37,14 +40,15 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     }
   }
 
-  // Self-fetch when used on the public /band route (no props passed)
+  // Self-fetch when used on the public /band/:token route
   useEffect(() => {
-    if (!propSongs.length || !propSets.length) {
-      Promise.all([getSongs(), getSets()])
+    if (!isPublic) return
+    if (token) {
+      Promise.all([getSongsForBand(token), getSetsForBand(token)])
         .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
         .catch(() => {})
     }
-  }, [propSongs.length, propSets.length])
+  }, [isPublic, token])
 
   const songs = propSongs.length ? propSongs : localSongs
   const sets  = propSets.length  ? propSets  : localSets

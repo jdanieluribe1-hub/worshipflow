@@ -9,7 +9,7 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function Home({ songs, sets, setPage }) {
+export default function Home({ songs, sets, setPage, profile }) {
   const [calDate, setCalDate] = useState(new Date())
   const [hoveredKey, setHoveredKey] = useState(null)
 
@@ -52,6 +52,17 @@ export default function Home({ songs, sets, setPage }) {
   }
 
   return (
+    <div>
+      {/* WELCOME */}
+      <div style={{ marginBottom:24 }}>
+        <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, color:'var(--text)' }}>
+          Welcome back, {profile?.name || 'Director'} 👋
+        </div>
+        {profile?.church_name && (
+          <div style={{ fontSize:13, color:'var(--muted)', marginTop:4 }}>{profile.church_name}</div>
+        )}
+      </div>
+
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, alignItems:'start' }}>
 
       {/* LEFT — CALENDAR + COMING UP */}
@@ -248,6 +259,7 @@ export default function Home({ songs, sets, setPage }) {
           )}
         </div>
       </div>
+    </div>
     </div>
   )
 }

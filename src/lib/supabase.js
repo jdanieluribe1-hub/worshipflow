@@ -5,8 +5,59 @@ const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export async function getSongs() {
-  const { data, error } = await supabase.from('songs').select('*').order('title')
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+export const signUp = (email, password) =>
+  supabase.auth.signUp({ email, password })
+
+export const signIn = (email, password) =>
+  supabase.auth.signInWithPassword({ email, password })
+
+export const signOut = () => supabase.auth.signOut()
+
+export const getSession = () => supabase.auth.getSession()
+
+// ─── Profiles ────────────────────────────────────────────────────────────────
+
+export async function getProfile(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  if (error && error.code !== 'PGRST116') throw error
+  return data || null
+}
+
+export async function createProfile(userId, name, churchName) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert([{ id: userId, name, church_name: churchName }])
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateProfile(userId, { name, churchName }) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ name, church_name: churchName })
+    .eq('id', userId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// ─── Songs ───────────────────────────────────────────────────────────────────
+
+export async function getSongs(userId) {
+  const { data, error } = await supabase
+    .from('songs')
+    .select('*')
+    .eq('user_id', userId)
+    .order('title')
   if (error) throw error
   return data
 }
@@ -41,35 +92,66 @@ export async function incrementPlays(songIds) {
   }
 }
 
-export async function getSets() {
-  const { data, error } = await supabase.from('sets').select('*').order('service_date', { ascending: false })
+// ─── Sets ────────────────────────────────────────────────────────────────────
+
+export async function getSets(userId) {
+  const { data, error } = await supabase
+    .from('sets')
+    .select('*')
+    .eq('user_id', userId)
+    .order('service_date', { ascending: false })
   if (error) throw error
   return data
 }
 
-export async function getSetByDate(date) {
-  const { data, error } = await supabase.from('sets').select('*').eq('service_date', date).single()
+export async function getSetByDate(userId, date) {
+  const { data, error } = await supabase
+    .from('sets')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('service_date', date)
+    .single()
   if (error && error.code !== 'PGRST116') throw error
   return data || null
 }
 
-export async function upsertSet(serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}) {
-  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks }, { onConflict: 'service_date' }).select().single()
+export async function upsertSet(userId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}) {
+  const { data, error } = await supabase
+    .from('sets')
+    .upsert(
+      { user_id: userId, service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks },
+      { onConflict: 'user_id,service_date' }
+    )
+    .select()
+    .single()
   if (error) throw error
   return data
 }
 
-export async function finalizeSet(serviceDate, songIds, keyOverrides = {}, musicLinks = {}) {
+export async function finalizeSet(userId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}) {
   await incrementPlays(songIds)
-  const { data, error } = await supabase.from('sets').upsert({ service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks }, { onConflict: 'service_date' }).select().single()
+  const { data, error } = await supabase
+    .from('sets')
+    .upsert(
+      { user_id: userId, service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks },
+      { onConflict: 'user_id,service_date' }
+    )
+    .select()
+    .single()
   if (error) throw error
   return data
 }
 
-export async function deleteSet(serviceDate) {
-  const { error } = await supabase.from('sets').delete().eq('service_date', serviceDate)
+export async function deleteSet(userId, serviceDate) {
+  const { error } = await supabase
+    .from('sets')
+    .delete()
+    .eq('user_id', userId)
+    .eq('service_date', serviceDate)
   if (error) throw error
 }
+
+// ─── Recommendations ─────────────────────────────────────────────────────────
 
 export async function submitRecommendation(songName, reason, link) {
   const { data, error } = await supabase.from('song_recommendations').insert([{ song_name: songName, reason, link }]).select().single()
@@ -77,8 +159,12 @@ export async function submitRecommendation(songName, reason, link) {
   return data
 }
 
-export async function getRecommendations() {
-  const { data, error } = await supabase.from('song_recommendations').select('*').order('created_at', { ascending: false })
+export async function getRecommendations(userId) {
+  const { data, error } = await supabase
+    .from('song_recommendations')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
   if (error) throw error
   return data
 }
@@ -87,6 +173,8 @@ export async function deleteRecommendation(id) {
   const { error } = await supabase.from('song_recommendations').delete().eq('id', id)
   if (error) throw error
 }
+
+// ─── Storage ─────────────────────────────────────────────────────────────────
 
 export async function uploadPDF(file, songTitle) {
   const safeName = songTitle
@@ -101,4 +189,18 @@ export async function uploadPDF(file, songTitle) {
   if (error) throw error
   const { data: urlData } = supabase.storage.from('chord-charts').getPublicUrl(fileName)
   return urlData.publicUrl
+}
+
+// ─── Band View (public, no auth) ─────────────────────────────────────────────
+
+export async function getSongsForBand(bandToken) {
+  const { data, error } = await supabase.rpc('get_songs_for_band', { token: bandToken })
+  if (error) throw error
+  return data || []
+}
+
+export async function getSetsForBand(bandToken) {
+  const { data, error } = await supabase.rpc('get_sets_for_band', { token: bandToken })
+  if (error) throw error
+  return data || []
 }

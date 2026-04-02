@@ -14,7 +14,7 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [] }) {
+export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [], user }) {
   const [serviceDate, setServiceDate] = useState(getNextSunday())
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -70,7 +70,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!weekSongIds.length) return alert('Add some songs first.')
     setSaving(true)
     try {
-      await upsertSet(serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks())
+      await upsertSet(user.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks())
       await refreshSets()
       alert('Set saved!')
     } catch(e) { alert('Error: ' + e.message) }
@@ -82,7 +82,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!window.confirm(`Finalize this set and log plays for ${serviceDate}?`)) return
     setFinalizing(true)
     try {
-      await finalizeSet(serviceDate, weekSongIds, keyOverrides, buildMusicLinks())
+      await finalizeSet(user.id, serviceDate, weekSongIds, keyOverrides, buildMusicLinks())
       await refreshSets()
       setWeekSongIds([])
       setNotes('')

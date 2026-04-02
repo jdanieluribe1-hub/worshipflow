@@ -4,7 +4,7 @@ import TransposeControl from '../components/TransposeControl'
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
-export default function History({ songs, sets, refreshSets, setPage }) {
+export default function History({ songs, sets, refreshSets, setPage, user }) {
   const [view, setView] = useState('calendar')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedKey, setSelectedKey] = useState(null)
@@ -39,7 +39,7 @@ export default function History({ songs, sets, refreshSets, setPage }) {
     if (!window.confirm('Delete the set for ' + new Date(selectedKey + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) + '? This cannot be undone.')) return
     setDeleting(true)
     try {
-      await deleteSet(selectedKey)
+      await deleteSet(user.id, selectedKey)
       await refreshSets()
       setSelectedKey(null)
     } catch (e) { alert('Error deleting set: ' + e.message) }
@@ -51,7 +51,7 @@ export default function History({ songs, sets, refreshSets, setPage }) {
     if (historyMap[duplicateDate] && !window.confirm(`A set already exists for ${duplicateDate}. Overwrite it?`)) return
     setDuplicating(true)
     try {
-      await upsertSet(duplicateDate, selectedSet.song_ids, selectedSet.notes || '', selectedSet.key_overrides || {}, selectedSet.music_links || {})
+      await upsertSet(user.id, duplicateDate, selectedSet.song_ids, selectedSet.notes || '', selectedSet.key_overrides || {}, selectedSet.music_links || {})
       await refreshSets()
       setDuplicateDate('')
       alert('Set duplicated to ' + new Date(duplicateDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) + '!')
@@ -70,7 +70,7 @@ export default function History({ songs, sets, refreshSets, setPage }) {
   const saveEditModal = async () => {
     setEditSaving(true)
     try {
-      await upsertSet(selectedKey, editSongIds, editNotes, editKeyOverrides, editMusicLinks)
+      await upsertSet(user.id, selectedKey, editSongIds, editNotes, editKeyOverrides, editMusicLinks)
       await refreshSets()
       setEditModal(false)
     } catch(e) { alert('Error saving: ' + e.message) }

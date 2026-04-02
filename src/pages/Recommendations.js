@@ -8,15 +8,16 @@ function linkIcon(url) {
   return { label: 'Link', color: 'var(--accent)' }
 }
 
-export default function Recommendations() {
+export default function Recommendations({ user }) {
   const [recs, setRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const load = async () => {
+    if (!user) return
     setLoading(true)
     try {
-      const data = await getRecommendations()
+      const data = await getRecommendations(user.id)
       setRecs(data)
     } catch (e) {
       setError(e.message)
@@ -24,7 +25,7 @@ export default function Recommendations() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [user])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Remove this recommendation?')) return

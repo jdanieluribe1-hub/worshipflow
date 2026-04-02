@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { getSongs, getSets } from './lib/supabase'
+import { AuthProvider, useAuth } from './lib/AuthContext'
 import Home from './pages/Home'
 import Library from './pages/Library'
 import ThisWeek from './pages/ThisWeek'
@@ -10,6 +11,8 @@ import BandView from './pages/BandView'
 import Settings from './pages/Settings'
 import Recommendations from './pages/Recommendations'
 import RecommendView from './pages/RecommendView'
+import Login from './pages/Login'
+import Onboarding from './pages/Onboarding'
 import './App.css'
 
 function Sidebar({ page, setPage, weekCount }) {
@@ -56,11 +59,13 @@ function Sidebar({ page, setPage, weekCount }) {
 }
 
 function AppShell() {
+  const { user, profile, loading: authLoading } = useAuth()
+  const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [page, setPage] = useState('home')
   const [songs, setSongs] = useState([])
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('wf_theme') || 'dark'
     if (saved === 'light') document.documentElement.classList.add('light-mode')
@@ -75,6 +80,20 @@ function AppShell() {
     }
     localStorage.setItem('wf_theme', theme)
   }, [theme])
+
+  useEffect(() => {
+    if (!user) return
+    setDataLoading(true)
+    Promise.all([getSongs(user.id), getSets(user.id)]).then(([s, st]) => {
+      setSongs(s || [])
+      setSets(st || [])
+      setDataLoading(false)
+    }).catch(() => setDataLoading(false))
+  }, [user])
+
+  const refreshSongs = () => getSongs(user.id).then(s => setSongs(s || []))
+  const refreshSets  = () => getSets(user.id).then(s => setSets(s || []))
+
   const titles = {
     home: 'Dashboard', library: 'Song Library', thisweek: 'Set Builder',
     history: 'Play History', upload: 'Upload Chord Chart',
@@ -82,26 +101,24 @@ function AppShell() {
     recommendations: 'Song Recommendations'
   }
 
-  useEffect(() => {
-    Promise.all([getSongs(), getSets()]).then(([s, sets]) => {
-      setSongs(s || [])
-      setSets(sets || [])
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
+  if (authLoading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d0f14', color: '#7c85a0', fontFamily: 'sans-serif' }}>
+      Loading WorshipFlow...
+    </div>
+  )
 
-  const refreshSongs = () => getSongs().then(s => setSongs(s || []))
-  const refreshSets = () => getSets().then(s => setSets(s || []))
+  if (!user) return <Login onNeedsOnboarding={() => setNeedsOnboarding(true)} />
+  if (!profile || needsOnboarding) return <Onboarding />
 
   const weekSongs = weekSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
 
   const pageProps = {
     songs, sets, weekSongIds, weekSongs,
     setWeekSongIds, refreshSongs, refreshSets,
-    theme, setTheme,
+    theme, setTheme, profile, user,
   }
 
-  if (loading) return (
+  if (dataLoading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d0f14', color: '#7c85a0', fontFamily: 'sans-serif' }}>
       Loading WorshipFlow...
     </div>
@@ -122,7 +139,7 @@ function AppShell() {
           {page === 'history' && <History {...pageProps} setPage={setPage} />}
           {page === 'upload' && <Upload {...pageProps} />}
           {page === 'bandview' && <BandView {...pageProps} />}
-          {page === 'recommendations' && <Recommendations />}
+          {page === 'recommendations' && <Recommendations {...pageProps} />}
           {page === 'settings' && <Settings {...pageProps} />}
         </div>
       </div>
@@ -133,11 +150,14 @@ function AppShell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/band" element={<BandViewPublic />} />
-        <Route path="/recommend" element={<RecommendView />} />
-        <Route path="*" element={<AppShell />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/band/:token" element={<BandViewPublic />} />
+          <Route path="/band" element={<BandViewPublic />} />
+          <Route path="/recommend" element={<RecommendView />} />
+          <Route path="*" element={<AppShell />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

@@ -1,18 +1,34 @@
 import React, { useState } from 'react'
+import { updateProfile, signOut } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 
-export default function Settings({ theme, setTheme }) {
-  const [churchName, setChurchName] = useState(localStorage.getItem('wf_church_name') || '')
-  const [directorName, setDirectorName] = useState(localStorage.getItem('wf_director_name') || '')
+export default function Settings({ theme, setTheme, user }) {
+  const { profile, setProfile } = useAuth()
+  const [name, setName] = useState(profile?.name || '')
+  const [churchName, setChurchName] = useState(profile?.church_name || '')
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  const saveSettings = () => {
-    localStorage.setItem('wf_church_name', churchName)
-    localStorage.setItem('wf_director_name', directorName)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  const saveSettings = async () => {
+    setSaving(true)
+    try {
+      const updated = await updateProfile(user.id, { name, churchName })
+      setProfile(updated)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      alert('Error saving: ' + e.message)
+    }
+    setSaving(false)
   }
 
-  const bandLink = `${window.location.origin}/band`
+  const bandLink = profile?.band_token
+    ? `${window.location.origin}/band/${profile.band_token}`
+    : `${window.location.origin}/band`
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
   return (
     <div style={{ maxWidth:560 }}>
@@ -44,7 +60,6 @@ export default function Settings({ theme, setTheme }) {
 
       {/* CONNECTIONS */}
       <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Connections</div>
-
       <div className="card" style={{ marginBottom:24 }}>
         <div style={{ display:'flex', alignItems:'center', gap:14 }}>
           <div style={{ width:40,height:40,borderRadius:10,background:'#25D366',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20 }}>💬</div>
@@ -82,16 +97,32 @@ export default function Settings({ theme, setTheme }) {
 
       {/* CHURCH INFO */}
       <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Church Info</div>
-      <div className="card">
+      <div className="card" style={{ marginBottom:24 }}>
+        <div className="form-group">
+          <label className="form-label">Worship Director Name</label>
+          <input type="text" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)} style={{ width:'100%' }} />
+        </div>
         <div className="form-group">
           <label className="form-label">Church Name</label>
           <input type="text" placeholder="e.g. Calvary Chapel" value={churchName} onChange={e=>setChurchName(e.target.value)} style={{ width:'100%' }} />
         </div>
-        <div className="form-group">
-          <label className="form-label">Worship Director</label>
-          <input type="text" placeholder="Your name" value={directorName} onChange={e=>setDirectorName(e.target.value)} style={{ width:'100%' }} />
+        <button className="btn btn-primary btn-sm" onClick={saveSettings} disabled={saving}>
+          {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Settings'}
+        </button>
+      </div>
+
+      {/* ACCOUNT */}
+      <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Account</div>
+      <div className="card">
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:500 }}>Signed in as</div>
+            <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>{user?.email}</div>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={handleSignOut} style={{ color:'var(--danger, #ef4444)' }}>
+            Sign Out
+          </button>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={saveSettings}>{saved ? '✓ Saved!' : 'Save Settings'}</button>
       </div>
     </div>
   )
