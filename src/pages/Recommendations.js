@@ -14,10 +14,10 @@ export default function Recommendations({ activeChurch }) {
   const [error, setError] = useState(null)
 
   const load = async () => {
-    if (!user) return
+    if (!activeChurch?.id) return
     setLoading(true)
     try {
-      const data = await getRecommendations(activeChurch?.id)
+      const data = await getRecommendations(activeChurch.id)
       setRecs(data)
     } catch (e) {
       setError(e.message)
@@ -37,7 +37,7 @@ export default function Recommendations({ activeChurch }) {
     }
   }
 
-  const recommendLink = `${window.location.origin}/recommend`
+  const recommendLink = `${window.location.origin}/recommend?church=${activeChurch?.id}&name=${encodeURIComponent(activeChurch?.name || '')}`
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: 20 }}>Loading...</div>
   if (error) return <div style={{ color: 'var(--red)', padding: 20 }}>Error: {error}</div>
