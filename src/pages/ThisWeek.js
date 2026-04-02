@@ -117,7 +117,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       <div className="grid-2" style={{ marginBottom:24 }}>
         <div className="stat-card">
           <div className="stat-label">Service Date</div>
-          <input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)} style={{ marginTop:4, width:'100%', fontSize:15 }} />
+          <input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)} style={{ marginTop:4, width:'100%', maxWidth:'100%', fontSize:13, boxSizing:'border-box' }} />
         </div>
         <div className="stat-card">
           <div className="stat-label">Tempo Mix</div>
@@ -153,7 +153,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s' }}
               >
               <div className="week-song" style={{
-                flexDirection:'column', gap:0,
+                flexDirection:'column', gap:0, alignItems:'stretch',
                 outline: dragOverIdx === i && dragIdx !== i ? '2px solid var(--accent)' : 'none',
                 borderRadius:10, cursor:'grab',
               }}>
