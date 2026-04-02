@@ -51,20 +51,20 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
       background: 'var(--bg)',
       padding: 20,
     }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
+      <div style={{ width: '100%', maxWidth: 520 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
             WorshipFlow
           </div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+          <div style={{ fontSize: 15, color: 'var(--muted)', marginTop: 6 }}>
             Worship Director Dashboard
           </div>
         </div>
 
         {/* Card */}
-        <div className="card" style={{ padding: 32 }}>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, marginBottom: 24, color: 'var(--text)' }}>
+        <div className="card" style={{ padding: 44 }}>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, marginBottom: 28, color: 'var(--text)' }}>
             {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
           </div>
 
