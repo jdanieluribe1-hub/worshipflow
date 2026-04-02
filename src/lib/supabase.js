@@ -122,6 +122,18 @@ export async function joinChurchByToken(token) {
   return data
 }
 
+export async function getChurchByShortCode(code) {
+  const { data, error } = await supabase.rpc('get_church_by_short_code', { code })
+  if (error) throw error
+  return (data || [])[0] || null
+}
+
+export async function joinChurchByShortCode(code) {
+  const { data, error } = await supabase.rpc('join_church_by_short_code', { code })
+  if (error) throw error
+  return data
+}
+
 export async function regenerateInviteToken(churchId) {
   const { data, error } = await supabase.rpc('regenerate_invite_token', { cid: churchId })
   if (error) throw error

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, regenerateInviteToken, deleteOwnAccount } from '../lib/supabase'
+import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, regenerateInviteToken, deleteOwnAccount, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Settings({ theme, setTheme, user }) {
@@ -51,6 +51,38 @@ export default function Settings({ theme, setTheme, user }) {
     : ''
 
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [joinPreview, setJoinPreview] = useState(null)
+  const [joiningChurch, setJoiningChurch] = useState(false)
+  const [joinError, setJoinError] = useState('')
+
+  const handleJoinCodeChange = async (val) => {
+    setJoinCode(val)
+    setJoinPreview(null)
+    setJoinError('')
+    if (val.trim().length >= 6) {
+      try {
+        const c = await getChurchByShortCode(val.trim())
+        setJoinPreview(c)
+      } catch { /* ignore */ }
+    }
+  }
+
+  const handleJoinChurch = async () => {
+    if (!joinPreview) return
+    setJoiningChurch(true)
+    setJoinError('')
+    try {
+      await joinChurchByShortCode(joinCode.trim())
+      await setActiveChurchDB(user.id, joinPreview.id)
+      await refreshChurches()
+      setJoinCode('')
+      setJoinPreview(null)
+    } catch (e) {
+      setJoinError(e.message || 'Failed to join')
+    }
+    setJoiningChurch(false)
+  }
 
   const handleSignOut = async () => {
     await signOut()
@@ -206,15 +238,23 @@ export default function Settings({ theme, setTheme, user }) {
             )}
 
             <div style={{ borderTop: '1px solid var(--border)', marginTop: 20, paddingTop: 20 }}>
-              <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 8 }}>Invite Link</div>
+              <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 8 }}>Invite Code</div>
               <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
-                Share this link to invite others to join {church?.name}. Regenerating invalidates the old link.
+                Share this short code or full link. Team members can enter the code in Settings to join.
               </div>
+              {/* Short code */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '9px 16px', fontSize: 20, fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text)', fontFamily: 'monospace' }}>
+                  {church?.short_code || '—'}
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(church?.short_code || ''); alert('Code copied!') }}>Copy Code</button>
+              </div>
+              {/* Full link */}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 12, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {inviteLink}
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Copied!') }}>Copy</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Copied!') }}>Copy Link</button>
                 <button className="btn btn-ghost btn-sm" onClick={handleRegenerateInvite} style={{ color: 'var(--muted)' }}>Regenerate</button>
               </div>
             </div>
@@ -243,6 +283,41 @@ export default function Settings({ theme, setTheme, user }) {
           </div>
         </>
       )}
+
+      {/* JOIN A CHURCH */}
+      <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Join a Church</div>
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+          Have an invite code? Enter it below to join an existing church team.
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <input
+              type="text"
+              placeholder="Enter code (e.g. A1B2C3D4)"
+              value={joinCode}
+              onChange={e => handleJoinCodeChange(e.target.value.toUpperCase())}
+              style={{ width: '100%', fontFamily: 'monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}
+              maxLength={8}
+            />
+            {joinPreview && (
+              <div style={{ marginTop: 6, fontSize: 13, color: 'var(--green)' }}>✓ Found: <strong>{joinPreview.name}</strong></div>
+            )}
+            {joinCode.length >= 6 && !joinPreview && (
+              <div style={{ marginTop: 6, fontSize: 13, color: 'var(--muted)' }}>No church found — check the code</div>
+            )}
+            {joinError && <div style={{ marginTop: 6, fontSize: 13, color: '#ef4444' }}>{joinError}</div>}
+          </div>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleJoinChurch}
+            disabled={!joinPreview || joiningChurch}
+            style={{ flexShrink: 0 }}
+          >
+            {joiningChurch ? 'Joining...' : 'Join'}
+          </button>
+        </div>
+      </div>
 
       {/* CHURCH INFO */}
       <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Church Info</div>
