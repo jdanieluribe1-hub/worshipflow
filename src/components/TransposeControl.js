@@ -10,7 +10,7 @@ export default function TransposeControl({ originalKey, transposedKey, onChange,
   const label = (k) => k === normOriginal ? `${k} (Original)` : k === 'Numbers' ? '# Numbers' : k
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-      <span style={{ fontSize:12, color:'var(--muted)', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', ...labelStyle }}>
+      <span className="transpose-label" style={{ fontSize:12, color:'var(--muted)', fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', ...labelStyle }}>
         Transpose
       </span>
       <select
