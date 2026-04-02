@@ -142,6 +142,7 @@ body {
 /* MOBILE */
 @media (max-width: 768px) {
   .app { flex-direction: column; }
+  .main { width: 100%; }
   .home-grid { grid-template-columns: 1fr !important; }
   .set-actions-row { flex: 1; }
   .set-actions-row .btn { flex: 1; justify-content: center; }
