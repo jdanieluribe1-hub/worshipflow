@@ -50,6 +50,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
       justifyContent: 'center',
       background: 'var(--bg)',
       padding: 20,
+      paddingTop: '6vh',
     }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
         {/* Logo */}
