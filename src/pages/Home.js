@@ -54,12 +54,12 @@ export default function Home({ songs, sets, setPage, profile }) {
   return (
     <div>
       {/* WELCOME */}
-      <div style={{ marginBottom:24 }}>
-        <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, color:'var(--text)' }}>
+      <div style={{ marginBottom:24, minWidth:0, overflow:'hidden' }}>
+        <div style={{ fontFamily:'var(--font-head)', fontSize:'clamp(16px, 4vw, 22px)', fontWeight:700, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
           Welcome back, {profile?.name || 'Director'} 👋
         </div>
         {profile?.church_name && (
-          <div style={{ fontSize:13, color:'var(--muted)', marginTop:4 }}>{profile.church_name}</div>
+          <div style={{ fontSize:13, color:'var(--muted)', marginTop:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile.church_name}</div>
         )}
       </div>
 
