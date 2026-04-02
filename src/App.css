@@ -150,6 +150,7 @@ body {
   .week-song-sub { padding-left: 0; }
   .week-song { padding: 12px; }
   .stat-card { padding: 12px; }
+  .history-cal-grid { grid-template-columns: 1fr !important; }
   .transpose-label { display: none; }
 
   /* Sidebar becomes a fixed drawer */

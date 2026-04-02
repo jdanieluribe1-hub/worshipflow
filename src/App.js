@@ -206,7 +206,7 @@ function AppShell() {
       <div className="main">
         <div className="topbar">
           <div className="topbar-title topbar-title-desktop">{titles[page]}</div>
-          <div className="topbar-title topbar-title-mobile">WorshipFlow</div>
+          <div className="topbar-title topbar-title-mobile">{page === 'home' ? 'WorshipFlow' : titles[page]}</div>
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
         <div className="content">

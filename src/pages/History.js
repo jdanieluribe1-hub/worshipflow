@@ -176,7 +176,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       </div>
 
       {view === 'calendar' && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:20, alignItems:'start' }}>
+        <div className="history-cal-grid" style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:20, alignItems:'start' }}>
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div style={{ fontFamily:'var(--font-head)', fontSize:20, fontWeight:700 }}>
