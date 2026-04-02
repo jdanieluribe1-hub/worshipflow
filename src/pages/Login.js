@@ -51,20 +51,20 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
       background: 'var(--bg)',
       padding: 20,
     }}>
-      <div style={{ width: '100%', maxWidth: 520 }}>
+      <div style={{ width: '100%', maxWidth: 640 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 44, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
             WorshipFlow
           </div>
-          <div style={{ fontSize: 15, color: 'var(--muted)', marginTop: 6 }}>
+          <div style={{ fontSize: 16, color: 'var(--muted)', marginTop: 8 }}>
             Worship Director Dashboard
           </div>
         </div>
 
         {/* Card */}
-        <div className="card" style={{ padding: 44 }}>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, marginBottom: 28, color: 'var(--text)' }}>
+        <div className="card" style={{ padding: 56 }}>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700, marginBottom: 32, color: 'var(--text)' }}>
             {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
           </div>
 
@@ -174,7 +174,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
         </div>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 16, left: 0, right: 0, textAlign: 'center', fontSize: 10, color: 'var(--muted)', opacity: 0.5, letterSpacing: '0.03em', pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', bottom: 16, left: 0, right: 0, textAlign: 'center', fontSize: 12, color: 'var(--muted)', opacity: 0.6, letterSpacing: '0.03em', pointerEvents: 'none' }}>
         © {new Date().getFullYear()} WorshipFlow · Designed &amp; built by Daniel Uribe
       </div>
     </div>
