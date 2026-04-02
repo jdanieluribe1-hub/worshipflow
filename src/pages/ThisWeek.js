@@ -157,18 +157,19 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 outline: dragOverIdx === i && dragIdx !== i ? '2px solid var(--accent)' : 'none',
                 borderRadius:10, cursor:'grab',
               }}>
-                {/* Row 1: number + thumb + title/artist + remove */}
+                {/* Row 1: number + thumb + title/artist + pdf + remove */}
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <div className="week-order" style={{ cursor:'grab', userSelect:'none', flexShrink:0 }}>{i+1}</div>
                   <div className="song-thumb" style={{ width:36,height:36,flexShrink:0 }}>{tempoEmoji(s.tempo)}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontWeight:600,fontSize:14,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{s.title}</div>
-                    <div style={{ fontSize:12,color:'var(--muted)' }}>{s.artist}</div>
+                    <div style={{ fontSize:12,color:'var(--muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{s.artist}</div>
                   </div>
+                  {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ flexShrink:0 }}>📄</a>}
                   <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)', flexShrink:0 }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
                 </div>
-                {/* Row 2: transpose + controls */}
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, paddingLeft:44, flexWrap:'wrap' }}>
+                {/* Row 2: transpose + tempo + preview (aligned under title) */}
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, paddingLeft:76 }}>
                   <TransposeControl
                     originalKey={s.key}
                     transposedKey={effectiveKey(s)}
@@ -176,20 +177,19 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                   />
                   <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
                   <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => setPreviewSong(s)} title="Preview chord chart">👁</button>
-                  {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">📄</a>}
                 </div>
-                {/* Rows 3-5: music links */}
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, paddingLeft:44 }}>
+                {/* Rows 3-5: music links (aligned under title) */}
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, paddingLeft:76 }}>
                   <a href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}>Spotify</a>
                   <input type="url" placeholder="Paste link..." value={songSpotifyUrls[s.id] || ''} onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songSpotifyUrls[s.id] && <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>}
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, paddingLeft:44 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, paddingLeft:76 }}>
                   <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}>YouTube</a>
                   <input type="url" placeholder="Paste link..." value={songYoutubeUrls[s.id] || ''} onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songYoutubeUrls[s.id] && <a href={songYoutubeUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#FF0000', flexShrink:0 }}>▶</a>}
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, paddingLeft:44 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:6, paddingLeft:76 }}>
                   <a href={`https://music.apple.com/search?term=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#fc3c44', whiteSpace:'nowrap', flexShrink:0 }}>Apple</a>
                   <input type="url" placeholder="Paste link..." value={songAppleMusicUrls[s.id] || ''} onChange={e => setSongAppleMusicUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songAppleMusicUrls[s.id] && <a href={songAppleMusicUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#fc3c44', flexShrink:0 }}>▶</a>}
