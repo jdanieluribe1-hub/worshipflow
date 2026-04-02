@@ -16,7 +16,14 @@ import Onboarding from './pages/Onboarding'
 import JoinChurch from './pages/JoinChurch'
 import './App.css'
 
-function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveChurch }) {
+const BOTTOM_NAV = [
+  { id: 'home', icon: '🏠', label: 'Home' },
+  { id: 'library', icon: '♪', label: 'Library' },
+  { id: 'thisweek', icon: '📅', label: 'Sets' },
+  { id: 'history', icon: '📊', label: 'History' },
+]
+
+function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveChurch, mode, onToggle, mobileOpen, onMobileClose }) {
   const nav = [
     { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'library', icon: '♪', label: 'Song Library' },
@@ -28,62 +35,89 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
     { id: 'bandview', icon: '🎸', label: 'Band View' },
     { id: 'recommendations', icon: '💡', label: 'Recommendations' },
   ]
+  const iconsOnly = mode === 'icons'
+
+  const handleNav = (id) => {
+    setPage(id)
+    onMobileClose()
+  }
+
   return (
-    <aside className="sidebar">
-      <div className="logo">
-        <div className="logo-title">WorshipFlow</div>
-        <div className="logo-sub">Director Dashboard</div>
-      </div>
-      <nav className="nav">
-        <div className="nav-section">Main</div>
-        {nav.map(n => (
-          <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => setPage(n.id)}>
-            <span className="nav-icon">{n.icon}</span>
-            {n.label}
-            {n.badge > 0 && <span className="badge">{n.badge}</span>}
-          </button>
-        ))}
-        <div className="nav-section">Tools</div>
-        {tools.map(n => (
-          <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => setPage(n.id)}>
-            <span className="nav-icon">{n.icon}</span>
-            {n.label}
-          </button>
-        ))}
-        {churches && churches.length > 1 && (
-          <>
-            <div className="nav-section">Church</div>
-            <div style={{ padding: '0 8px 8px' }}>
-              <select
-                value={activeChurch?.id || ''}
-                onChange={e => {
-                  const c = churches.find(ch => ch.id === e.target.value)
-                  if (c) setActiveChurch(c)
-                }}
-                style={{
-                  width: '100%',
-                  background: 'var(--bg3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                  padding: '7px 10px',
-                  color: 'var(--text)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
-              >
-                {churches.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && <div className="sidebar-overlay" onClick={onMobileClose} />}
+
+      <aside className={`sidebar sidebar-${mode} ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="logo">
+          {!iconsOnly && (
+            <div>
+              <div className="logo-title">WorshipFlow</div>
+              <div className="logo-sub">Director Dashboard</div>
             </div>
-          </>
-        )}
-        <div className="nav-section">Settings</div>
-        <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => setPage('settings')}>
-          <span className="nav-icon">⚙</span> Settings
-        </button>
-      </nav>
-    </aside>
+          )}
+          {iconsOnly && <div className="logo-title" style={{ fontSize: 14, textAlign: 'center' }}>WF</div>}
+          <button className="sidebar-toggle-btn" onClick={onToggle} title="Toggle sidebar">
+            {mode === 'full' ? '‹‹' : mode === 'icons' ? '›' : '›'}
+          </button>
+        </div>
+
+        <nav className="nav">
+          {!iconsOnly && <div className="nav-section">Main</div>}
+          {nav.map(n => (
+            <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)} title={n.label}>
+              <span className="nav-icon">{n.icon}</span>
+              {!iconsOnly && <span className="nav-label">{n.label}</span>}
+              {!iconsOnly && n.badge > 0 && <span className="badge">{n.badge}</span>}
+              {iconsOnly && n.badge > 0 && <span className="badge badge-dot" />}
+            </button>
+          ))}
+
+          {!iconsOnly && <div className="nav-section">Tools</div>}
+          {iconsOnly && <div className="nav-divider" />}
+          {tools.map(n => (
+            <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)} title={n.label}>
+              <span className="nav-icon">{n.icon}</span>
+              {!iconsOnly && <span className="nav-label">{n.label}</span>}
+            </button>
+          ))}
+
+          {churches && churches.length > 1 && (
+            <>
+              {!iconsOnly && <div className="nav-section">Church</div>}
+              {iconsOnly && <div className="nav-divider" />}
+              {!iconsOnly && (
+                <div style={{ padding: '0 8px 8px' }}>
+                  <select
+                    value={activeChurch?.id || ''}
+                    onChange={e => {
+                      const c = churches.find(ch => ch.id === e.target.value)
+                      if (c) setActiveChurch(c)
+                    }}
+                    style={{ width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}
+                  >
+                    {churches.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {iconsOnly && (
+                <button className="nav-item" title="Church" style={{ justifyContent: 'center' }}>
+                  <span className="nav-icon">⛪</span>
+                </button>
+              )}
+            </>
+          )}
+
+          {!iconsOnly && <div className="nav-section">Settings</div>}
+          {iconsOnly && <div className="nav-divider" />}
+          <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => handleNav('settings')} title="Settings">
+            <span className="nav-icon">⚙</span>
+            {!iconsOnly && <span className="nav-label">Settings</span>}
+          </button>
+        </nav>
+      </aside>
+    </>
   )
 }
 
@@ -95,6 +129,8 @@ function AppShell() {
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
   const [dataLoading, setDataLoading] = useState(true)
+  const [sidebarMode, setSidebarMode] = useState(() => localStorage.getItem('wf_sidebar') || 'full')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('wf_theme') || 'dark'
     if (saved === 'light') document.documentElement.classList.add('light-mode')
@@ -102,13 +138,14 @@ function AppShell() {
   })
 
   useEffect(() => {
-    if (theme === 'light') {
-      document.documentElement.classList.add('light-mode')
-    } else {
-      document.documentElement.classList.remove('light-mode')
-    }
+    if (theme === 'light') document.documentElement.classList.add('light-mode')
+    else document.documentElement.classList.remove('light-mode')
     localStorage.setItem('wf_theme', theme)
   }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem('wf_sidebar', sidebarMode)
+  }, [sidebarMode])
 
   useEffect(() => {
     if (!activeChurch?.id) return
@@ -122,6 +159,10 @@ function AppShell() {
 
   const refreshSongs = () => getSongs(activeChurch.id).then(s => setSongs(s || []))
   const refreshSets  = () => getSets(activeChurch.id).then(s => setSets(s || []))
+
+  const cycleSidebar = () => {
+    setSidebarMode(m => m === 'full' ? 'icons' : m === 'icons' ? 'hidden' : 'full')
+  }
 
   const titles = {
     home: 'Dashboard', library: 'Song Library', thisweek: 'Set Builder',
@@ -155,10 +196,23 @@ function AppShell() {
   )
 
   return (
-    <div className="app">
-      <Sidebar page={page} setPage={setPage} weekCount={weekSongIds.length} churches={churches} activeChurch={activeChurch} setActiveChurch={setActiveChurch} />
+    <div className={`app sidebar-mode-${sidebarMode}`}>
+      <Sidebar
+        page={page} setPage={setPage} weekCount={weekSongIds.length}
+        churches={churches} activeChurch={activeChurch} setActiveChurch={setActiveChurch}
+        mode={sidebarMode} onToggle={cycleSidebar}
+        mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)}
+      />
       <div className="main">
         <div className="topbar">
+          {/* Mobile hamburger */}
+          <button className="hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
+            <span /><span /><span />
+          </button>
+          {/* Desktop show-sidebar button (only when hidden) */}
+          {sidebarMode === 'hidden' && (
+            <button className="sidebar-show-btn" onClick={cycleSidebar} title="Show sidebar">›› </button>
+          )}
           <div className="topbar-title">{titles[page]}</div>
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
@@ -173,6 +227,21 @@ function AppShell() {
           {page === 'settings' && <Settings {...pageProps} />}
         </div>
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav className="bottom-nav">
+        {BOTTOM_NAV.map(n => (
+          <button key={n.id} className={`bottom-nav-item ${page === n.id ? 'active' : ''}`} onClick={() => setPage(n.id)}>
+            <span className="bottom-nav-icon">{n.icon}</span>
+            <span className="bottom-nav-label">{n.label}</span>
+            {n.id === 'thisweek' && weekSongIds.length > 0 && <span className="bottom-nav-badge">{weekSongIds.length}</span>}
+          </button>
+        ))}
+        <button className="bottom-nav-item" onClick={() => setMobileOpen(o => !o)}>
+          <span className="bottom-nav-icon">☰</span>
+          <span className="bottom-nav-label">More</span>
+        </button>
+      </nav>
     </div>
   )
 }
