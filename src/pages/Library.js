@@ -26,10 +26,10 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [editForm, setEditForm] = useState({})
   const [viewTransposedKey, setViewTransposedKey] = useState(null)
 
-  const [proPresenterXml, setProPresenterXml] = useState(null)
+  const [proPresenterBin, setProPresenterBin] = useState(null)
 
-  const openDetail = (s) => { setDetailSong(s); setEditing(false); setViewTransposedKey(null); setProPresenterXml(null) }
-  const closeDetail = () => { setDetailSong(null); setEditing(false); setViewTransposedKey(null); setProPresenterXml(null) }
+  const openDetail = (s) => { setDetailSong(s); setEditing(false); setViewTransposedKey(null); setProPresenterBin(null) }
+  const closeDetail = () => { setDetailSong(null); setEditing(false); setViewTransposedKey(null); setProPresenterBin(null) }
 
   useEffect(() => {
     if (pendingOpenSong) {
@@ -380,23 +380,23 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                 {detailSong.lyrics && (
                   <div style={{ marginBottom:16 }}>
                     <div className="form-label" style={{ marginBottom:8 }}>ProPresenter</div>
-                    {!proPresenterXml ? (
-                      <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(generateProPresenterFile(detailSong.title, detailSong.key, detailSong.lyrics))}>
-                        Generate .pro6 File
+                    {!proPresenterBin ? (
+                      <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterBin(generateProPresenterFile(detailSong.title, detailSong.key, detailSong.lyrics))}>
+                        Generate .pro File
                       </button>
                     ) : (
                       <>
-                        <div className="propre-box">{stripChords(detailSong.lyrics)}</div>
+                        <div className="propre-box">Ready to download</div>
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
                           <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(stripChords(detailSong.lyrics)); alert('Copied!') }}>Copy Text</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => {
-                            const blob = new Blob([proPresenterXml], { type: 'text/xml' })
+                            const blob = new Blob([proPresenterBin], { type: 'application/octet-stream' })
                             const a = document.createElement('a')
                             a.href = URL.createObjectURL(blob)
-                            a.download = `${detailSong.title.replace(/[^a-zA-Z0-9]/g,'-')}.pro6`
+                            a.download = `${detailSong.title.replace(/[^a-zA-Z0-9]/g,'-')}.pro`
                             a.click()
-                          }}>Download .pro6</button>
-                          <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(null)}>Hide</button>
+                          }}>Download .pro</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterBin(null)}>Hide</button>
                         </div>
                       </>
                     )}
