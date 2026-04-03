@@ -154,21 +154,46 @@ const SECTION_COLORS = [
   hexToBytes('0d9a99193f15908f0f3f1df9f8f83d250000803f'), // End     — orange
 ]
 
+// Replace a fixed UUID string (36 ASCII bytes) within a Uint8Array with a new one.
+// UUIDs are always 36 chars so lengths don't change — no re-encoding needed.
+function swapUUID(arr, oldUuid, newUuid) {
+  const enc = new TextEncoder()
+  const old = enc.encode(oldUuid)
+  const nw  = enc.encode(newUuid)
+  const out = new Uint8Array(arr)
+  for (let i = 0; i <= out.length - old.length; i++) {
+    let match = true
+    for (let j = 0; j < old.length; j++) {
+      if (out[i + j] !== old[j]) { match = false; break }
+    }
+    if (match) { out.set(nw, i); return out }
+  }
+  return out
+}
+
 function buildSlide(slideUuid, rtfBytes) {
-  // Build the full presentation_obj (field [10] inner content)
-  // Structure: [TMPL_A] [varint(rtf_len)] [rtf_bytes] [TMPL_B]
-  const rtfLenVarint = pbVarint(rtfBytes.length)
-  const presObj = concat(TMPL_A, rtfLenVarint, rtfBytes, TMPL_B)
+  // Each slide must have unique UUIDs or PP7 deduplicates and drops slides.
+  // TMPL_A contains 2 hardcoded UUIDs; TMPL_B contains 5. Replace all 7 per slide.
+  let tA = swapUUID(TMPL_A, 'B1CB1249-35D4-4D67-921B-0B58D9EC8B40', crypto.randomUUID())
+      tA = swapUUID(tA,     '047FFE0A-BD68-4478-BAAA-2B5A2608A0B9', crypto.randomUUID())
+  let tB = swapUUID(TMPL_B, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID())
+      tB = swapUUID(tB,     '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID())
+      tB = swapUUID(tB,     '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID())
+      tB = swapUUID(tB,     'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID())
+      tB = swapUUID(tB,     '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID())
+
+  // Build the full presentation_obj: [TMPL_A] [varint(rtf_len)] [rtf_bytes] [TMPL_B]
+  const presObj = concat(tA, pbVarint(rtfBytes.length), rtfBytes, tB)
 
   // Build the slide wrapper:
-  // [1] = uuid wrapper, [5] = enabled, [8] = notes (empty), [10] = presObj, [12] = flag
-  const uuidWrap = pbLenDelim(1, uuidToProto(slideUuid))
-  const enabled  = pbVarintField(5, 1)
-  const notes    = pbString(8, '')
-  const presObjF = pbLenDelim(10, presObj)
-  const flag     = pbVarintField(12, 1)
-
-  return concat(uuidWrap, enabled, notes, presObjF, flag)
+  // [1]=uuid, [5]=enabled, [8]=notes (empty), [10]=presObj, [12]=flag
+  return concat(
+    pbLenDelim(1, uuidToProto(slideUuid)),
+    pbVarintField(5, 1),
+    pbString(8, ''),
+    pbLenDelim(10, presObj),
+    pbVarintField(12, 1)
+  )
 }
 
 function buildGroup(groupUuid, name, colorBytes, slideUuids) {

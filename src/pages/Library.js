@@ -386,7 +386,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                       </button>
                     ) : (
                       <>
-                        <div className="propre-box">Ready to download</div>
+                        <div className="propre-box">{stripChords(detailSong.lyrics)}</div>
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
                           <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(stripChords(detailSong.lyrics)); alert('Copied!') }}>Copy Text</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => {
