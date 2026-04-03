@@ -337,7 +337,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                 {detailSong.notes && <div style={{ background:'var(--bg3)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--muted)',marginBottom:16 }}>{detailSong.notes}</div>}
                 <div style={{ marginBottom:16 }}>
                   <div className="form-label" style={{ marginBottom:8 }}>Play History</div>
-                  <div className="grid-3">
+                  <div className="grid-3 stat-grid">
                     {[['3 Weeks',detailSong.plays_3weeks],['3 Months',detailSong.plays_3months],['This Year',detailSong.plays_year]].map(([label,val])=>(
                       <div key={label} className="stat-card card-sm">
                         <div className="stat-label">{label}</div>
