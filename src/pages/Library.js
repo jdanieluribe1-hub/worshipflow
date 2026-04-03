@@ -313,17 +313,17 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
               </>
             ) : (
               <>
-                <div className="modal-top-actions">
-                  <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
-                  <button className={`btn btn-sm ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>toggleWeek(detailSong.id,{stopPropagation:()=>{}})}>
-                    {weekSongIds.includes(detailSong.id)?'✓ In Week':'+ This Week'}
-                  </button>
-                </div>
                 <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
                   <div className="song-thumb" style={{ width:52,height:52,fontSize:22 }}>{tempoEmoji(detailSong.tempo)}</div>
-                  <div>
+                  <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontFamily:'var(--font-head)',fontSize:20,fontWeight:700 }}>{detailSong.title}</div>
                     <div style={{ color:'var(--muted)',fontSize:13 }}>{detailSong.artist}</div>
+                  </div>
+                  <div className="modal-top-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
+                    <button className={`btn btn-sm ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>toggleWeek(detailSong.id,{stopPropagation:()=>{}})}>
+                      {weekSongIds.includes(detailSong.id)?'✓ Week':'+ Week'}
+                    </button>
                   </div>
                 </div>
                 <div style={{ display:'flex',gap:8,flexWrap:'wrap',marginBottom:16 }}>

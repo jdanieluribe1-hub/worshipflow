@@ -360,8 +360,8 @@ textarea { resize: vertical; min-height: 80px; }
   }
   .modal-close-x:hover { color: var(--text); }
   .modal-top-actions {
-    display: flex; gap: 8px; margin-bottom: 16px;
-    padding-right: 40px;
+    display: flex; flex-direction: column; gap: 6px;
+    flex-shrink: 0; padding-right: 36px;
   }
   .modal-footer-close,
   .modal-footer-edit,
