@@ -69,6 +69,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const touchDragRef = useRef({ active: false, startIdx: null, overIdx: null })
 
   const handleTouchStart = (e, i) => {
+    if (!e.target.closest('[data-drag-handle]')) return
     touchDragRef.current = { active: true, startIdx: i, overIdx: i }
     setDragIdx(i)
   }
@@ -185,19 +186,23 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 onDragOver={(e) => handleDragOver(e, i)}
                 onDrop={() => handleDrop(i)}
                 onDragEnd={handleDragEnd}
-                onTouchStart={(e) => handleTouchStart(e, i)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s', touchAction:'none' }}
+                style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s' }}
               >
               <div className="week-song" style={{
                 flexDirection:'column', gap:0, alignItems:'stretch',
                 outline: dragOverIdx === i && dragIdx !== i ? '2px solid var(--accent)' : 'none',
-                borderRadius:10, cursor:'grab',
+                borderRadius:10,
               }}>
-                {/* Row 1: number + thumb + title/artist + pdf + remove */}
+                {/* Row 1: handle + number + thumb + title/artist + pdf + remove */}
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <div className="week-order" style={{ cursor:'grab', userSelect:'none', flexShrink:0 }}>{i+1}</div>
+                  <div
+                    data-drag-handle
+                    onTouchStart={(e) => handleTouchStart(e, i)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    style={{ touchAction:'none', cursor:'grab', userSelect:'none', flexShrink:0, padding:'4px 2px', color:'var(--muted)', fontSize:18, lineHeight:1 }}
+                  >⠿</div>
+                  <div className="week-order" style={{ userSelect:'none', flexShrink:0 }}>{i+1}</div>
                   <div className="song-thumb" style={{ width:36,height:36,flexShrink:0 }}>{tempoEmoji(s.tempo)}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontWeight:600,fontSize:14,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{s.title}</div>
