@@ -213,14 +213,14 @@ function buildSlide(slideUuid, rtfBytes) {
   // PP7 deduplicates slides sharing UUIDs and silently drops them.
   tA = swapUUID(tA, 'B1CB1249-35D4-4D67-921B-0B58D9EC8B40', crypto.randomUUID())
   tA = swapUUID(tA, '047FFE0A-BD68-4478-BAAA-2B5A2608A0B9', crypto.randomUUID())
-  swapUUID(tB, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID())
-  swapUUID(tB, '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID())
-  swapUUID(tB, '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID())
-  swapUUID(tB, 'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID())
-  swapUUID(tB, '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID())
+  let tB2 = swapUUID(tB, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID())
+  tB2 = swapUUID(tB2, '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID())
+  tB2 = swapUUID(tB2, '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID())
+  tB2 = swapUUID(tB2, 'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID())
+  tB2 = swapUUID(tB2, '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID())
 
   // ── Assemble: template_A + varint(rtf_len) + rtf_bytes + template_B ────────
-  const presObj = concat(tA, pbVarint(rtfBytes.length), rtfBytes, tB)
+  const presObj = concat(tA, pbVarint(rtfBytes.length), rtfBytes, tB2)
 
   return concat(
     pbLenDelim(1, uuidToProto(slideUuid)),
