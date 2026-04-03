@@ -9,7 +9,7 @@ function getNextSunday() {
   return d.toISOString().slice(0, 10)
 }
 
-export default function Home({ songs, sets, setPage, profile }) {
+export default function Home({ songs, sets, setPage, setPendingOpenSong, profile }) {
   const [calDate, setCalDate] = useState(new Date())
   const [hoveredKey, setHoveredKey] = useState(null)
 
@@ -241,7 +241,7 @@ export default function Home({ songs, sets, setPage, profile }) {
           {librarySongs.length === 0 ? (
             <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:16 }}>No songs yet</div>
           ) : librarySongs.map((s, i) => (
-            <div key={s.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'7px 0', borderBottom: i < librarySongs.length-1 ? '1px solid var(--border)' : 'none' }}>
+            <div key={s.id} onClick={() => { setPendingOpenSong(s); setPage('library') }} style={{ display:'flex', alignItems:'center', gap:12, padding:'7px 0', borderBottom: i < librarySongs.length-1 ? '1px solid var(--border)' : 'none', cursor:'pointer' }}>
               <div style={{ width:32, height:32, borderRadius:7, background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
                 {s.tempo==='Fast'?'⚡':s.tempo==='Medium'?'♩':'🎶'}
               </div>

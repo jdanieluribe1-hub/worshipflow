@@ -125,6 +125,7 @@ function AppShell() {
   const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [page, setPage] = useState('home')
+  const [pendingOpenSong, setPendingOpenSong] = useState(null)
   const [songs, setSongs] = useState([])
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
@@ -210,8 +211,8 @@ function AppShell() {
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
         <div className="content">
-          {page === 'home' && <Home {...pageProps} setPage={setPage} />}
-          {page === 'library' && <Library {...pageProps} />}
+          {page === 'home' && <Home {...pageProps} setPage={setPage} setPendingOpenSong={setPendingOpenSong} />}
+          {page === 'library' && <Library {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
           {page === 'thisweek' && <ThisWeek {...pageProps} setPage={setPage} />}
           {page === 'history' && <History {...pageProps} setPage={setPage} />}
           {page === 'upload' && <Upload {...pageProps} />}

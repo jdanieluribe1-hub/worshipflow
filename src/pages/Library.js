@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { addSong, deleteSong, updateSong } from '../lib/supabase'
 import { parsePDFWithAI, generateProPresenterTemplate, stripChords } from '../lib/ai'
 import { transposeLyrics } from '../lib/transpose'
@@ -15,7 +15,7 @@ const SPECIALTY = ['Contemporary','Traditional','Hymn','Spanish','Bilingual','Ac
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
-export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch }) {
+export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch, pendingOpenSong, setPendingOpenSong }) {
   const [filter, setFilter] = useState({ tempo: 'all', key: 'all', search: '' })
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
@@ -30,6 +30,13 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
 
   const openDetail = (s) => { setDetailSong(s); setEditing(false); setViewTransposedKey(null); setProPresenterXml(null) }
   const closeDetail = () => { setDetailSong(null); setEditing(false); setViewTransposedKey(null); setProPresenterXml(null) }
+
+  useEffect(() => {
+    if (pendingOpenSong) {
+      openDetail(pendingOpenSong)
+      setPendingOpenSong(null)
+    }
+  }, [pendingOpenSong])
 
   const startEdit = () => {
     setEditForm({
