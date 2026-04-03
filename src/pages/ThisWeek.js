@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { upsertSet, finalizeSet } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
@@ -65,6 +65,38 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     setDragOverIdx(null)
   }
   const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null) }
+
+  const touchDragRef = useRef({ active: false, startIdx: null, overIdx: null })
+
+  const handleTouchStart = (e, i) => {
+    touchDragRef.current = { active: true, startIdx: i, overIdx: i }
+    setDragIdx(i)
+  }
+  const handleTouchMove = (e) => {
+    if (!touchDragRef.current.active) return
+    e.preventDefault()
+    const touch = e.touches[0]
+    let el = document.elementFromPoint(touch.clientX, touch.clientY)
+    while (el && el.dataset.dragIndex === undefined) el = el.parentElement
+    if (el && el.dataset.dragIndex !== undefined) {
+      const over = parseInt(el.dataset.dragIndex)
+      touchDragRef.current.overIdx = over
+      setDragOverIdx(over)
+    }
+  }
+  const handleTouchEnd = () => {
+    if (!touchDragRef.current.active) return
+    const { startIdx, overIdx } = touchDragRef.current
+    touchDragRef.current = { active: false, startIdx: null, overIdx: null }
+    if (overIdx !== null && startIdx !== overIdx) {
+      const newIds = [...weekSongIds]
+      const [removed] = newIds.splice(startIdx, 1)
+      newIds.splice(overIdx, 0, removed)
+      setWeekSongIds(newIds)
+    }
+    setDragIdx(null)
+    setDragOverIdx(null)
+  }
 
   const saveSet = async () => {
     if (!weekSongIds.length) return alert('Add some songs first.')
@@ -147,12 +179,16 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
             {weekSongs.map((s,i) => (
               <div
                 key={s.id}
+                data-drag-index={i}
                 draggable
                 onDragStart={() => handleDragStart(i)}
                 onDragOver={(e) => handleDragOver(e, i)}
                 onDrop={() => handleDrop(i)}
                 onDragEnd={handleDragEnd}
-                style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s' }}
+                onTouchStart={(e) => handleTouchStart(e, i)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ marginBottom:4, opacity: dragIdx === i ? 0.4 : 1, transition:'opacity 0.15s', touchAction:'none' }}
               >
               <div className="week-song" style={{
                 flexDirection:'column', gap:0, alignItems:'stretch',
