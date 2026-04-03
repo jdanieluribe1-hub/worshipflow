@@ -313,11 +313,28 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
               </>
             ) : (
               <>
-                <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
                   <div className="song-thumb" style={{ width:52,height:52,fontSize:22 }}>{tempoEmoji(detailSong.tempo)}</div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontFamily:'var(--font-head)',fontSize:20,fontWeight:700 }}>{detailSong.title}</div>
                     <div style={{ color:'var(--muted)',fontSize:13 }}>{detailSong.artist}</div>
+                  </div>
+                </div>
+                <div style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:16 }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex',gap:8,flexWrap:'wrap',marginBottom:10 }}>
+                      <span className={`tag tag-${detailSong.tempo?.toLowerCase()}`}>{detailSong.tempo}</span>
+                      <span className="tag tag-key">Key of {detailSong.key}</span>
+                      {(detailSong.themes||[]).map(t=><span key={t} className="tag tag-theme">{t}</span>)}
+                      {(detailSong.specialty||[]).map(t=><span key={t} className="tag tag-specialty">{t}</span>)}
+                    </div>
+                    {detailSong.lyrics && (
+                      <TransposeControl
+                        originalKey={detailSong.key}
+                        transposedKey={viewTransposedKey || detailSong.key}
+                        onChange={setViewTransposedKey}
+                      />
+                    )}
                   </div>
                   <div className="modal-top-actions">
                     <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
@@ -326,21 +343,6 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                     </button>
                   </div>
                 </div>
-                <div style={{ display:'flex',gap:8,flexWrap:'wrap',marginBottom:16 }}>
-                  <span className={`tag tag-${detailSong.tempo?.toLowerCase()}`}>{detailSong.tempo}</span>
-                  <span className="tag tag-key">Key of {detailSong.key}</span>
-                  {(detailSong.themes||[]).map(t=><span key={t} className="tag tag-theme">{t}</span>)}
-                  {(detailSong.specialty||[]).map(t=><span key={t} className="tag tag-specialty">{t}</span>)}
-                </div>
-                {detailSong.lyrics && (
-                  <div style={{ marginBottom:16 }}>
-                    <TransposeControl
-                      originalKey={detailSong.key}
-                      transposedKey={viewTransposedKey || detailSong.key}
-                      onChange={setViewTransposedKey}
-                    />
-                  </div>
-                )}
                 {detailSong.notes && <div style={{ background:'var(--bg3)',borderRadius:8,padding:'12px 14px',fontSize:13,color:'var(--muted)',marginBottom:16 }}>{detailSong.notes}</div>}
                 <div style={{ marginBottom:16 }}>
                   <div className="form-label" style={{ marginBottom:8 }}>Play History</div>

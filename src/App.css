@@ -361,7 +361,7 @@ textarea { resize: vertical; min-height: 80px; }
   .modal-close-x:hover { color: var(--text); }
   .modal-top-actions {
     display: flex; flex-direction: column; gap: 6px;
-    flex-shrink: 0; padding-right: 36px;
+    flex-shrink: 0;
   }
   .modal-footer-close,
   .modal-footer-edit,
