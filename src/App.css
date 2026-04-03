@@ -363,6 +363,10 @@ textarea { resize: vertical; min-height: 80px; }
     display: flex; flex-direction: column; gap: 6px;
     flex-shrink: 0;
   }
+  .modal-top-actions .btn {
+    width: 90px; padding: 8px 0;
+    font-size: 13px; justify-content: center; text-align: center;
+  }
   .modal-footer-close,
   .modal-footer-edit,
   .modal-footer-week { display: none !important; }
