@@ -61,25 +61,89 @@ export function stripChords(lyrics) {
     .split('\n').map(l => l.trimEnd()).join('\n')
 }
 
-export function generateProPresenterTemplate(title, key, lyrics) {
-  if (!lyrics) return '<!-- No lyrics extracted -->'
-  const clean = stripChords(lyrics)
-  const parts = clean.split(/(\[[^\]]+\])/).filter(s => s.trim())
-  const slides = []
-  let currentHeading = ''
-  for (const part of parts) {
-    if (/^\[[^\]]+\]$/.test(part)) {
-      currentHeading = part.trim().slice(1, -1)
+export function generateProPresenterFile(title, key, lyrics) {
+  if (!lyrics) return null
+
+  const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  const newUuid = () => crypto.randomUUID()
+
+  // Parse lyrics into sections → stanzas, preserving raw (with chords) for stage notes
+  const sections = []
+  let currentSection = { name: 'Song', stanzas: [] }
+  let currentStanza = []
+
+  const flushStanza = () => {
+    const raw = currentStanza.join('\n').trim()
+    if (raw) currentSection.stanzas.push({ raw, clean: stripChords(raw) })
+    currentStanza = []
+  }
+  const flushSection = () => {
+    flushStanza()
+    if (currentSection.stanzas.length > 0) sections.push(currentSection)
+  }
+
+  for (const line of lyrics.split('\n')) {
+    const trimmed = line.trim()
+    const isSectionLabel = /^\[[^\]]+\]$/.test(trimmed) && !isChordToken(trimmed.slice(1,-1).trim())
+    if (isSectionLabel) {
+      flushSection()
+      currentSection = { name: trimmed.slice(1,-1), stanzas: [] }
+    } else if (trimmed === '') {
+      flushStanza()
     } else {
-      const lines = part.trim()
-      if (lines) slides.push({ heading: currentHeading, text: lines })
+      currentStanza.push(line)
     }
   }
-  if (slides.length === 0) {
-    clean.split('\n\n').filter(s => s.trim()).forEach((s, i) => {
-      slides.push({ heading: 'Section ' + (i + 1), text: s.trim() })
-    })
+  flushSection()
+
+  if (sections.length === 0) {
+    sections.push({ name: 'Song', stanzas: [{ raw: lyrics, clean: stripChords(lyrics) }] })
   }
-  const slideXml = slides.map((s, i) => '    <RVDisplaySlide uuid="slide-' + (i+1) + '">\n      <!-- ' + s.heading + ' -->\n      <RVTextElement>\n        <NSString>' + s.text + '</NSString>\n      </RVTextElement>\n    </RVDisplaySlide>').join('\n')
-  return '<?xml version="1.0" encoding="UTF-8"?>\n<RVPresentationDocument>\n  <RVSlideGrouping name="' + title + ' (Key of ' + key + ')">\n' + slideXml + '\n  </RVSlideGrouping>\n</RVPresentationDocument>'
+
+  const docUuid = newUuid()
+
+  const groupsXml = sections.map((section, si) => {
+    const groupUuid = newUuid()
+    const slidesXml = section.stanzas.map((stanza, idx) => {
+      const slideUuid = newUuid()
+      const elemUuid = newUuid()
+      const cleanText = esc(stanza.clean.trim())
+      const notes = esc(stanza.raw.trim())
+      return `        <RVDisplaySlide backgroundColor="0 0 0 0" enabled="1" highlightColor="" hotKey="" label="${esc(section.name)}" notes="${notes}" slideType="1" sort_index="${idx}" UUID="${slideUuid}" drawingBackgroundColor="0" serialization-array-index="${idx}">
+          <cues containerClass="NSMutableArray"/>
+          <displayElements containerClass="NSMutableArray">
+            <RVTextElement displayName="Lyrics" UUID="${elemUuid}" typeID="0" fromTemplate="0" locked="0" opacity="1" persistent="0" source="" rotation="0" adjustsHeightToFit="0" scaleFactor="1" drawingFill="0" drawingShadow="1" drawingStroke="0" fillColor="1 1 1 0" bezelRadius="0" displayDelay="0" serialization-array-index="0">
+              <_-RVRect3D-_position x="0" y="0" z="0" width="1920" height="1080"/>
+              <RVTextData verticalAlignment="1">
+                <_-NSFont-_font fontFamily="Arial" pointSize="80" antialias="YES"/>
+                <string>
+                  <NSAttributedString baseWritingDirection="-1">
+                    <fragment content="${cleanText}">
+                      <attributes>
+                        <NSColor RGBA="1 1 1 1"/>
+                        <NSFont fontFamily="Arial" pointSize="80"/>
+                        <NSParagraphStyle baseWritingDirection="0" alignment="2"/>
+                      </attributes>
+                    </fragment>
+                  </NSAttributedString>
+                </string>
+              </RVTextData>
+            </RVTextElement>
+          </displayElements>
+        </RVDisplaySlide>`
+    }).join('\n')
+    return `    <RVSlideGrouping name="${esc(section.name)}" uuid="${groupUuid}" color="0 0 0 1" serialization-array-index="${si}">
+      <slides containerClass="NSMutableArray">
+${slidesXml}
+      </slides>
+    </RVSlideGrouping>`
+  }).join('\n')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<RVPresentationDocument height="1080" width="1920" versionNumber="600" uuid="${docUuid}" name="${esc(title)} (Key of ${esc(key)})" category="Song" artist="" author="" CCLIDisplay="0" backgroundColor="0 0 0 1" drawingBackgroundColor="0" notes="">
+  <groups containerClass="NSMutableArray">
+${groupsXml}
+  </groups>
+  <arrangements containerClass="NSMutableArray"/>
+</RVPresentationDocument>`
 }

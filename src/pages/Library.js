@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { addSong, deleteSong, updateSong } from '../lib/supabase'
-import { parsePDFWithAI, generateProPresenterTemplate, stripChords } from '../lib/ai'
+import { parsePDFWithAI, generateProPresenterFile, stripChords } from '../lib/ai'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
@@ -381,8 +381,8 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                   <div style={{ marginBottom:16 }}>
                     <div className="form-label" style={{ marginBottom:8 }}>ProPresenter</div>
                     {!proPresenterXml ? (
-                      <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(generateProPresenterTemplate(detailSong.title, detailSong.key, detailSong.lyrics))}>
-                        Generate ProPresenter File
+                      <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(generateProPresenterFile(detailSong.title, detailSong.key, detailSong.lyrics))}>
+                        Generate .pro6 File
                       </button>
                     ) : (
                       <>
@@ -393,9 +393,9 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                             const blob = new Blob([proPresenterXml], { type: 'text/xml' })
                             const a = document.createElement('a')
                             a.href = URL.createObjectURL(blob)
-                            a.download = `${detailSong.title.replace(/[^a-zA-Z0-9]/g,'-')}.pro`
+                            a.download = `${detailSong.title.replace(/[^a-zA-Z0-9]/g,'-')}.pro6`
                             a.click()
-                          }}>Download .pro</button>
+                          }}>Download .pro6</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => setProPresenterXml(null)}>Hide</button>
                         </div>
                       </>
