@@ -348,6 +348,7 @@ textarea { resize: vertical; min-height: 80px; }
 .modal-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 20px; }
 .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
 .modal-close-x { display: none; }
+.modal-top-actions { display: none; }
 @media (max-width: 768px) {
   .modal-close-x {
     display: flex; align-items: center; justify-content: center;
@@ -358,7 +359,13 @@ textarea { resize: vertical; min-height: 80px; }
     z-index: 10;
   }
   .modal-close-x:hover { color: var(--text); }
-  .modal-footer-close { display: none !important; }
+  .modal-top-actions {
+    display: flex; gap: 8px; margin-bottom: 16px;
+    padding-right: 40px;
+  }
+  .modal-footer-close,
+  .modal-footer-edit,
+  .modal-footer-week { display: none !important; }
 }
 
 /* MISC */
