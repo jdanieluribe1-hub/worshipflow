@@ -258,6 +258,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       {detailSong && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&!editing&&closeDetail()}>
           <div className="modal">
+            {!editing && <button className="modal-close-x" onClick={closeDetail}>✕</button>}
             {editing ? (
               <>
                 <div className="modal-title">Edit Song</div>
@@ -397,7 +398,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                   <button className="btn btn-red btn-sm" onClick={()=>handleDelete(detailSong.id)}>Delete</button>
                   <div style={{ flex:1 }} />
                   <button className="btn btn-ghost btn-sm" onClick={startEdit}>Edit</button>
-                  <button className="btn btn-ghost" onClick={closeDetail}>Close</button>
+                  <button className="btn btn-ghost modal-footer-close" onClick={closeDetail}>Close</button>
                   <button className={`btn ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>{toggleWeek(detailSong.id,{stopPropagation:()=>{}});closeDetail()}}>
                     {weekSongIds.includes(detailSong.id)?'✓ In This Week':'+ Add to This Week'}
                   </button>
