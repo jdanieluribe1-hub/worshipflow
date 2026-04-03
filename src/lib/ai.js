@@ -154,6 +154,19 @@ const SECTION_COLORS = [
   hexToBytes('0d9a99193f15908f0f3f1df9f8f83d250000803f'), // End     — orange
 ]
 
+function varintSize(n) {
+  if (n < 128) return 1
+  if (n < 16384) return 2
+  if (n < 2097152) return 3
+  return 4
+}
+
+// Write a 2-byte varint in-place (safe for values 128–16383).
+function write2ByteVarint(arr, pos, val) {
+  arr[pos]   = (val & 0x7f) | 0x80
+  arr[pos+1] = val >>> 7
+}
+
 // Replace a fixed UUID string (36 ASCII bytes) within a Uint8Array with a new one.
 // UUIDs are always 36 chars so lengths don't change — no re-encoding needed.
 function swapUUID(arr, oldUuid, newUuid) {
@@ -172,21 +185,43 @@ function swapUUID(arr, oldUuid, newUuid) {
 }
 
 function buildSlide(slideUuid, rtfBytes) {
-  // Each slide must have unique UUIDs or PP7 deduplicates and drops slides.
-  // TMPL_A contains 2 hardcoded UUIDs; TMPL_B contains 5. Replace all 7 per slide.
-  let tA = swapUUID(TMPL_A, 'B1CB1249-35D4-4D67-921B-0B58D9EC8B40', crypto.randomUUID())
-      tA = swapUUID(tA,     '047FFE0A-BD68-4478-BAAA-2B5A2608A0B9', crypto.randomUUID())
-  let tB = swapUUID(TMPL_B, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID())
-      tB = swapUUID(tB,     '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID())
-      tB = swapUUID(tB,     '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID())
-      tB = swapUUID(tB,     'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID())
-      tB = swapUUID(tB,     '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID())
+  // Deep-copy templates (we mutate them per slide)
+  let tA = new Uint8Array(TMPL_A)
+  const tB = new Uint8Array(TMPL_B)
 
-  // Build the full presentation_obj: [TMPL_A] [varint(rtf_len)] [rtf_bytes] [TMPL_B]
+  // ── Fix nested length varints ───────────────────────────────────────────────
+  // TMPL_A embeds 6 hardcoded protobuf length varints that were correct for the
+  // original 357-byte RTF. Each nesting level (field[23] → field[2] → field[1] ×3
+  // → field[13]) must grow/shrink by exactly delta = new_rtf_payload - old_rtf_payload.
+  // old_rtf_payload = varint(357)[2 bytes] + 357 bytes = 359 bytes
+  // new_rtf_payload = varint(rtfBytes.length) + rtfBytes.length
+  const origRtfPayload = 2 + 357   // varint(357) is 2 bytes
+  const newRtfPayload  = varintSize(rtfBytes.length) + rtfBytes.length
+  const delta = newRtfPayload - origRtfPayload
+  if (delta !== 0) {
+    // Positions verified against real PP7 binary. All base values are in the
+    // 553–1249 range, so ±delta stays safely within 2-byte varint territory.
+    write2ByteVarint(tA, 46, 1249 + delta)  // field[23] in pres_obj
+    write2ByteVarint(tA, 49, 1246 + delta)  // field[2]  in field[23]
+    write2ByteVarint(tA, 52, 1031 + delta)  // field[1]  = content_1
+    write2ByteVarint(tA, 55,  946 + delta)  // field[1]  = slide_content
+    write2ByteVarint(tA, 58,  919 + delta)  // field[1]  = text_element
+    write2ByteVarint(tA, 422, 553 + delta)  // field[13] = rtf_container
+  }
+
+  // ── Swap all 7 hardcoded UUIDs with fresh ones per slide ───────────────────
+  // PP7 deduplicates slides sharing UUIDs and silently drops them.
+  tA = swapUUID(tA, 'B1CB1249-35D4-4D67-921B-0B58D9EC8B40', crypto.randomUUID())
+  tA = swapUUID(tA, '047FFE0A-BD68-4478-BAAA-2B5A2608A0B9', crypto.randomUUID())
+  swapUUID(tB, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID())
+  swapUUID(tB, '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID())
+  swapUUID(tB, '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID())
+  swapUUID(tB, 'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID())
+  swapUUID(tB, '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID())
+
+  // ── Assemble: template_A + varint(rtf_len) + rtf_bytes + template_B ────────
   const presObj = concat(tA, pbVarint(rtfBytes.length), rtfBytes, tB)
 
-  // Build the slide wrapper:
-  // [1]=uuid, [5]=enabled, [8]=notes (empty), [10]=presObj, [12]=flag
   return concat(
     pbLenDelim(1, uuidToProto(slideUuid)),
     pbVarintField(5, 1),
