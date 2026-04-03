@@ -159,7 +159,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
 
   return (
     <div>
-      <div className="grid-4" style={{ marginBottom:28 }}>
+      <div className="grid-4 stat-grid" style={{ marginBottom:28 }}>
         <div className="stat-card"><div className="stat-label">Total Songs</div><div className="stat-value">{songs.length}</div></div>
         <div className="stat-card"><div className="stat-label">Services Logged</div><div className="stat-value">{sets.length}</div></div>
         <div className="stat-card">
