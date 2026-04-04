@@ -286,6 +286,12 @@ export function generateProPresenterFile(title, key, lyrics) {
     sections.push({ name: 'Song', stanzas: [{ raw: lyrics, clean: stripChords(lyrics) }] })
   }
 
+  console.log('[PP7] sections:', sections.map(s => ({ name: s.name, stanzas: s.stanzas.length })))
+  console.log('[PP7] first stanza clean text:', sections[0]?.stanzas[0]?.clean?.slice(0, 200))
+  const firstRtf = sections[0]?.stanzas[0] ? buildRTFBytes(sections[0].stanzas[0].clean.trim()) : null
+  console.log('[PP7] first RTF bytes length:', firstRtf?.length)
+  console.log('[PP7] first RTF string preview:', firstRtf ? new TextDecoder('latin1').decode(firstRtf).slice(0, 300) : null)
+
   const docUuid = newUuid()
 
   // ── Fixed header fields from real PP7 file ──
