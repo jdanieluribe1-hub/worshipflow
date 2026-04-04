@@ -287,10 +287,26 @@ export function generateProPresenterFile(title, key, lyrics) {
   }
 
   console.log('[PP7] sections:', sections.map(s => ({ name: s.name, stanzas: s.stanzas.length })))
-  console.log('[PP7] first stanza clean text:', sections[0]?.stanzas[0]?.clean?.slice(0, 200))
   const firstRtf = sections[0]?.stanzas[0] ? buildRTFBytes(sections[0].stanzas[0].clean.trim()) : null
-  console.log('[PP7] first RTF bytes length:', firstRtf?.length)
-  console.log('[PP7] first RTF string preview:', firstRtf ? new TextDecoder('latin1').decode(firstRtf).slice(0, 300) : null)
+  if (firstRtf) {
+    const delta = (varintSize(firstRtf.length) + firstRtf.length) - (2 + 357)
+    console.log('[PP7] RTF length:', firstRtf.length, '| delta:', delta)
+    // Build a test slide to inspect the patched bytes
+    const testTa = new Uint8Array(TMPL_A)
+    if (delta !== 0) {
+      write2ByteVarint(testTa, 46, 1249 + delta)
+      write2ByteVarint(testTa, 49, 1246 + delta)
+      write2ByteVarint(testTa, 52, 1031 + delta)
+      write2ByteVarint(testTa, 55,  946 + delta)
+      write2ByteVarint(testTa, 58,  919 + delta)
+      write2ByteVarint(testTa, 422, 553 + delta)
+    }
+    // Log bytes around key patch positions as hex
+    const hex = (arr, start, len) => Array.from(arr.slice(start, start+len)).map(b => b.toString(16).padStart(2,'0')).join(' ')
+    console.log('[PP7] bytes 43-60 (field[23] tag+len, field[2] tag+len, etc):', hex(testTa, 43, 18))
+    console.log('[PP7] bytes 418-428 (field[13] tag+len, RTF tag):', hex(testTa, 418, 10))
+    console.log('[PP7] TMPL_A length:', TMPL_A.length, '| TMPL_B length:', TMPL_B.length)
+  }
 
   const docUuid = newUuid()
 
