@@ -286,8 +286,8 @@ export default function Settings({ theme, setTheme, user }) {
         </>
       )}
 
-      {/* SWITCH CHURCH (if member of multiple) */}
-      {churches && churches.length > 1 && (
+      {/* YOUR CHURCHES */}
+      {churches && churches.length > 0 && (
         <>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Your Churches</div>
           <div className="card" style={{ marginBottom: 24 }}>
@@ -304,6 +304,11 @@ export default function Settings({ theme, setTheme, user }) {
                 </div>
               ))}
             </div>
+            {churches.length === 1 && (
+              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--muted)' }}>
+                Serving at multiple churches? Use an invite code below to join another.
+              </div>
+            )}
           </div>
         </>
       )}
