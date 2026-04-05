@@ -211,13 +211,13 @@ function buildSlide(slideUuid, rtfBytes) {
 
   // ── Swap all 7 hardcoded UUIDs with fresh ones per slide ───────────────────
   // PP7 deduplicates slides sharing UUIDs and silently drops them.
-  tA = swapUUID(tA, 'B1CB1249-35D4-4D67-921B-0B58D9EC8B40', crypto.randomUUID())
-  tA = swapUUID(tA, '047FFE0A-BD68-4478-BAAA-2B5A2608A0B9', crypto.randomUUID())
-  let tB2 = swapUUID(tB, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID())
-  tB2 = swapUUID(tB2, '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID())
-  tB2 = swapUUID(tB2, '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID())
-  tB2 = swapUUID(tB2, 'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID())
-  tB2 = swapUUID(tB2, '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID())
+  tA = swapUUID(tA, 'B1CB1249-35D4-4D67-921B-0B58D9EC8B40', crypto.randomUUID().toUpperCase())
+  tA = swapUUID(tA, '047FFE0A-BD68-4478-BAAA-2B5A2608A0B9', crypto.randomUUID().toUpperCase())
+  let tB2 = swapUUID(tB, 'B9CD6206-D48B-4524-A35D-CFF097499BFB', crypto.randomUUID().toUpperCase())
+  tB2 = swapUUID(tB2, '1A488615-721E-4C44-9048-E82F0A03E9B3', crypto.randomUUID().toUpperCase())
+  tB2 = swapUUID(tB2, '4A0DC7FA-5605-4E4F-8E26-BC99B349F257', crypto.randomUUID().toUpperCase())
+  tB2 = swapUUID(tB2, 'A9872345-C7C7-4BA5-BF01-D184172E702A', crypto.randomUUID().toUpperCase())
+  tB2 = swapUUID(tB2, '1BCA9128-39EE-4F21-A3F0-43811152EFF2', crypto.randomUUID().toUpperCase())
 
   // ── Assemble: template_A + varint(rtf_len) + rtf_bytes + template_B ────────
   const presObj = concat(tA, pbVarint(rtfBytes.length), rtfBytes, tB2)
@@ -251,7 +251,7 @@ function buildGroup(groupUuid, name, colorBytes, slideUuids) {
 export function generateProPresenterFile(title, key, lyrics) {
   if (!lyrics) return null
 
-  const newUuid = () => crypto.randomUUID()
+  const newUuid = () => crypto.randomUUID().toUpperCase()
 
   // Parse lyrics into sections → stanzas
   const sections = []
@@ -286,35 +286,14 @@ export function generateProPresenterFile(title, key, lyrics) {
     sections.push({ name: 'Song', stanzas: [{ raw: lyrics, clean: stripChords(lyrics) }] })
   }
 
-  console.log('[PP7] sections:', sections.map(s => ({ name: s.name, stanzas: s.stanzas.length })))
-  const firstRtf = sections[0]?.stanzas[0] ? buildRTFBytes(sections[0].stanzas[0].clean.trim()) : null
-  if (firstRtf) {
-    const delta = (varintSize(firstRtf.length) + firstRtf.length) - (2 + 357)
-    console.log('[PP7] RTF length:', firstRtf.length, '| delta:', delta)
-    // Build a test slide to inspect the patched bytes
-    const testTa = new Uint8Array(TMPL_A)
-    if (delta !== 0) {
-      write2ByteVarint(testTa, 46, 1249 + delta)
-      write2ByteVarint(testTa, 49, 1246 + delta)
-      write2ByteVarint(testTa, 52, 1031 + delta)
-      write2ByteVarint(testTa, 55,  946 + delta)
-      write2ByteVarint(testTa, 58,  919 + delta)
-      write2ByteVarint(testTa, 422, 553 + delta)
-    }
-    // Log bytes around key patch positions as hex
-    const hex = (arr, start, len) => Array.from(arr.slice(start, start+len)).map(b => b.toString(16).padStart(2,'0')).join(' ')
-    console.log('[PP7] bytes 43-60 (field[23] tag+len, field[2] tag+len, etc):', hex(testTa, 43, 18))
-    console.log('[PP7] bytes 418-428 (field[13] tag+len, RTF tag):', hex(testTa, 418, 10))
-    console.log('[PP7] TMPL_A length:', TMPL_A.length, '| TMPL_B length:', TMPL_B.length)
-  }
 
   const docUuid = newUuid()
 
   // ── Fixed header fields from real PP7 file ──
   // [1] app version info (fixed)
   const f1 = hexToBytes('0a1b08011204081a10051801220f081510032209333532353138313738')
-  // [2] document UUID
-  const f2 = pbString(2, docUuid)
+  // [2] document UUID (wrapped as UUID message, matching real PP7 files)
+  const f2 = pbLenDelim(2, uuidToProto(docUuid))
   // [3] title
   const f3 = pbString(3, `${title} (Key of ${key})`)
   // [8] background color (black, alpha 1)
