@@ -253,10 +253,29 @@ export function generateProPresenterFile(title, key, lyrics) {
 
   const newUuid = () => crypto.randomUUID().toUpperCase()
 
-  // Parse lyrics into sections → stanzas
+  // Split a lyric phrase into slide-sized chunks (max 8 words).
+  // Prefers breaking at commas; falls back to the nearest word boundary.
+  function splitToSlides(phrase) {
+    const words = phrase.split(/\s+/).filter(Boolean)
+    if (words.length <= 8) return [phrase]
+    const parts = phrase.split(',').map(p => p.trim()).filter(Boolean)
+    if (parts.length > 1) {
+      // Recurse in case any comma-part is still too long
+      return parts.flatMap(p => splitToSlides(p))
+    }
+    const mid = Math.ceil(words.length / 2)
+    return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
+  }
+
+  // Parse lyrics into sections → stanzas (one slide per logical lyric line)
   const sections = []
   let currentSection = { name: 'Song', stanzas: [] }
-  let currentStanza = []
+
+  const addLine = (clean) => {
+    for (const part of splitToSlides(clean.trim())) {
+      if (part.trim()) currentSection.stanzas.push({ clean: part })
+    }
+  }
 
   const flushSection = () => {
     if (currentSection.stanzas.length > 0) sections.push(currentSection)
@@ -269,14 +288,14 @@ export function generateProPresenterFile(title, key, lyrics) {
       flushSection()
       currentSection = { name: trimmed.slice(1,-1), stanzas: [] }
     } else if (trimmed) {
-      const clean = stripChords(trimmed)
-      if (clean.trim()) currentSection.stanzas.push({ raw: trimmed, clean })
+      const clean = stripChords(trimmed).trim()
+      if (clean) addLine(clean)
     }
   }
   flushSection()
 
   if (sections.length === 0) {
-    sections.push({ name: 'Song', stanzas: [{ raw: lyrics, clean: stripChords(lyrics) }] })
+    sections.push({ name: 'Song', stanzas: [{ clean: stripChords(lyrics) }] })
   }
 
 
