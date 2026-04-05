@@ -257,13 +257,26 @@ export function generateProPresenterFile(title, key, lyrics) {
   const newUuid = () => crypto.randomUUID().toUpperCase()
 
   // Split a lyric phrase into slide-sized chunks.
-  // Always splits at commas (natural phrase breaks), then splits any
-  // remaining chunk > 8 words at the midpoint word boundary.
+  // Priority: commas → "y"/"e" natural breaks in second half → midpoint.
   function splitToSlides(phrase) {
+    // 1. Always split at commas first
     const parts = phrase.split(',').map(p => p.trim()).filter(Boolean)
     if (parts.length > 1) return parts.flatMap(p => splitToSlides(p))
+
     const words = phrase.split(/\s+/).filter(Boolean)
     if (words.length <= 8) return [phrase]
+
+    // 2. Try splitting just AFTER a "y"/"e" connector found in the second half,
+    //    so the conjunction stays with the preceding phrase and the next phrase
+    //    starts cleanly (e.g. "...noventa y nueve y" | "va por mí").
+    const half = Math.floor(words.length / 2)
+    for (let i = words.length - 2; i >= half; i--) {
+      if ((words[i].toLowerCase() === 'y' || words[i].toLowerCase() === 'e') && words.length - i - 1 >= 2) {
+        return [words.slice(0, i + 1).join(' '), words.slice(i + 1).join(' ')]
+      }
+    }
+
+    // 3. Fall back to midpoint split
     const mid = Math.ceil(words.length / 2)
     return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
   }
