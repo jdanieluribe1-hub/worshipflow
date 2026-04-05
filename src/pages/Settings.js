@@ -343,17 +343,19 @@ export default function Settings({ theme, setTheme, user }) {
         </div>
       </div>
 
-      {/* CHURCH INFO */}
-      <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Church Info</div>
+      {/* CHURCH INFO / MY INFO */}
+      <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{isAdmin ? 'Church Info' : 'My Info'}</div>
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="form-group">
-          <label className="form-label">Worship Director Name</label>
+          <label className="form-label">{isAdmin ? 'Worship Director Name' : 'Team Member Name'}</label>
           <input type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} style={{ width: '100%' }} />
         </div>
-        <div className="form-group">
-          <label className="form-label">Church Name</label>
-          <input type="text" placeholder="e.g. Calvary Chapel" value={churchName} onChange={e => setChurchName(e.target.value)} style={{ width: '100%' }} />
-        </div>
+        {isAdmin && (
+          <div className="form-group">
+            <label className="form-label">Church Name</label>
+            <input type="text" placeholder="e.g. Calvary Chapel" value={churchName} onChange={e => setChurchName(e.target.value)} style={{ width: '100%' }} />
+          </div>
+        )}
         <button className="btn btn-primary btn-sm" onClick={saveSettings} disabled={saving}>
           {saved ? '✓ Saved!' : saving ? 'Saving...' : 'Save Settings'}
         </button>
