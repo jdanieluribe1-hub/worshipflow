@@ -27,6 +27,9 @@ Expected inline output:
 [G]Amazing [D]grace how [Em]sweet the [C]sound
 
 Rules:
+- CRITICAL: Transcribe ALL lyrics VERBATIM exactly as printed in the PDF — word for word, character for character
+- CRITICAL: Do NOT use your memory of the song. Only transcribe what is visually present in the PDF
+- CRITICAL: Do not paraphrase, "correct", or fill in lyrics you cannot read — transcribe only what you see
 - Keep ALL chords — do not drop any
 - Place each chord inline before the word/syllable it falls on based on spacing
 - Use section labels like [Verse 1], [Chorus], [Bridge], [Intro], [Pre-Chorus]
