@@ -258,13 +258,7 @@ export function generateProPresenterFile(title, key, lyrics) {
   let currentSection = { name: 'Song', stanzas: [] }
   let currentStanza = []
 
-  const flushStanza = () => {
-    const raw = currentStanza.join('\n').trim()
-    if (raw) currentSection.stanzas.push({ raw, clean: stripChords(raw) })
-    currentStanza = []
-  }
   const flushSection = () => {
-    flushStanza()
     if (currentSection.stanzas.length > 0) sections.push(currentSection)
   }
 
@@ -274,10 +268,9 @@ export function generateProPresenterFile(title, key, lyrics) {
     if (isSectionLabel) {
       flushSection()
       currentSection = { name: trimmed.slice(1,-1), stanzas: [] }
-    } else if (trimmed === '') {
-      flushStanza()
-    } else {
-      currentStanza.push(line)
+    } else if (trimmed) {
+      const clean = stripChords(trimmed)
+      if (clean.trim()) currentSection.stanzas.push({ raw: trimmed, clean })
     }
   }
   flushSection()
@@ -313,7 +306,7 @@ export function generateProPresenterFile(title, key, lyrics) {
 
     for (const stanza of section.stanzas) {
       const slideUuid = newUuid()
-      const rtfBytes = buildRTFBytes(stanza.clean.trim())
+      const rtfBytes = buildRTFBytes(stanza.clean.trim().toUpperCase())
       const slideBytes = buildSlide(slideUuid, rtfBytes)
       allSlides.push({ uuid: slideUuid, bytes: slideBytes })
       slideUuids.push(slideUuid)
