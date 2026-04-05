@@ -294,9 +294,17 @@ export function generateProPresenterFile(title, key, lyrics) {
   // [9] flags
   const f9 = hexToBytes('4a021801')
 
+  // Orange color for Background/End groups (matches PP7 convention)
+  const ORANGE = hexToBytes('0d9a99193f15908f0f3f1df9f8f83d250000803f')
+
   // ── Build all slides and groups ──
   const allSlides = []   // { uuid, bytes }
   const groupMsgs = []   // complete group [12] field bytes
+
+  // Background blank slide (first)
+  const bgSlideUuid = newUuid()
+  allSlides.push({ uuid: bgSlideUuid, bytes: buildSlide(bgSlideUuid, buildRTFBytes('')) })
+  groupMsgs.push(pbLenDelim(12, buildGroup(newUuid(), 'Background', ORANGE, [bgSlideUuid])))
 
   for (let si = 0; si < sections.length; si++) {
     const section = sections[si]
@@ -314,6 +322,11 @@ export function generateProPresenterFile(title, key, lyrics) {
 
     groupMsgs.push(pbLenDelim(12, buildGroup(groupUuid, section.name, colorBytes, slideUuids)))
   }
+
+  // End blank slide (last)
+  const endSlideUuid = newUuid()
+  allSlides.push({ uuid: endSlideUuid, bytes: buildSlide(endSlideUuid, buildRTFBytes('')) })
+  groupMsgs.push(pbLenDelim(12, buildGroup(newUuid(), 'End', ORANGE, [endSlideUuid])))
 
   // ── Assemble the document ──
   // Header fields
