@@ -37,6 +37,8 @@ export default function JoinChurch() {
   }
 
   const handleSignUpToJoin = () => {
+    // Store token in sessionStorage so it survives the email confirmation redirect
+    sessionStorage.setItem('pendingJoinToken', token)
     navigate(`/signup?join=${token}`)
   }
 

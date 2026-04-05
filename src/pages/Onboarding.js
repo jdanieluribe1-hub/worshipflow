@@ -16,7 +16,8 @@ export default function Onboarding() {
   const [error, setError] = useState('')
 
   // If arriving from /signup?join=TOKEN, pre-populate invite and skip to join
-  const pendingJoinToken = searchParams.get('join')
+  // Also check sessionStorage as fallback (survives email confirmation redirects)
+  const pendingJoinToken = searchParams.get('join') || sessionStorage.getItem('pendingJoinToken') || null
   useEffect(() => {
     if (pendingJoinToken) {
       setInviteInput(pendingJoinToken)
@@ -57,10 +58,11 @@ export default function Onboarding() {
       setLoading(true)
       try {
         const token = extractToken(pendingJoinToken)
-        const profile = await createProfile(user.id, name.trim(), churchName.trim())
+        const profile = await createProfile(user.id, name.trim(), '')
         await joinChurchByToken(token)
         const church = await getChurchByInviteToken(token)
         if (church) await setActiveChurchDB(user.id, church.id)
+        sessionStorage.removeItem('pendingJoinToken')
         const result = await refreshChurches()
         setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
       } catch (err) {
@@ -96,6 +98,7 @@ export default function Onboarding() {
       await joinChurchByToken(token)
       const church = await getChurchByInviteToken(token)
       if (church) await setActiveChurchDB(user.id, church.id)
+      sessionStorage.removeItem('pendingJoinToken')
       const result = await refreshChurches()
       setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
     } catch (err) {
@@ -120,7 +123,11 @@ export default function Onboarding() {
             Welcome to WorshipFlow!
           </div>
           <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 8 }}>
-            {step === 1 ? "Let's set up your account" : "Set up your church"}
+            {pendingJoinToken
+              ? joinChurchPreview
+                ? `You've been invited to join ${joinChurchPreview.name}`
+                : "You've been invited to join a church"
+              : step === 1 ? "Let's set up your account" : "Set up your church"}
           </div>
         </div>
 
@@ -152,16 +159,18 @@ export default function Onboarding() {
                   autoFocus
                 />
               </div>
-              <div className="form-group" style={{ marginBottom: 28 }}>
-                <label className="form-label">Church Name <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
-                <input
-                  type="text"
-                  placeholder="e.g. Calvary Chapel"
-                  value={churchName}
-                  onChange={e => setChurchName(e.target.value)}
-                  style={{ width: '100%' }}
-                />
-              </div>
+              {!pendingJoinToken && (
+                <div className="form-group" style={{ marginBottom: 28 }}>
+                  <label className="form-label">Church Name <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Calvary Chapel"
+                    value={churchName}
+                    onChange={e => setChurchName(e.target.value)}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              )}
 
               {error && (
                 <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#ef4444', marginBottom: 16 }}>
@@ -172,9 +181,10 @@ export default function Onboarding() {
               <button
                 type="submit"
                 className="btn btn-primary"
+                disabled={loading}
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '10px 0' }}
               >
-                Continue →
+                {loading ? 'Joining...' : pendingJoinToken ? `Join ${joinChurchPreview?.name || 'Church'}` : 'Continue →'}
               </button>
             </form>
           )}
