@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, regenerateInviteToken, deleteOwnAccount, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from '../lib/supabase'
+import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, leaveChurch, regenerateInviteToken, deleteOwnAccount, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Settings({ theme, setTheme, user }) {
@@ -16,14 +16,14 @@ export default function Settings({ theme, setTheme, user }) {
 
   useEffect(() => {
     setChurch(activeChurch)
-    if (activeChurch?.id && isAdmin) {
+    if (activeChurch?.id) {
       setMembersLoading(true)
       getChurchMembers(activeChurch.id)
         .then(m => setMembers(m))
         .catch(() => {})
         .finally(() => setMembersLoading(false))
     }
-  }, [activeChurch?.id, isAdmin])
+  }, [activeChurch?.id])
 
   const saveSettings = async () => {
     setSaving(true)
@@ -139,6 +139,16 @@ export default function Settings({ theme, setTheme, user }) {
     await setActiveChurch(c)
   }
 
+  const handleLeaveChurch = async () => {
+    if (!window.confirm(`Leave ${activeChurch?.name}? You can rejoin later with an invite code.`)) return
+    try {
+      await leaveChurch(activeChurch.id)
+      await refreshChurches()
+    } catch (e) {
+      alert('Error: ' + e.message)
+    }
+  }
+
   return (
     <div style={{ maxWidth: 560 }}>
 
@@ -194,8 +204,8 @@ export default function Settings({ theme, setTheme, user }) {
         </div>
       </div>
 
-      {/* TEAM (admin only) */}
-      {isAdmin && (
+      {/* TEAM */}
+      {activeChurch?.id && (
         <>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Team Members</div>
           <div className="card" style={{ marginBottom: 24 }}>
@@ -214,7 +224,7 @@ export default function Settings({ theme, setTheme, user }) {
                       <div style={{ fontWeight: 500, fontSize: 14 }}>{m.name || 'Unknown'} {m.id === user.id ? <span style={{ fontSize: 11, color: 'var(--muted)' }}>(you)</span> : ''}</div>
                       <div style={{ fontSize: 12, color: 'var(--muted)' }}>{m.role}</div>
                     </div>
-                    {m.id !== user.id && (
+                    {isAdmin && m.id !== user.id && (
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
                           className="btn btn-ghost btn-sm"
@@ -237,27 +247,41 @@ export default function Settings({ theme, setTheme, user }) {
               </div>
             )}
 
-            <div style={{ borderTop: '1px solid var(--border)', marginTop: 20, paddingTop: 20 }}>
-              <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 8 }}>Invite Code</div>
-              <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
-                Share this short code or full link. Team members can enter the code in Settings to join.
-              </div>
-              {/* Short code */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '9px 16px', fontSize: 20, fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text)', fontFamily: 'monospace' }}>
-                  {church?.short_code || '—'}
+            {isAdmin && (
+              <div style={{ borderTop: '1px solid var(--border)', marginTop: 20, paddingTop: 20 }}>
+                <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 8 }}>Invite Code</div>
+                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
+                  Share this short code or full link. Team members can enter the code in Settings to join.
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(church?.short_code || ''); alert('Code copied!') }}>Copy Code</button>
-              </div>
-              {/* Full link */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 12, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {inviteLink}
+                {/* Short code */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '9px 16px', fontSize: 20, fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text)', fontFamily: 'monospace' }}>
+                    {church?.short_code || '—'}
+                  </div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(church?.short_code || ''); alert('Code copied!') }}>Copy Code</button>
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Copied!') }}>Copy Link</button>
-                <button className="btn btn-ghost btn-sm" onClick={handleRegenerateInvite} style={{ color: 'var(--muted)' }}>Regenerate</button>
+                {/* Full link */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 12, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {inviteLink}
+                  </div>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Copied!') }}>Copy Link</button>
+                  <button className="btn btn-ghost btn-sm" onClick={handleRegenerateInvite} style={{ color: 'var(--muted)' }}>Regenerate</button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {!isAdmin && (
+              <div style={{ borderTop: '1px solid var(--border)', marginTop: 20, paddingTop: 20 }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleLeaveChurch}
+                  style={{ color: '#ef4444' }}
+                >
+                  Leave {activeChurch?.name}
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

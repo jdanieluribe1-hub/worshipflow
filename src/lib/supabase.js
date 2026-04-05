@@ -134,6 +134,11 @@ export async function joinChurchByShortCode(code) {
   return data
 }
 
+export async function leaveChurch(churchId) {
+  const { error } = await supabase.rpc('leave_church', { p_church_id: churchId })
+  if (error) throw error
+}
+
 export async function regenerateInviteToken(churchId) {
   const { data, error } = await supabase.rpc('regenerate_invite_token', { cid: churchId })
   if (error) throw error
