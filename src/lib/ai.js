@@ -256,16 +256,14 @@ export function generateProPresenterFile(title, key, lyrics) {
 
   const newUuid = () => crypto.randomUUID().toUpperCase()
 
-  // Split a lyric phrase into slide-sized chunks (max 8 words).
-  // Prefers breaking at commas; falls back to the nearest word boundary.
+  // Split a lyric phrase into slide-sized chunks.
+  // Always splits at commas (natural phrase breaks), then splits any
+  // remaining chunk > 8 words at the midpoint word boundary.
   function splitToSlides(phrase) {
+    const parts = phrase.split(',').map(p => p.trim()).filter(Boolean)
+    if (parts.length > 1) return parts.flatMap(p => splitToSlides(p))
     const words = phrase.split(/\s+/).filter(Boolean)
     if (words.length <= 8) return [phrase]
-    const parts = phrase.split(',').map(p => p.trim()).filter(Boolean)
-    if (parts.length > 1) {
-      // Recurse in case any comma-part is still too long
-      return parts.flatMap(p => splitToSlides(p))
-    }
     const mid = Math.ceil(words.length / 2)
     return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
   }
