@@ -198,7 +198,6 @@ function AppShell() {
   )
 
   if (!user) {
-    if (location.pathname === '/') return <Landing />
     return <Login onNeedsOnboarding={() => setNeedsOnboarding(true)} />
   }
   if (!profile || needsOnboarding) return <Onboarding />
@@ -271,6 +270,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/home" element={<Landing />} />
           <Route path="/band/:token" element={<BandViewPublic />} />
           <Route path="/band" element={<BandViewPublic />} />
           <Route path="/recommend" element={<RecommendView />} />
