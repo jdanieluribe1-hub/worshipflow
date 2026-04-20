@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import React, { useState, useEffect, useCallback } from 'react'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { getSongs, getSets } from './lib/supabase'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import Home from './pages/Home'
@@ -17,6 +17,19 @@ import JoinChurch from './pages/JoinChurch'
 import Landing from './pages/Landing'
 import SongEditor from './pages/SongEditor'
 import './App.css'
+
+const PAGE_PATHS = {
+  home: '/dashboard',
+  library: '/library',
+  thisweek: '/sets',
+  history: '/history',
+  upload: '/upload',
+  bandview: '/band-view',
+  recommendations: '/recommendations',
+  settings: '/settings',
+  editor: '/editor',
+}
+const PATH_PAGES = Object.fromEntries(Object.entries(PAGE_PATHS).map(([k, v]) => [v, k]))
 
 const BOTTOM_NAV = [
   { id: 'home', icon: '🏠', label: 'Home' },
@@ -127,8 +140,10 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
 function AppShell() {
   const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
-  const [page, setPage] = useState('home')
+  const page = PATH_PAGES[location.pathname] || 'home'
+  const setPage = useCallback((id) => navigate(PAGE_PATHS[id] || '/dashboard'), [navigate])
   const [pendingOpenSong, setPendingOpenSong] = useState(null)
   const [songs, setSongs] = useState([])
   const [sets, setSets] = useState([])
@@ -187,6 +202,9 @@ function AppShell() {
     return <Login onNeedsOnboarding={() => setNeedsOnboarding(true)} />
   }
   if (!profile || needsOnboarding) return <Onboarding />
+
+  // Redirect bare / to /dashboard when logged in
+  if (location.pathname === '/') { navigate('/dashboard', { replace: true }); return null }
 
   const weekSongs = weekSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
 
