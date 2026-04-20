@@ -22,7 +22,8 @@ export default function Upload({ refreshSongs, activeChurch }) {
   const [transposedKey, setTransposedKey] = useState(null)
 
   const handleFile = async (file) => {
-    if (!file || file.type !== 'application/pdf') return alert('Please upload a PDF file.')
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg']
+    if (!file || !allowed.includes(file.type)) return alert('Please upload a PDF, PNG, or JPEG file.')
     setPdfFile(file)
     setStep('parsing')
     setError('')
@@ -33,17 +34,18 @@ export default function Upload({ refreshSongs, activeChurch }) {
         reader.onerror = rej
         reader.readAsDataURL(file)
       })
-      const result = await parsePDFWithAI(base64)
+      const result = await parsePDFWithAI(base64, file.type)
       if (!result.title && !result.lyrics) {
-        setError('Could not extract song data from the PDF. Please try a different file or paste the lyrics manually.')
+        setError('Could not extract song data from the file. Please try a different file or paste the lyrics manually.')
         setStep('idle')
         return
       }
-      setExtracted({ title: result.title || file.name.replace('.pdf',''), artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
+      const baseName = file.name.replace(/\.[^.]+$/, '')
+      setExtracted({ title: result.title || baseName, artist: result.artist || '', key: result.key || 'G', tempo: result.tempo || 'Medium', lyrics: result.lyrics || '' })
       setTransposedKey(result.key || 'G')
       setStep('review')
     } catch(e) {
-      setError('Error parsing PDF: ' + e.message)
+      setError('Error parsing file: ' + e.message)
       setStep('idle')
     }
   }
@@ -140,12 +142,12 @@ export default function Upload({ refreshSongs, activeChurch }) {
               <div style={{ flex:1, height:1, background:'var(--border)' }} />
             </div>
 
-            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Option 2 — Upload a PDF</div>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:600, marginBottom:16 }}>Option 2 — Upload a File</div>
             <div className="upload-zone" onClick={()=>document.getElementById('pdf-input').click()}>
               <div style={{ fontSize:32, marginBottom:10 }}>📄</div>
-              <div style={{ fontSize:14, fontWeight:500, marginBottom:4 }}>Click to upload a PDF</div>
+              <div style={{ fontSize:14, fontWeight:500, marginBottom:4 }}>Click to upload a PDF, PNG, or JPEG</div>
               <div style={{ fontSize:12, color:'var(--muted)' }}>AI will extract chords and lyrics automatically</div>
-              <input id="pdf-input" type="file" accept=".pdf" style={{ display:'none' }} onChange={e=>handleFile(e.target.files[0])} />
+              <input id="pdf-input" type="file" accept=".pdf,.png,.jpg,.jpeg" style={{ display:'none' }} onChange={e=>handleFile(e.target.files[0])} />
             </div>
 
             <div style={{ display:'flex', alignItems:'center', gap:12, margin:'24px 0' }}>

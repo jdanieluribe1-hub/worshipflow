@@ -1,4 +1,9 @@
-export async function parsePDFWithAI(base64PDF) {
+export async function parsePDFWithAI(base64PDF, mediaType = 'application/pdf') {
+  const isImage = mediaType.startsWith('image/')
+  const fileContent = isImage
+    ? { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64PDF } }
+    : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64PDF } }
+
   const response = await fetch('/api/parse-pdf', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -8,10 +13,7 @@ export async function parsePDFWithAI(base64PDF) {
       messages: [{
         role: 'user',
         content: [
-          {
-            type: 'document',
-            source: { type: 'base64', media_type: 'application/pdf', data: base64PDF }
-          },
+          fileContent,
           {
             type: 'text',
             text: `You are processing a worship song chord chart PDF. Extract the full song data including all chords.

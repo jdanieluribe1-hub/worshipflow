@@ -281,8 +281,9 @@ export async function uploadPDF(file, songTitle) {
     .toLowerCase()
     .replace(/-+/g, '-')
     .slice(0, 50)
-  const fileName = `${Date.now()}-${safeName}.pdf`
-  const { data, error } = await supabase.storage.from('chord-charts').upload(fileName, file, { contentType: 'application/pdf', upsert: true })
+  const ext = file.name.split('.').pop().toLowerCase() || 'pdf'
+  const fileName = `${Date.now()}-${safeName}.${ext}`
+  const { data, error } = await supabase.storage.from('chord-charts').upload(fileName, file, { contentType: file.type || 'application/pdf', upsert: true })
   if (error) throw error
   const { data: urlData } = supabase.storage.from('chord-charts').getPublicUrl(fileName)
   return urlData.publicUrl
