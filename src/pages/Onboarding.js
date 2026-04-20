@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { createProfile, createChurch, joinChurchByToken, getChurchByInviteToken, setActiveChurchDB } from '../lib/supabase'
+import {
+  createProfile, createChurch,
+  joinChurchByToken, getChurchByInviteToken,
+  joinChurchByShortCode, getChurchByShortCode,
+  setActiveChurchDB
+} from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Onboarding() {
@@ -12,6 +17,8 @@ export default function Onboarding() {
   const [joinMode, setJoinMode] = useState(false) // true = joining existing
   const [inviteInput, setInviteInput] = useState('')
   const [joinChurchPreview, setJoinChurchPreview] = useState(null)
+  const [inviteFormat, setInviteFormat] = useState(null) // 'token' | 'short_code' | null
+  const [lookupLoading, setLookupLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -22,7 +29,12 @@ export default function Onboarding() {
     if (pendingJoinToken) {
       setInviteInput(pendingJoinToken)
       setJoinMode(true)
-      getChurchByInviteToken(pendingJoinToken).then(c => setJoinChurchPreview(c)).catch(() => {})
+      const token = extractToken(pendingJoinToken)
+      if (token.length === 36) {
+        getChurchByInviteToken(token).then(c => setJoinChurchPreview(c)).catch(() => {})
+      } else if (/^[a-zA-Z0-9]{4,12}$/.test(token)) {
+        getChurchByShortCode(token).then(c => setJoinChurchPreview(c)).catch(() => {})
+      }
     }
   }, [pendingJoinToken])
 
@@ -37,16 +49,51 @@ export default function Onboarding() {
     }
   }
 
+  function detectFormat(token) {
+    if (token.length === 36) return 'token'
+    if (/^[a-zA-Z0-9]{4,12}$/.test(token)) return 'short_code'
+    return null
+  }
+
   const handleInviteChange = async (val) => {
     setInviteInput(val)
     setJoinChurchPreview(null)
+    setInviteFormat(null)
     const token = extractToken(val)
-    if (token.length === 36) { // UUID length
-      try {
+    const format = detectFormat(token)
+    if (!format) return
+    setLookupLoading(true)
+    try {
+      if (format === 'token') {
         const c = await getChurchByInviteToken(token)
         setJoinChurchPreview(c)
-      } catch { /* ignore */ }
+        setInviteFormat('token')
+      } else {
+        const c = await getChurchByShortCode(token)
+        setJoinChurchPreview(c)
+        setInviteFormat('short_code')
+      }
+    } catch { /* ignore */ } finally {
+      setLookupLoading(false)
     }
+  }
+
+  // Helper used by both handleStep1 and handleJoin
+  async function doJoin(rawToken, userId, nameVal, churchNameVal) {
+    const token = extractToken(rawToken)
+    const format = detectFormat(token)
+    const profile = await createProfile(userId, nameVal, churchNameVal)
+    if (format === 'short_code') {
+      await joinChurchByShortCode(token)
+      const church = await getChurchByShortCode(token)
+      if (church) await setActiveChurchDB(userId, church.id)
+    } else {
+      await joinChurchByToken(token)
+      const church = await getChurchByInviteToken(token)
+      if (church) await setActiveChurchDB(userId, church.id)
+    }
+    sessionStorage.removeItem('pendingJoinToken')
+    return profile
   }
 
   const handleStep1 = async (e) => {
@@ -57,12 +104,7 @@ export default function Onboarding() {
     if (pendingJoinToken) {
       setLoading(true)
       try {
-        const token = extractToken(pendingJoinToken)
-        const profile = await createProfile(user.id, name.trim(), '')
-        await joinChurchByToken(token)
-        const church = await getChurchByInviteToken(token)
-        if (church) await setActiveChurchDB(user.id, church.id)
-        sessionStorage.removeItem('pendingJoinToken')
+        const profile = await doJoin(pendingJoinToken, user.id, name.trim(), '')
         const result = await refreshChurches()
         setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
       } catch (err) {
@@ -89,16 +131,11 @@ export default function Onboarding() {
   }
 
   const handleJoin = async () => {
-    const token = extractToken(inviteInput)
-    if (!token) { setError('Please enter an invite link'); return }
+    if (!joinChurchPreview) { setError('Please enter a valid invite link or code'); return }
     setError('')
     setLoading(true)
     try {
-      const profile = await createProfile(user.id, name.trim(), churchName.trim())
-      await joinChurchByToken(token)
-      const church = await getChurchByInviteToken(token)
-      if (church) await setActiveChurchDB(user.id, church.id)
-      sessionStorage.removeItem('pendingJoinToken')
+      const profile = await doJoin(inviteInput, user.id, name.trim(), churchName.trim())
       const result = await refreshChurches()
       setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
     } catch (err) {
@@ -232,7 +269,7 @@ export default function Onboarding() {
                 <div style={{ fontSize: 24, marginBottom: 6 }}>🔗</div>
                 <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Join an existing church</div>
                 <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  Paste an invite link from your admin
+                  Paste an invite link or short code from your admin
                 </div>
               </button>
 
@@ -256,23 +293,26 @@ export default function Onboarding() {
                 Join an existing church
               </div>
               <div className="form-group" style={{ marginBottom: 20 }}>
-                <label className="form-label">Invite link or token</label>
+                <label className="form-label">Invite link or short code</label>
                 <input
                   type="text"
-                  placeholder="https://worshipflow.app/join/..."
+                  placeholder="Invite link or short code"
                   value={inviteInput}
                   onChange={e => handleInviteChange(e.target.value)}
                   style={{ width: '100%' }}
                   autoFocus
                 />
+                {lookupLoading && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)' }}>Looking up...</div>
+                )}
                 {joinChurchPreview && (
                   <div style={{ marginTop: 8, fontSize: 13, color: 'var(--green)' }}>
                     ✓ Found: <strong>{joinChurchPreview.name}</strong>
                   </div>
                 )}
-                {inviteInput.length > 10 && !joinChurchPreview && (
+                {inviteInput.length > 3 && !lookupLoading && !joinChurchPreview && (
                   <div style={{ marginTop: 8, fontSize: 13, color: 'var(--muted)' }}>
-                    Church not found — check the link
+                    Church not found — check the link or code
                   </div>
                 )}
               </div>
