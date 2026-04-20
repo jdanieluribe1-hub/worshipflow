@@ -5,6 +5,46 @@ import {
 } from '../lib/supabase'
 import { isChordName } from '../lib/transpose'
 
+// ─── Button styles ────────────────────────────────────────────────────────────
+
+const toolBtn = (disabled) => ({
+  background: 'var(--bg3)', border: '1px solid var(--border)',
+  color: disabled ? 'var(--muted)' : 'var(--text)',
+  borderRadius: 7, padding: '6px 12px', fontSize: 13,
+  cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
+})
+
+const accentBtn = {
+  background: 'var(--accent)', color: '#fff', border: 'none',
+  borderRadius: 7, padding: '7px 14px', fontSize: 13,
+  cursor: 'pointer', fontWeight: 600,
+}
+
+const dangerBtn = {
+  background: 'var(--red)', color: '#fff', border: 'none',
+  borderRadius: 7, padding: '7px 14px', fontSize: 13,
+  cursor: 'pointer', fontWeight: 600,
+}
+
+const dangerBtnSm = {
+  background: 'transparent', color: 'var(--red)',
+  border: '1px solid var(--red)',
+  borderRadius: 7, padding: '6px 12px', fontSize: 13,
+  cursor: 'pointer',
+}
+
+const dialogOverlay = {
+  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  zIndex: 999,
+}
+
+const dialogBox = {
+  background: 'var(--bg2)', border: '1px solid var(--border)',
+  borderRadius: 12, padding: 28, maxWidth: 360, width: '90%',
+  color: 'var(--text)', fontSize: 14,
+}
+
 // ─── Chord data parsing / serialization ──────────────────────────────────────
 
 function parseLyricsToLines(lyricsStr) {
@@ -20,7 +60,6 @@ function parseLyricsToLines(lyricsStr) {
         if (isChordName(name)) {
           chords.push({ id: Math.random().toString(36).slice(2), name, charPos })
         } else {
-          // Section label — keep it in the text
           text += part
           charPos += part.length
         }
@@ -150,7 +189,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
   const [variantName, setVariantName] = useState('')
   const [lines, setLines] = useState([])
   const [originalLines, setOriginalLines] = useState([])
-  const [savedLines, setSavedLines] = useState(null) // last-persisted state for "Discard"
+  const [savedLines, setSavedLines] = useState(null)
   const [undoStack, setUndoStack] = useState([])
   const [redoStack, setRedoStack] = useState([])
   const [dirty, setDirty] = useState(false)
@@ -163,23 +202,40 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmPublish, setConfirmPublish] = useState(false)
 
-  // Pre-load song when navigating from Library "Edit Variants" button
-  useEffect(() => {
-    if (pendingOpenSong && pendingOpenSong.lyrics) {
-      loadSong(pendingOpenSong)
-      setPendingOpenSong(null)
-    }
-  }, [pendingOpenSong, loadSong, setPendingOpenSong])
-
   // Refs to avoid stale closures in event handlers
   const linesRef = useRef(lines)
   const undoRef = useRef(undoStack)
   const redoRef = useRef(redoStack)
+  const selectedVariantIdRef = useRef(selectedVariantId)
+  const variantNameRef = useRef(variantName)
   useEffect(() => { linesRef.current = lines }, [lines])
   useEffect(() => { undoRef.current = undoStack }, [undoStack])
   useEffect(() => { redoRef.current = redoStack }, [redoStack])
+  useEffect(() => { selectedVariantIdRef.current = selectedVariantId }, [selectedVariantId])
+  useEffect(() => { variantNameRef.current = variantName }, [variantName])
 
-  // ── Load song ──────────────────────────────────────────────────────────────
+  // ── Undo/redo ──────────────────────────────────────────────────────────────
+
+  const applyChange = useCallback((newLines) => {
+    setUndoStack(s => [...s, linesRef.current])
+    setRedoStack([])
+    setLines(newLines)
+    setDirty(true)
+  }, [])
+
+  const scheduleAutosave = useCallback((newLines, variantId, name) => {
+    if (!variantId) return
+    setAutosaveTimer(prev => {
+      if (prev) clearTimeout(prev)
+      return setTimeout(async () => {
+        try {
+          await updateSongVariant(variantId, name, serializeLinesToLyrics(newLines))
+        } catch { /* silent */ }
+      }, 2000)
+    })
+  }, [])
+
+  // ── Load song / variant ────────────────────────────────────────────────────
 
   const loadSong = useCallback(async (song) => {
     setSelectedSong(song)
@@ -213,32 +269,13 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     setSavedLines(parsed)
   }, [])
 
-  // ── Undo/redo ──────────────────────────────────────────────────────────────
-
-  const applyChange = useCallback((newLines) => {
-    setUndoStack(s => [...s, linesRef.current])
-    setRedoStack([])
-    setLines(newLines)
-    setDirty(true)
-  }, [])
-
-  const scheduleAutosave = useCallback((newLines, variantId, name) => {
-    if (!variantId) return
-    setAutosaveTimer(prev => {
-      if (prev) clearTimeout(prev)
-      return setTimeout(async () => {
-        try {
-          await updateSongVariant(variantId, name, serializeLinesToLyrics(newLines))
-        } catch { /* silent autosave failure */ }
-      }, 2000)
-    })
-  }, [])
-
-  // Wrap applyChange to also trigger autosave
-  const change = useCallback((newLines) => {
-    applyChange(newLines)
-    scheduleAutosave(newLines, selectedVariantId, variantName)
-  }, [applyChange, scheduleAutosave, selectedVariantId, variantName])
+  // Pre-load song when navigating from Library "Edit Variants" button
+  useEffect(() => {
+    if (pendingOpenSong && pendingOpenSong.lyrics) {
+      loadSong(pendingOpenSong)
+      setPendingOpenSong(null)
+    }
+  }, [pendingOpenSong, loadSong, setPendingOpenSong])
 
   // Keyboard undo/redo
   useEffect(() => {
@@ -279,7 +316,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       const deltaX = e.clientX - startX
       const deltaY = e.clientY - startLineY
 
-      // Determine target line
       const LINE_HEIGHT = 48
       const lineOffset = Math.round(deltaY / LINE_HEIGHT)
       const targetLineIdx = Math.max(0, Math.min(linesRef.current.length - 1, lineIdx + lineOffset))
@@ -291,7 +327,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
 
       setLines(prev => {
         const next = prev.map((line, li) => {
-          // Remove chord from original line
           if (li === lineIdx && lineIdx !== targetLineIdx) {
             return { ...line, chords: line.chords.filter(c => c.id !== chordId) }
           }
@@ -299,7 +334,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
         }).map((line, li) => {
           if (li === targetLineIdx) {
             if (lineIdx === targetLineIdx) {
-              // Move within same line
               return {
                 ...line,
                 chords: line.chords.map(c =>
@@ -307,7 +341,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                 )
               }
             } else {
-              // Moving chord from another line to this line
               const movedChord = prev[lineIdx]?.chords.find(c => c.id === chordId)
               if (!movedChord) return line
               return {
@@ -323,11 +356,10 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     }
 
     const onMouseUp = () => {
-      // Commit drag as a single undo entry
       setUndoStack(s => [...s, dragState.snapshot])
       setRedoStack([])
       setDirty(true)
-      scheduleAutosave(linesRef.current, selectedVariantId, variantName)
+      scheduleAutosave(linesRef.current, selectedVariantIdRef.current, variantNameRef.current)
       setDragState(null)
     }
 
@@ -337,7 +369,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
     }
-  }, [dragState, scheduleAutosave, selectedVariantId, variantName])
+  }, [dragState, scheduleAutosave])
 
   const startDrag = useCallback((e, lineIdx, chordId) => {
     const chord = linesRef.current[lineIdx]?.chords.find(c => c.id === chordId)
@@ -347,27 +379,31 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       startX: e.clientX,
       startCharPos: chord.charPos,
       startLineY: e.clientY,
-      snapshot: JSON.parse(JSON.stringify(linesRef.current)), // deep copy for undo
+      snapshot: JSON.parse(JSON.stringify(linesRef.current)),
     })
   }, [])
 
   // ── Chord operations ──────────────────────────────────────────────────────
 
   const editChord = (lineIdx, chordId, newName) => {
-    change(lines.map((line, li) =>
+    const newLines = lines.map((line, li) =>
       li === lineIdx
         ? { ...line, chords: line.chords.map(c => c.id === chordId ? { ...c, name: newName } : c) }
         : line
-    ))
+    )
+    applyChange(newLines)
+    scheduleAutosave(newLines, selectedVariantId, variantName)
     setEditingChordId(null)
   }
 
   const deleteChord = (lineIdx, chordId) => {
-    change(lines.map((line, li) =>
+    const newLines = lines.map((line, li) =>
       li === lineIdx
         ? { ...line, chords: line.chords.filter(c => c.id !== chordId) }
         : line
-    ))
+    )
+    applyChange(newLines)
+    scheduleAutosave(newLines, selectedVariantId, variantName)
   }
 
   // ── Save/publish/delete ───────────────────────────────────────────────────
@@ -401,7 +437,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     if (!selectedVariantId) return
     setSaving(true); setSaveError('')
     try {
-      // Save first to ensure latest is published
       await updateSongVariant(selectedVariantId, variantName || 'Untitled Variant', serializeLinesToLyrics(lines))
       await publishSongVariant(selectedVariantId)
       const v = await listSongVariants(selectedSong.id)
@@ -441,7 +476,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       setSavedLines(null)
       const v = await listSongVariants(selectedSong.id)
       setVariants(v)
-      // Reset canvas to original
       setLines(JSON.parse(JSON.stringify(originalLines)))
       setUndoStack([]); setRedoStack([])
     } catch (err) {
@@ -734,7 +768,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                     minHeight: hasChords ? 44 : 20,
                   }}
                 >
-                  {/* Chord tokens */}
                   {line.chords.map(chord => (
                     <ChordToken
                       key={chord.id}
@@ -747,7 +780,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                       onDelete={() => deleteChord(lineIdx, chord.id)}
                     />
                   ))}
-                  {/* Lyric text */}
                   <span style={{ color: 'var(--text)', whiteSpace: 'pre' }}>{line.text || '\u00a0'}</span>
                 </div>
               )
@@ -762,44 +794,4 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       )}
     </div>
   )
-}
-
-// ─── Button styles ────────────────────────────────────────────────────────────
-
-const toolBtn = (disabled) => ({
-  background: 'var(--bg3)', border: '1px solid var(--border)',
-  color: disabled ? 'var(--muted)' : 'var(--text)',
-  borderRadius: 7, padding: '6px 12px', fontSize: 13,
-  cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-})
-
-const accentBtn = {
-  background: 'var(--accent)', color: '#fff', border: 'none',
-  borderRadius: 7, padding: '7px 14px', fontSize: 13,
-  cursor: 'pointer', fontWeight: 600,
-}
-
-const dangerBtn = {
-  background: 'var(--red)', color: '#fff', border: 'none',
-  borderRadius: 7, padding: '7px 14px', fontSize: 13,
-  cursor: 'pointer', fontWeight: 600,
-}
-
-const dangerBtnSm = {
-  background: 'transparent', color: 'var(--red)',
-  border: '1px solid var(--red)',
-  borderRadius: 7, padding: '6px 12px', fontSize: 13,
-  cursor: 'pointer',
-}
-
-const dialogOverlay = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  zIndex: 999,
-}
-
-const dialogBox = {
-  background: 'var(--bg2)', border: '1px solid var(--border)',
-  borderRadius: 12, padding: 28, maxWidth: 360, width: '90%',
-  color: 'var(--text)', fontSize: 14,
 }
