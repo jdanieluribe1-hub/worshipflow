@@ -79,7 +79,7 @@ function serializeLinesToLyrics(lines) {
     let cursor = 0
     const text = line.text
     for (const chord of sorted) {
-      const pos = Math.min(Math.max(0, chord.charPos), text.length)
+      const pos = Math.min(Math.max(0, Math.round(chord.charPos)), text.length)
       result += text.slice(cursor, pos) + `[${chord.name}]`
       cursor = pos
     }
@@ -123,7 +123,7 @@ function ChordToken({ chord, editing, onDragStart, onEdit, onEditCommit, onEditC
     <div
       style={{
         position: 'absolute',
-        top: -22,
+        top: 2,
         left: chord.charPos * CHAR_W,
         display: 'inline-flex', alignItems: 'center', gap: 2,
         userSelect: 'none',
@@ -157,7 +157,7 @@ function ChordToken({ chord, editing, onDragStart, onEdit, onEditCommit, onEditC
               border: '1px solid transparent',
               borderColor: hovered ? 'var(--border2)' : 'transparent',
             }}
-            onMouseDown={e => { e.preventDefault(); onDragStart(e) }}
+            onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onDragStart(e) }}
             onClick={e => { e.stopPropagation(); onEdit() }}
           >
             {chord.name}
@@ -180,6 +180,46 @@ function ChordToken({ chord, editing, onDragStart, onEdit, onEditCommit, onEditC
   )
 }
 
+// ─── AddChordInput ────────────────────────────────────────────────────────────
+
+function AddChordInput({ charPos, onCommit, onCancel }) {
+  const [val, setVal] = useState('')
+  const [invalid, setInvalid] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const commit = () => {
+    const v = val.trim()
+    if (!v || !isChordName(v)) { setInvalid(true); return }
+    onCommit(v)
+  }
+
+  return (
+    <div style={{ position: 'absolute', top: 2, left: charPos * CHAR_W, zIndex: 10 }}>
+      <input
+        ref={inputRef}
+        value={val}
+        placeholder="C"
+        onChange={e => { setVal(e.target.value); setInvalid(false) }}
+        onBlur={onCancel}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { e.preventDefault(); commit() }
+          if (e.key === 'Escape') { onCancel() }
+        }}
+        style={{
+          width: '5ch', fontSize: 12, fontWeight: 700,
+          background: 'var(--bg4)', color: invalid ? 'var(--red)' : 'var(--accent)',
+          border: `1px solid ${invalid ? 'var(--red)' : 'var(--accent)'}`,
+          borderRadius: 4, padding: '1px 3px', outline: 'none',
+        }}
+      />
+    </div>
+  )
+}
+
 // ─── Main editor ─────────────────────────────────────────────────────────────
 
 export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpenSong }) {
@@ -196,6 +236,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [editingChordId, setEditingChordId] = useState(null)
+  const [addingChord, setAddingChord] = useState(null) // { lineIdx, charPos }
   const [dragState, setDragState] = useState(null)
   const [autosaveTimer, setAutosaveTimer] = useState(null)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -245,6 +286,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     setUndoStack([])
     setRedoStack([])
     setEditingChordId(null)
+    setAddingChord(null)
     setSaveError('')
     const parsed = parseLyricsToLines(song.lyrics || '')
     setLines(parsed)
@@ -263,6 +305,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     setUndoStack([])
     setRedoStack([])
     setEditingChordId(null)
+    setAddingChord(null)
     setSaveError('')
     const parsed = parseLyricsToLines(variant.chord_data || '')
     setLines(parsed)
@@ -313,16 +356,15 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
 
     const onMouseMove = (e) => {
       const { chordId, lineIdx, startX, startCharPos, startLineY } = dragState
-      const deltaX = e.clientX - startX
-      const deltaY = e.clientY - startLineY
-
-      const LINE_HEIGHT = 48
-      const lineOffset = Math.round(deltaY / LINE_HEIGHT)
+      // Use fractional charPos during drag for smooth pixel movement
+      const deltaCharPos = (e.clientX - startX) / CHAR_W
+      const LINE_HEIGHT = 52
+      const lineOffset = Math.round((e.clientY - startLineY) / LINE_HEIGHT)
       const targetLineIdx = Math.max(0, Math.min(linesRef.current.length - 1, lineIdx + lineOffset))
       const targetLine = linesRef.current[targetLineIdx]
       const newCharPos = Math.max(0, Math.min(
         targetLine.text.length,
-        startCharPos + Math.round(deltaX / CHAR_W)
+        startCharPos + deltaCharPos
       ))
 
       setLines(prev => {
@@ -356,10 +398,16 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     }
 
     const onMouseUp = () => {
+      // Snap fractional charPos to integers on commit
+      const snapped = linesRef.current.map(line => ({
+        ...line,
+        chords: line.chords.map(c => ({ ...c, charPos: Math.round(c.charPos) }))
+      }))
       setUndoStack(s => [...s, dragState.snapshot])
       setRedoStack([])
+      setLines(snapped)
       setDirty(true)
-      scheduleAutosave(linesRef.current, selectedVariantIdRef.current, variantNameRef.current)
+      scheduleAutosave(snapped, selectedVariantIdRef.current, variantNameRef.current)
       setDragState(null)
     }
 
@@ -374,6 +422,8 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
   const startDrag = useCallback((e, lineIdx, chordId) => {
     const chord = linesRef.current[lineIdx]?.chords.find(c => c.id === chordId)
     if (!chord) return
+    setEditingChordId(null)
+    setAddingChord(null)
     setDragState({
       chordId, lineIdx,
       startX: e.clientX,
@@ -382,6 +432,27 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       snapshot: JSON.parse(JSON.stringify(linesRef.current)),
     })
   }, [])
+
+  // ── Add chord by clicking on a line ───────────────────────────────────────
+
+  const handleLineClick = useCallback((e, lineIdx) => {
+    if (dragState) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const charPos = Math.round((e.clientX - rect.left) / CHAR_W)
+    setEditingChordId(null)
+    setAddingChord({ lineIdx, charPos: Math.max(0, charPos) })
+  }, [dragState])
+
+  const commitAddChord = useCallback((lineIdx, charPos, name) => {
+    const newLines = linesRef.current.map((line, li) =>
+      li === lineIdx
+        ? { ...line, chords: [...line.chords, { id: Math.random().toString(36).slice(2), name, charPos }] }
+        : line
+    )
+    applyChange(newLines)
+    scheduleAutosave(newLines, selectedVariantIdRef.current, variantNameRef.current)
+    setAddingChord(null)
+  }, [applyChange, scheduleAutosave])
 
   // ── Chord operations ──────────────────────────────────────────────────────
 
@@ -595,7 +666,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               }}
             />
 
-            {/* Undo / redo */}
             <div style={{ display: 'flex', gap: 6 }}>
               <button
                 onClick={() => {
@@ -625,7 +695,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               >↪ Redo</button>
             </div>
 
-            {/* Revert */}
             <button
               onClick={discardChanges}
               disabled={!dirty}
@@ -737,7 +806,10 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
 
           {/* ── Editor hint ──────────────────────────────────────────────── */}
           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
-            <strong style={{ color: 'var(--text)' }}>Drag</strong> chords left/right to reposition · <strong style={{ color: 'var(--text)' }}>Drag</strong> up/down to move between lines · <strong style={{ color: 'var(--text)' }}>Click</strong> a chord to rename · <strong style={{ color: 'var(--text)' }}>✕</strong> to delete
+            <strong style={{ color: 'var(--text)' }}>Click</strong> empty space to add a chord ·{' '}
+            <strong style={{ color: 'var(--text)' }}>Drag</strong> to reposition ·{' '}
+            <strong style={{ color: 'var(--text)' }}>Click chord</strong> to rename ·{' '}
+            <strong style={{ color: 'var(--text)' }}>✕</strong> to delete
           </div>
 
           {/* ── Canvas ───────────────────────────────────────────────────── */}
@@ -748,8 +820,9 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               fontFamily: 'monospace', fontSize: 13,
               cursor: dragState ? 'grabbing' : 'default',
               userSelect: dragState ? 'none' : 'auto',
+              overflowX: 'auto',
             }}
-            onClick={() => setEditingChordId(null)}
+            onClick={() => { setEditingChordId(null); setAddingChord(null) }}
           >
             {lines.length === 0 && (
               <div style={{ color: 'var(--muted)', fontSize: 14 }}>
@@ -757,30 +830,52 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               </div>
             )}
             {lines.map((line, lineIdx) => {
-              const hasChords = line.chords.length > 0
+              const isSectionLabel = /^\s*\[/.test(line.text) && line.chords.length === 0
+              const isAddingHere = addingChord?.lineIdx === lineIdx
+
               return (
                 <div
                   key={lineIdx}
                   style={{
                     position: 'relative',
-                    marginBottom: hasChords ? 28 : 4,
-                    paddingTop: hasChords ? 24 : 0,
-                    minHeight: hasChords ? 44 : 20,
+                    marginBottom: 6,
+                    paddingTop: 26,
+                    minHeight: 46,
+                    cursor: dragState ? 'grabbing' : 'crosshair',
                   }}
+                  onClick={e => { e.stopPropagation(); handleLineClick(e, lineIdx) }}
                 >
+                  {/* Chord tokens */}
                   {line.chords.map(chord => (
                     <ChordToken
                       key={chord.id}
                       chord={chord}
                       editing={editingChordId === `${lineIdx}-${chord.id}`}
                       onDragStart={e => startDrag(e, lineIdx, chord.id)}
-                      onEdit={() => setEditingChordId(`${lineIdx}-${chord.id}`)}
+                      onEdit={() => { setAddingChord(null); setEditingChordId(`${lineIdx}-${chord.id}`) }}
                       onEditCommit={newName => editChord(lineIdx, chord.id, newName)}
                       onEditCancel={() => setEditingChordId(null)}
                       onDelete={() => deleteChord(lineIdx, chord.id)}
                     />
                   ))}
-                  <span style={{ color: 'var(--text)', whiteSpace: 'pre' }}>{line.text || '\u00a0'}</span>
+
+                  {/* Add chord inline input */}
+                  {isAddingHere && (
+                    <AddChordInput
+                      charPos={addingChord.charPos}
+                      onCommit={name => commitAddChord(lineIdx, addingChord.charPos, name)}
+                      onCancel={() => setAddingChord(null)}
+                    />
+                  )}
+
+                  {/* Lyric text */}
+                  <span style={{
+                    color: isSectionLabel ? 'var(--muted)' : 'var(--text)',
+                    whiteSpace: 'pre',
+                    fontStyle: isSectionLabel ? 'italic' : 'normal',
+                  }}>
+                    {line.text || '\u00a0'}
+                  </span>
                 </div>
               )
             })}
