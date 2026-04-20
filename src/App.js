@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { getSongs, getSets } from './lib/supabase'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import Home from './pages/Home'
@@ -14,6 +14,7 @@ import RecommendView from './pages/RecommendView'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import JoinChurch from './pages/JoinChurch'
+import Landing from './pages/Landing'
 import './App.css'
 
 const BOTTOM_NAV = [
@@ -123,6 +124,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
 
 function AppShell() {
   const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
+  const location = useLocation()
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const [page, setPage] = useState('home')
   const [pendingOpenSong, setPendingOpenSong] = useState(null)
@@ -178,7 +180,10 @@ function AppShell() {
     </div>
   )
 
-  if (!user) return <Login onNeedsOnboarding={() => setNeedsOnboarding(true)} />
+  if (!user) {
+    if (location.pathname === '/') return <Landing />
+    return <Login onNeedsOnboarding={() => setNeedsOnboarding(true)} />
+  }
   if (!profile || needsOnboarding) return <Onboarding />
 
   const weekSongs = weekSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
