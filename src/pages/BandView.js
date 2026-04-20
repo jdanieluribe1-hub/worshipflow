@@ -4,6 +4,7 @@ import { getSongs, getSets, getSongsForBand, getSetsForBand } from '../lib/supab
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
+import VariantSelect from '../components/VariantSelect'
 
 function getNextSunday() {
   const d = new Date()
@@ -19,6 +20,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
   const [localSongs, setLocalSongs] = useState([])
   const [localSets, setLocalSets] = useState([])
   const [transposedKeys, setTransposedKeys] = useState({})
+  const [selectedVariants, setSelectedVariants] = useState({})
   const [expanded, setExpanded] = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('wf_band_theme') || 'dark'
@@ -83,10 +85,12 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
 
   const currentTransposedKey = current ? (transposedKeys[current.id] || current.key) : null
   const currentLyrics = (() => {
-    if (!current?.lyrics) return current?.lyrics
+    if (!current) return null
+    const source = selectedVariants[current.id]?.chord_data || current.lyrics
+    if (!source) return source
     const override = transposedKeys[current.id]
-    if (!override || override === current.key) return current.lyrics
-    return transposeLyrics(current.lyrics, current.key, override)
+    if (!override || override === current.key) return source
+    return transposeLyrics(source, current.key, override)
   })()
 
   return (
@@ -149,7 +153,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
                 </span>
               </div>
               {current.lyrics && (
-                <div style={{ marginBottom:16, display:'flex', justifyContent:'center' }}>
+                <div style={{ marginBottom:16, display:'flex', justifyContent:'center', flexWrap:'wrap', gap:8 }}>
                   <TransposeControl
                     originalKey={current.key}
                     transposedKey={currentTransposedKey}
@@ -157,6 +161,13 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
                     selectStyle={{ background:'var(--bg4)', border:'1px solid var(--border2)', color:'var(--text)' }}
                     labelStyle={{ color:'var(--muted)' }}
                   />
+                  {!isPublic && (
+                    <VariantSelect
+                      songId={current.id}
+                      value={selectedVariants[current.id]?.id || null}
+                      onChange={v => setSelectedVariants(p => ({ ...p, [current.id]: v || undefined }))}
+                    />
+                  )}
                 </div>
               )}
               {current.lyrics ? (

@@ -301,3 +301,41 @@ export async function getSetsForBand(bandToken) {
   if (error) throw error
   return data || []
 }
+
+// ─── Song Variants ────────────────────────────────────────────────────────────
+
+export async function createSongVariant(songId, name, chordData) {
+  const { data, error } = await supabase.rpc('create_song_variant', {
+    p_song_id: songId, p_name: name, p_chord_data: chordData
+  })
+  if (error) throw error
+  return data // uuid of new variant
+}
+
+export async function updateSongVariant(variantId, name, chordData) {
+  const { error } = await supabase.rpc('update_song_variant', {
+    p_variant_id: variantId, p_name: name, p_chord_data: chordData
+  })
+  if (error) throw error
+}
+
+export async function publishSongVariant(variantId) {
+  const { error } = await supabase.rpc('publish_song_variant', { p_variant_id: variantId })
+  if (error) throw error
+}
+
+export async function unpublishSongVariant(variantId) {
+  const { error } = await supabase.rpc('unpublish_song_variant', { p_variant_id: variantId })
+  if (error) throw error
+}
+
+export async function deleteSongVariant(variantId) {
+  const { error } = await supabase.rpc('delete_song_variant', { p_variant_id: variantId })
+  if (error) throw error
+}
+
+export async function listSongVariants(songId) {
+  const { data, error } = await supabase.rpc('list_song_variants', { p_song_id: songId })
+  if (error) throw error
+  return data || []
+}

@@ -3,6 +3,7 @@ import { upsertSet, finalizeSet } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
+import VariantSelect from '../components/VariantSelect'
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
@@ -27,6 +28,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [dragOverIdx, setDragOverIdx] = useState(null)
   const [keyOverrides, setKeyOverrides] = useState({})
   const [previewSong, setPreviewSong] = useState(null)
+  const [previewVariant, setPreviewVariant] = useState(null)
 
   useEffect(() => {
     const savedSet = sets.find(s => s.service_date === serviceDate)
@@ -221,7 +223,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                     onChange={(newKey) => setKeyOverrides(p => ({ ...p, [s.id]: newKey }))}
                   />
                   <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
-                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => setPreviewSong(s)} title="Preview chord chart">👁</button>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => { setPreviewSong(s); setPreviewVariant(null) }} title="Preview chord chart">👁</button>
                 </div>
                 {/* Rows 3-5: music links (aligned under title) */}
                 <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:8 }}>
@@ -262,7 +264,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       )}
 
       {previewSong && (
-        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setPreviewSong(null)}>
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&(setPreviewSong(null)||setPreviewVariant(null))}>
           <div className="modal" style={{ maxWidth:560 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
@@ -274,20 +276,27 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 <span className={`tag tag-${previewSong.tempo?.toLowerCase()}`}>{previewSong.tempo}</span>
               </div>
             </div>
-            <div style={{ marginBottom:14 }}>
+            <div style={{ marginBottom:14, display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
               <TransposeControl
                 originalKey={previewSong.key}
                 transposedKey={effectiveKey(previewSong)}
                 onChange={(newKey) => setKeyOverrides(p => ({ ...p, [previewSong.id]: newKey }))}
               />
+              <VariantSelect
+                songId={previewSong.id}
+                value={previewVariant?.id || null}
+                onChange={v => { setPreviewVariant(v); setKeyOverrides(p => ({ ...p })) }}
+              />
             </div>
             {previewSong.lyrics ? (
               <ChordDisplay
-                lyrics={
-                  keyOverrides[previewSong.id] && keyOverrides[previewSong.id] !== previewSong.key
-                    ? transposeLyrics(previewSong.lyrics, previewSong.key, keyOverrides[previewSong.id])
-                    : previewSong.lyrics
-                }
+                lyrics={(() => {
+                  const source = previewVariant?.chord_data || previewSong.lyrics
+                  const override = keyOverrides[previewSong.id]
+                  return override && override !== previewSong.key
+                    ? transposeLyrics(source, previewSong.key, override)
+                    : source
+                })()}
               />
             ) : previewSong.pdf_url ? (
               <iframe src={previewSong.pdf_url} title={previewSong.title} style={{ width:'100%', height:400, border:'none', borderRadius:10 }} />
@@ -295,7 +304,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
               <div style={{ textAlign:'center', padding:32, color:'var(--muted)', fontSize:13 }}>No chord chart available</div>
             )}
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={()=>setPreviewSong(null)}>Close</button>
+              <button className="btn btn-ghost" onClick={()=>{ setPreviewSong(null); setPreviewVariant(null) }}>Close</button>
             </div>
           </div>
         </div>

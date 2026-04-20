@@ -15,6 +15,7 @@ import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import JoinChurch from './pages/JoinChurch'
 import Landing from './pages/Landing'
+import SongEditor from './pages/SongEditor'
 import './App.css'
 
 const BOTTOM_NAV = [
@@ -35,6 +36,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
     { id: 'upload', icon: '⬆', label: 'Upload Chart' },
     { id: 'bandview', icon: '🎸', label: 'Band View' },
     { id: 'recommendations', icon: '💡', label: 'Recommendations' },
+    { id: 'editor', icon: '✏️', label: 'Song Editor' },
   ]
   const iconsOnly = mode === 'icons'
 
@@ -171,7 +173,7 @@ function AppShell() {
     home: 'Dashboard', library: 'Song Library', thisweek: 'Set Builder',
     history: 'Play History', upload: 'Upload Chord Chart',
     bandview: 'Band View', settings: 'Settings',
-    recommendations: 'Song Recommendations'
+    recommendations: 'Song Recommendations', editor: 'Song Editor',
   }
 
   if (authLoading) return (
@@ -192,7 +194,7 @@ function AppShell() {
     songs, sets, weekSongIds, weekSongs,
     setWeekSongIds, refreshSongs, refreshSets,
     theme, setTheme, profile, user,
-    activeChurch, churches,
+    activeChurch, churches, setPage,
   }
 
   if (dataLoading) return (
@@ -224,6 +226,7 @@ function AppShell() {
           {page === 'bandview' && <BandView {...pageProps} />}
           {page === 'recommendations' && <Recommendations {...pageProps} />}
           {page === 'settings' && <Settings {...pageProps} />}
+          {page === 'editor' && <SongEditor {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
         </div>
       </div>
 

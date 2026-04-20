@@ -4,6 +4,7 @@ import { parsePDFWithAI, generateProPresenterFile, stripChords } from '../lib/ai
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
+import VariantSelect from '../components/VariantSelect'
 
 const KEYS = [
   'C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B',
@@ -15,7 +16,7 @@ const SPECIALTY = ['Contemporary','Traditional','Hymn','Spanish','Bilingual','Ac
 
 function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
 
-export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch, pendingOpenSong, setPendingOpenSong }) {
+export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch, pendingOpenSong, setPendingOpenSong, setPage }) {
   const [filter, setFilter] = useState({ tempo: 'all', key: 'all', search: '' })
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
@@ -25,11 +26,12 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [viewTransposedKey, setViewTransposedKey] = useState(null)
+  const [selectedVariant, setSelectedVariant] = useState(null)
 
   const [proPresenterBin, setProPresenterBin] = useState(null)
 
-  const openDetail = (s) => { setDetailSong(s); setEditing(false); setViewTransposedKey(null); setProPresenterBin(null) }
-  const closeDetail = () => { setDetailSong(null); setEditing(false); setViewTransposedKey(null); setProPresenterBin(null) }
+  const openDetail = (s) => { setDetailSong(s); setEditing(false); setViewTransposedKey(null); setProPresenterBin(null); setSelectedVariant(null) }
+  const closeDetail = () => { setDetailSong(null); setEditing(false); setViewTransposedKey(null); setProPresenterBin(null); setSelectedVariant(null) }
 
   useEffect(() => {
     if (pendingOpenSong) {
@@ -329,11 +331,26 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                       {(detailSong.specialty||[]).map(t=><span key={t} className="tag tag-specialty">{t}</span>)}
                     </div>
                     {detailSong.lyrics && (
-                      <TransposeControl
-                        originalKey={detailSong.key}
-                        transposedKey={viewTransposedKey || detailSong.key}
-                        onChange={setViewTransposedKey}
-                      />
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                        <TransposeControl
+                          originalKey={detailSong.key}
+                          transposedKey={viewTransposedKey || detailSong.key}
+                          onChange={setViewTransposedKey}
+                        />
+                        <VariantSelect
+                          songId={detailSong.id}
+                          value={selectedVariant?.id || null}
+                          onChange={v => { setSelectedVariant(v); setViewTransposedKey(null) }}
+                        />
+                        {setPage && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => { setPendingOpenSong(detailSong); setPage('editor') }}
+                          >
+                            ✏️ Edit Variants
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                   <div className="modal-top-actions">
@@ -369,11 +386,13 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                   <div style={{ marginBottom:16 }}>
                     <div className="form-label" style={{ marginBottom:8 }}>Lyrics</div>
                     <ChordDisplay
-                      lyrics={
-                        viewTransposedKey && viewTransposedKey !== detailSong.key
-                          ? transposeLyrics(detailSong.lyrics, detailSong.key, viewTransposedKey)
-                          : detailSong.lyrics
-                      }
+                      lyrics={(() => {
+                        const source = selectedVariant?.chord_data || detailSong.lyrics
+                        const baseKey = detailSong.key
+                        return viewTransposedKey && viewTransposedKey !== baseKey
+                          ? transposeLyrics(source, baseKey, viewTransposedKey)
+                          : source
+                      })()}
                     />
                   </div>
                 )}
