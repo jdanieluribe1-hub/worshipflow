@@ -144,7 +144,9 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     const bandLink = activeChurch?.band_token
       ? `${window.location.origin}/band/${activeChurch.band_token}`
       : `${window.location.origin}/band`
-    const recommendLink = `${window.location.origin}/recommend`
+    const recommendLink = activeChurch?.id
+      ? `${window.location.origin}/recommend?church=${activeChurch.id}&name=${encodeURIComponent(activeChurch.name || '')}`
+      : `${window.location.origin}/recommend`
     const songLines = useSongs.map((s,i) => {
       const eff = keys[s.id] || s.key
       return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${eff} | ${s.tempo}${spotify[s.id] ? `\n   🎵 ${spotify[s.id]}` : ''}${youtube[s.id] ? `\n   ▶️ ${youtube[s.id]}` : ''}${apple[s.id] ? `\n   🍎 ${apple[s.id]}` : ''}`
