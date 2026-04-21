@@ -101,8 +101,8 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     const bandLink = activeChurch?.band_token
       ? `${window.location.origin}/band/${activeChurch.band_token}`
       : `${window.location.origin}/band`
-    const recommendLink = activeChurch?.id
-      ? `${window.location.origin}/recommend?church=${activeChurch.id}&name=${encodeURIComponent(activeChurch.name || '')}`
+    const recommendLink = activeChurch?.short_code
+      ? `${window.location.origin}/recommend?c=${activeChurch.short_code}`
       : `${window.location.origin}/recommend`
     const songLines = useSongs.map((s,i) => {
       const eff = editKeyOverrides[s.id] || s.key

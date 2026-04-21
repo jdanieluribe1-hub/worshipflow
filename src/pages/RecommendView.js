@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { submitRecommendation } from '../lib/supabase'
+import { submitRecommendation, getChurchByShortCode } from '../lib/supabase'
 
 function detectLinkType(url) {
   if (!url) return null
@@ -13,8 +13,17 @@ function detectLinkType(url) {
 export default function RecommendView() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  const churchId = searchParams.get('church')
-  const churchName = searchParams.get('name') || 'Worship Flow'
+  const shortCode = searchParams.get('c')
+  const [churchId, setChurchId] = useState(searchParams.get('church'))
+  const [churchName, setChurchName] = useState(searchParams.get('name') || 'Worship Flow')
+
+  useEffect(() => {
+    if (shortCode) {
+      getChurchByShortCode(shortCode)
+        .then(c => { setChurchId(c.id); setChurchName(c.name || 'Worship Flow') })
+        .catch(() => {})
+    }
+  }, [shortCode])
 
   const [songName, setSongName] = useState('')
   const [reason, setReason] = useState('')
