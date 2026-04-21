@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n, { dateLocale } from '../i18n'
 import { upsertSet, finalizeSet } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
 import VariantSelect from '../components/VariantSelect'
 
-function tempoEmoji(t) { return t==='Fast'?'⚡':t==='Medium'?'♩':'🎶' }
+function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':'🎶' }
 
 function getNextSunday() {
   const d = new Date()
@@ -16,6 +18,7 @@ function getNextSunday() {
 }
 
 export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [], activeChurch }) {
+  const { t } = useTranslation()
   const [serviceDate, setServiceDate] = useState(getNextSunday())
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
@@ -102,19 +105,19 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   }
 
   const saveSet = async () => {
-    if (!weekSongIds.length) return alert('Add some songs first.')
+    if (!weekSongIds.length) return alert(t('thisWeek.addSongsFirst'))
     setSaving(true)
     try {
       await upsertSet(activeChurch?.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks())
       await refreshSets()
-      alert('Set saved!')
-    } catch(e) { alert('Error: ' + e.message) }
+      alert(t('thisWeek.setSaved'))
+    } catch(e) { alert(t('thisWeek.errorSave', { msg: e.message })) }
     setSaving(false)
   }
 
   const finalize = async () => {
-    if (!weekSongIds.length) return alert('Add some songs first.')
-    if (!window.confirm(`Finalize this set and log plays for ${serviceDate}?`)) return
+    if (!weekSongIds.length) return alert(t('thisWeek.addSongsFirst'))
+    if (!window.confirm(t('thisWeek.finalizeConfirm', { date: serviceDate }))) return
     setFinalizing(true)
     try {
       await finalizeSet(activeChurch?.id, serviceDate, weekSongIds, keyOverrides, buildMusicLinks())
@@ -125,8 +128,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       setSongYoutubeUrls({})
       setSongAppleMusicUrls({})
       setKeyOverrides({})
-      alert('Set finalized! Play counts updated.')
-    } catch(e) { alert('Error: ' + e.message) }
+      alert(t('thisWeek.setFinalized'))
+    } catch(e) { alert(t('thisWeek.errorFinalize', { msg: e.message })) }
     setFinalizing(false)
   }
 
@@ -137,7 +140,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     const youtube = overrides.youtube || songYoutubeUrls
     const apple = overrides.apple || songAppleMusicUrls
     const useSongs = ids.map(id => songs.find(s => s.id === id)).filter(Boolean)
-    const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
+    const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { weekday:'long', month:'long', day:'numeric', year:'numeric' })
     const bandLink = activeChurch?.band_token
       ? `${window.location.origin}/band/${activeChurch.band_token}`
       : `${window.location.origin}/band`
@@ -146,22 +149,22 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       const eff = keys[s.id] || s.key
       return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${eff} | ${s.tempo}${spotify[s.id] ? `\n   🎵 ${spotify[s.id]}` : ''}${youtube[s.id] ? `\n   ▶️ ${youtube[s.id]}` : ''}${apple[s.id] ? `\n   🍎 ${apple[s.id]}` : ''}`
     }).join('\n\n')
-    return `*Worship Set — ${date}* 🎵\n\n${songLines}\n\n📋 Chord Charts & Lyrics:\n${bandLink}\n\n💡 Have a song you'd like me to listen to? Share it here:\n${recommendLink}\n\nSee you Sunday! 🙌`
+    return `*${t('thisWeek.waMessage.title', { date })}*\n\n${songLines}\n\n${t('thisWeek.waMessage.chordsHeader')}\n${bandLink}\n\n${t('thisWeek.waMessage.recommendHeader')}\n${recommendLink}\n\n${t('thisWeek.waMessage.closing')}`
   }
 
   return (
     <div>
       <div className="grid-2" style={{ marginBottom:24 }}>
         <div className="stat-card">
-          <div className="stat-label">Service Date</div>
+          <div className="stat-label">{t('thisWeek.serviceDate')}</div>
           <div style={{ display:'flex', justifyContent:'center', marginTop:4 }}>
             <input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)} style={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }} />
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Tempo Mix</div>
+          <div className="stat-label">{t('thisWeek.tempoMix')}</div>
           <div style={{ fontSize:15, fontWeight:500, marginTop:6, color:'var(--text)' }}>
-            <span style={{ color:'var(--fast)' }}>{fast} fast</span> · <span style={{ color:'var(--medium)' }}>{med} mid</span> · <span style={{ color:'var(--slow)' }}>{slow} slow</span>
+            <span style={{ color:'var(--fast)' }}>{fast} {t('thisWeek.fast')}</span> · <span style={{ color:'var(--medium)' }}>{med} {t('thisWeek.mid')}</span> · <span style={{ color:'var(--slow)' }}>{slow} {t('thisWeek.slow')}</span>
           </div>
           <div style={{ display:'flex',gap:3,height:6,borderRadius:6,overflow:'hidden',marginTop:8 }}>
             {fast>0&&<div style={{ flex:fast,background:'var(--fast)',opacity:0.7,borderRadius:6 }}/>}
@@ -174,13 +177,13 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       {weekSongs.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📅</div>
-          <div className="empty-text">No songs added yet<br />Go to the Library and press "+ Set" on songs</div>
-          <button className="btn btn-ghost" style={{ marginTop:16 }} onClick={()=>setPage('library')}>Go to Library</button>
+          <div className="empty-text">{t('thisWeek.noSongsYet')}<br />{t('thisWeek.goToLibraryHint')}</div>
+          <button className="btn btn-ghost" style={{ marginTop:16 }} onClick={()=>setPage('library')}>{t('thisWeek.goToLibrary')}</button>
         </div>
       ) : (
         <>
           <div style={{ marginBottom:8 }}>
-            <div className="form-label" style={{ marginBottom:8 }}>Set Order <span style={{ fontSize:11, color:'var(--muted)', fontWeight:400 }}>— drag to reorder</span></div>
+            <div className="form-label" style={{ marginBottom:8 }}>{t('thisWeek.setOrder')} <span style={{ fontSize:11, color:'var(--muted)', fontWeight:400 }}>{t('thisWeek.dragToReorder')}</span></div>
             {weekSongs.map((s,i) => (
               <div
                 key={s.id}
@@ -215,30 +218,30 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                   {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ flexShrink:0 }}>📄</a>}
                   <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)', flexShrink:0 }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
                 </div>
-                {/* Row 2: transpose + tempo + preview (aligned under title) */}
+                {/* Row 2: transpose + tempo + preview */}
                 <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:8 }}>
                   <TransposeControl
                     originalKey={s.key}
                     transposedKey={effectiveKey(s)}
                     onChange={(newKey) => setKeyOverrides(p => ({ ...p, [s.id]: newKey }))}
                   />
-                  <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{s.tempo}</span>
-                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => { setPreviewSong(s); setPreviewVariant(null) }} title="Preview chord chart">👁</button>
+                  <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{t('tempos.' + s.tempo)}</span>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => { setPreviewSong(s); setPreviewVariant(null) }} title={t('thisWeek.previewTitle')}>👁</button>
                 </div>
-                {/* Rows 3-5: music links (aligned under title) */}
+                {/* Rows 3-5: music links */}
                 <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:8 }}>
                   <a href={`https://open.spotify.com/search/${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#1DB954', whiteSpace:'nowrap', flexShrink:0 }}>Spotify</a>
-                  <input type="url" placeholder="Paste link..." value={songSpotifyUrls[s.id] || ''} onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                  <input type="url" placeholder={t('thisWeek.pasteLink')} value={songSpotifyUrls[s.id] || ''} onChange={e => setSongSpotifyUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songSpotifyUrls[s.id] && <a href={songSpotifyUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#1DB954', flexShrink:0 }}>▶</a>}
                 </div>
                 <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:6 }}>
                   <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#FF0000', whiteSpace:'nowrap', flexShrink:0 }}>YouTube</a>
-                  <input type="url" placeholder="Paste link..." value={songYoutubeUrls[s.id] || ''} onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                  <input type="url" placeholder={t('thisWeek.pasteLink')} value={songYoutubeUrls[s.id] || ''} onChange={e => setSongYoutubeUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songYoutubeUrls[s.id] && <a href={songYoutubeUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#FF0000', flexShrink:0 }}>▶</a>}
                 </div>
                 <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:6 }}>
                   <a href={`https://music.apple.com/search?term=${encodeURIComponent(`${s.title} ${s.artist||''}`)}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ color:'#fc3c44', whiteSpace:'nowrap', flexShrink:0 }}>Apple</a>
-                  <input type="url" placeholder="Paste link..." value={songAppleMusicUrls[s.id] || ''} onChange={e => setSongAppleMusicUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
+                  <input type="url" placeholder={t('thisWeek.pasteLink')} value={songAppleMusicUrls[s.id] || ''} onChange={e => setSongAppleMusicUrls(p => ({ ...p, [s.id]: e.target.value }))} style={{ flex:1, minWidth:0, fontSize:12, padding:'5px 10px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                   {songAppleMusicUrls[s.id] && <a href={songAppleMusicUrls[s.id]} target="_blank" rel="noreferrer" style={{ fontSize:12, color:'#fc3c44', flexShrink:0 }}>▶</a>}
                 </div>
               </div>
@@ -247,18 +250,18 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
           </div>
 
           <div className="form-group" style={{ marginBottom:16 }}>
-            <label className="form-label">Service Notes</label>
-            <textarea placeholder="Any notes for this service..." value={notes} onChange={e=>setNotes(e.target.value)} style={{ width:'100%' }} />
+            <label className="form-label">{t('thisWeek.serviceNotes')}</label>
+            <textarea placeholder={t('thisWeek.serviceNotesPlaceholder')} value={notes} onChange={e=>setNotes(e.target.value)} style={{ width:'100%' }} />
           </div>
 
           <div className="divider" />
 
           <div className="set-actions">
             <div className="set-actions-row">
-              <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving?'Saving...':'💾 Save Set'}</button>
-              <button className="btn btn-gold" onClick={()=>setWaModal(true)}>📱 WhatsApp</button>
+              <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving ? t('common.saving') : t('thisWeek.saveSet')}</button>
+              <button className="btn btn-gold" onClick={()=>setWaModal(true)}>{t('thisWeek.whatsapp')}</button>
             </div>
-            <button className="btn btn-primary set-finalize-btn" onClick={finalize} disabled={finalizing}>{finalizing?'Finalizing...':'✓ Finalize & Log Plays'}</button>
+            <button className="btn btn-primary set-finalize-btn" onClick={finalize} disabled={finalizing}>{finalizing ? t('thisWeek.finalizing') : t('thisWeek.finalize')}</button>
           </div>
         </>
       )}
@@ -272,8 +275,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                 <div style={{ fontSize:13, color:'var(--muted)' }}>{previewSong.artist}</div>
               </div>
               <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                <span className="tag tag-key">Key of {effectiveKey(previewSong)}</span>
-                <span className={`tag tag-${previewSong.tempo?.toLowerCase()}`}>{previewSong.tempo}</span>
+                <span className="tag tag-key">{t('library.keyOf')} {effectiveKey(previewSong)}</span>
+                <span className={`tag tag-${previewSong.tempo?.toLowerCase()}`}>{t('tempos.' + previewSong.tempo)}</span>
               </div>
             </div>
             <div style={{ marginBottom:14, display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
@@ -301,10 +304,10 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
             ) : previewSong.pdf_url ? (
               <iframe src={previewSong.pdf_url} title={previewSong.title} style={{ width:'100%', height:400, border:'none', borderRadius:10 }} />
             ) : (
-              <div style={{ textAlign:'center', padding:32, color:'var(--muted)', fontSize:13 }}>No chord chart available</div>
+              <div style={{ textAlign:'center', padding:32, color:'var(--muted)', fontSize:13 }}>{t('bandView.noChordChart')}</div>
             )}
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={()=>{ setPreviewSong(null); setPreviewVariant(null) }}>Close</button>
+              <button className="btn btn-ghost" onClick={()=>{ setPreviewSong(null); setPreviewVariant(null) }}>{t('common.close')}</button>
             </div>
           </div>
         </div>
@@ -313,18 +316,18 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       {waModal && (
         <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setWaModal(false)}>
           <div className="modal">
-            <div className="modal-title">WhatsApp Message</div>
-            <div style={{ marginBottom:14, fontSize:13, color:'var(--muted)' }}>Copy and paste into your team group chat.</div>
+            <div className="modal-title">{t('thisWeek.waMessageTitle')}</div>
+            <div style={{ marginBottom:14, fontSize:13, color:'var(--muted)' }}>{t('thisWeek.waMessageHint')}</div>
             <div style={{ background:'#111b21', borderRadius:14, padding:20 }}>
               <div style={{ fontSize:11, color:'#8696a0', textAlign:'center', marginBottom:14 }}>
-                {new Date().toLocaleDateString('en-US',{weekday:'long'})}
+                {new Date().toLocaleDateString(dateLocale(i18n.language), { weekday:'long' })}
               </div>
               <div style={{ background:'#005c4b', borderRadius:'10px 10px 10px 2px', padding:'12px 14px', fontSize:13, lineHeight:1.6, color:'#e9edef', whiteSpace:'pre-wrap' }}
                 dangerouslySetInnerHTML={{ __html: waMessage().replace(/\*(.*?)\*/g,'<b>$1</b>') }} />
             </div>
             <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={()=>setWaModal(false)}>Close</button>
-              <button className="btn btn-green" onClick={()=>{navigator.clipboard.writeText(waMessage());alert('Copied!')}}>Copy Message</button>
+              <button className="btn btn-ghost" onClick={()=>setWaModal(false)}>{t('common.close')}</button>
+              <button className="btn btn-green" onClick={()=>{navigator.clipboard.writeText(waMessage());alert(t('common.copied'))}}>{t('thisWeek.copyMessage')}</button>
             </div>
           </div>
         </div>

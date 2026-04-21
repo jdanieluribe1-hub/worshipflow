@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n, { dateLocale } from '../i18n'
 
 function tempoColor(t) { return t==='Fast'?'var(--fast)':t==='Medium'?'var(--medium)':'var(--slow)' }
 
@@ -10,8 +12,11 @@ function getNextSunday() {
 }
 
 export default function Home({ songs, sets, setPage, setPendingOpenSong, profile }) {
+  const { t } = useTranslation()
   const [calDate, setCalDate] = useState(new Date())
   const [hoveredKey, setHoveredKey] = useState(null)
+
+  const locale = dateLocale(i18n.language)
 
   const today = new Date(); today.setHours(0,0,0,0)
   const todayStr = today.toISOString().slice(0,10)
@@ -35,7 +40,13 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month+1, 0).getDate()
   const daysInPrev = new Date(year, month, 0).getDate()
-  const dayLabels = ['Su','Mo','Tu','We','Th','Fr','Sa']
+
+  // Generate locale-aware day labels (starting Sunday)
+  const dayLabels = Array.from({length: 7}, (_, i) => {
+    const d = new Date(2024, 0, 7 + i) // Jan 7, 2024 is a Sunday
+    return new Intl.DateTimeFormat(locale, {weekday: 'narrow'}).format(d)
+  })
+
   const changeMonth = dir => { const d = new Date(calDate); d.setMonth(d.getMonth()+dir); setCalDate(d) }
 
   const calCells = []
@@ -56,7 +67,7 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
       {/* WELCOME */}
       <div style={{ marginBottom:24, minWidth:0, overflow:'hidden' }}>
         <div style={{ fontFamily:'var(--font-head)', fontSize:'clamp(16px, 4vw, 22px)', fontWeight:700, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          Welcome back, {profile?.name || 'Director'} 👋
+          {t('home.welcomeBack')}, {profile?.name || 'Director'} 👋
         </div>
         {profile?.church_name && (
           <div style={{ fontSize:13, color:'var(--muted)', marginTop:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile.church_name}</div>
@@ -72,11 +83,11 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
         <div className="card home-cal-card" style={{ padding:24, overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, gap:8 }}>
             <div style={{ fontFamily:'var(--font-head)', fontSize:17, fontWeight:700, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {calDate.toLocaleDateString('en-US',{month:'long',year:'numeric'})}
+              {calDate.toLocaleDateString(locale,{month:'long',year:'numeric'})}
             </div>
             <div style={{ display:'flex', gap:6, flexShrink:0 }}>
               <button className="btn btn-ghost btn-sm" onClick={()=>changeMonth(-1)}>‹</button>
-              <button className="btn btn-ghost btn-sm" onClick={()=>{setCalDate(new Date())}}>Today</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>{setCalDate(new Date())}}>{t('home.today')}</button>
               <button className="btn btn-ghost btn-sm" onClick={()=>changeMonth(1)}>›</button>
             </div>
           </div>
@@ -119,7 +130,7 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
                       pointerEvents:'none',
                     }}>
                       <div style={{ fontSize:12, fontWeight:600, marginBottom:5, color:'var(--text)' }}>
-                        {new Date(key+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}
+                        {new Date(key+'T12:00:00').toLocaleDateString(locale,{weekday:'short',month:'short',day:'numeric'})}
                       </div>
                       {(setData.song_ids||[]).slice(0,4).map(id => {
                         const s = songs.find(x => x.id === id)
@@ -134,22 +145,22 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
           </div>
           <div style={{ marginTop:14, fontSize:11, color:'var(--muted)', display:'flex', gap:14 }}>
             <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
-              <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--accent)', display:'inline-block' }}/>set scheduled
+              <span style={{ width:5, height:5, borderRadius:'50%', background:'var(--accent)', display:'inline-block' }}/>{t('home.setScheduled')}
             </span>
             <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
-              <span style={{ width:10, height:10, borderRadius:3, border:'1.5px solid var(--accent)', display:'inline-block' }}/>next Sunday
+              <span style={{ width:10, height:10, borderRadius:3, border:'1.5px solid var(--accent)', display:'inline-block' }}/>{t('home.nextSunday')}
             </span>
           </div>
         </div>
 
         {/* COMING UP */}
         <div className="card" style={{ padding:20 }}>
-          <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:4 }}>Coming Up</div>
-          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>Upcoming scheduled sets</div>
+          <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:4 }}>{t('home.comingUp')}</div>
+          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>{t('home.upcomingScheduledSets')}</div>
           {upcomingSets.length === 0 ? (
             <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:'20px 0' }}>
-              No upcoming sets yet —{' '}
-              <span style={{ color:'var(--accent)', cursor:'pointer' }} onClick={()=>setPage('thisweek')}>build one in Set Builder</span>
+              {t('home.noUpcomingSets')}{' '}
+              <span style={{ color:'var(--accent)', cursor:'pointer' }} onClick={()=>setPage('thisweek')}>{t('home.buildOneInSetBuilder')}</span>
             </div>
           ) : upcomingSets.map(set => {
             const setSongs = (set.song_ids||[]).map(id => songs.find(s => s.id === id)).filter(Boolean)
@@ -164,26 +175,26 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
               }}>
                 <div style={{ flexShrink:0, textAlign:'center', minWidth:48 }}>
                   <div style={{ fontSize:11, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>
-                    {new Date(set.service_date+'T12:00:00').toLocaleDateString('en-US',{month:'short'})}
+                    {new Date(set.service_date+'T12:00:00').toLocaleDateString(locale,{month:'short'})}
                   </div>
                   <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, lineHeight:1, color: isNext ? 'var(--accent)' : 'var(--text)' }}>
                     {new Date(set.service_date+'T12:00:00').getDate()}
                   </div>
                   <div style={{ fontSize:10, color:'var(--muted)' }}>
-                    {new Date(set.service_date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short'})}
+                    {new Date(set.service_date+'T12:00:00').toLocaleDateString(locale,{weekday:'short'})}
                   </div>
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:12, color:'var(--muted)', marginBottom:6 }}>
-                    {setSongs.length} song{setSongs.length !== 1 ? 's' : ''}
+                    {setSongs.length} {setSongs.length !== 1 ? t('common.songs') : t('common.song')}
                   </div>
                   <div style={{ display:'flex', gap:8 }}>
-                    {fast > 0 && <span style={{ fontSize:11, color:'var(--fast)', background:'rgba(248,113,113,0.1)', borderRadius:5, padding:'2px 7px' }}>⚡ {fast} fast</span>}
-                    {mid > 0 && <span style={{ fontSize:11, color:'var(--medium)', background:'rgba(245,200,66,0.1)', borderRadius:5, padding:'2px 7px' }}>♩ {mid} mid</span>}
-                    {slow > 0 && <span style={{ fontSize:11, color:'var(--slow)', background:'rgba(96,165,250,0.1)', borderRadius:5, padding:'2px 7px' }}>🎶 {slow} slow</span>}
+                    {fast > 0 && <span style={{ fontSize:11, color:'var(--fast)', background:'rgba(248,113,113,0.1)', borderRadius:5, padding:'2px 7px' }}>⚡ {fast} {t('thisWeek.fast')}</span>}
+                    {mid > 0 && <span style={{ fontSize:11, color:'var(--medium)', background:'rgba(245,200,66,0.1)', borderRadius:5, padding:'2px 7px' }}>♩ {mid} {t('thisWeek.mid')}</span>}
+                    {slow > 0 && <span style={{ fontSize:11, color:'var(--slow)', background:'rgba(96,165,250,0.1)', borderRadius:5, padding:'2px 7px' }}>🎶 {slow} {t('thisWeek.slow')}</span>}
                   </div>
                 </div>
-                {isNext && <span style={{ fontSize:10, background:'var(--accent)', color:'#fff', borderRadius:5, padding:'3px 8px', flexShrink:0, fontWeight:600 }}>Next</span>}
+                {isNext && <span style={{ fontSize:10, background:'var(--accent)', color:'#fff', borderRadius:5, padding:'3px 8px', flexShrink:0, fontWeight:600 }}>{t('home.nextLabel')}</span>}
               </div>
             )
           })}
@@ -199,8 +210,8 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
         >
           <div style={{ fontSize:32, flexShrink:0 }}>⬆</div>
           <div>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:2 }}>Upload Chart</div>
-            <div style={{ fontSize:12, color:'var(--muted)' }}>Add a new song from PDF or URL</div>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:2 }}>{t('home.uploadChart')}</div>
+            <div style={{ fontSize:12, color:'var(--muted)' }}>{t('home.uploadChartDesc')}</div>
           </div>
         </div>
       </div>
@@ -210,10 +221,10 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
 
         {/* TOP PLAYED THIS YEAR */}
         <div className="card" style={{ padding:20 }}>
-          <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:4 }}>Top Played This Year</div>
-          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>Remember to keep things diverse!</div>
+          <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700, marginBottom:4 }}>{t('home.topPlayedThisYear')}</div>
+          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>{t('home.keepThingsDiverse')}</div>
           {topSongs.length === 0 ? (
-            <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:16 }}>No play history yet</div>
+            <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:16 }}>{t('home.noPlayHistoryYet')}</div>
           ) : topSongs.map((s, i) => (
             <div key={s.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'7px 0', borderBottom: i < topSongs.length-1 ? '1px solid var(--border)' : 'none' }}>
               <div style={{ width:22, height:22, borderRadius:'50%', background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color: i===0 ? 'var(--gold)' : 'var(--muted)', flexShrink:0 }}>{i+1}</div>
@@ -234,12 +245,12 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
         {/* SONG LIBRARY PREVIEW */}
         <div className="card" style={{ padding:20 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700 }}>Song Library</div>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setPage('library')}>View all →</button>
+            <div style={{ fontFamily:'var(--font-head)', fontSize:15, fontWeight:700 }}>{t('home.songLibraryTitle')}</div>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setPage('library')}>{t('home.viewAll')}</button>
           </div>
-          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>First 10 of {songs.length} songs</div>
+          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>{t('home.firstNofTotal', { n: 10, total: songs.length })}</div>
           {librarySongs.length === 0 ? (
-            <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:16 }}>No songs yet</div>
+            <div style={{ color:'var(--muted)', fontSize:13, textAlign:'center', padding:16 }}>{t('home.noSongsYet')}</div>
           ) : librarySongs.map((s, i) => (
             <div key={s.id} onClick={() => { setPendingOpenSong(s); setPage('library') }} style={{ display:'flex', alignItems:'center', gap:12, padding:'7px 0', borderBottom: i < librarySongs.length-1 ? '1px solid var(--border)' : 'none', cursor:'pointer' }}>
               <div style={{ width:32, height:32, borderRadius:7, background:'var(--bg3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>
@@ -254,7 +265,7 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
           ))}
           {songs.length > 10 && (
             <button className="btn btn-ghost btn-sm" style={{ width:'100%', marginTop:10 }} onClick={()=>setPage('library')}>
-              + {songs.length - 10} more songs in library
+              {t('home.moreInLibrary', { n: songs.length - 10 })}
             </button>
           )}
         </div>

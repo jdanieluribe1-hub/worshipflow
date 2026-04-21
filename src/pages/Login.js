@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { signIn, signUp, signInWithGoogle } from '../lib/supabase'
 
 export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
+  const { t } = useTranslation()
   const [mode, setMode] = useState(defaultMode) // 'signin' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,7 +25,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
         onNeedsOnboarding()
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || t('auth.somethingWentWrong'))
     } finally {
       setLoading(false)
     }
@@ -37,7 +39,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
       if (error) throw error
       // redirect happens automatically
     } catch (err) {
-      setError(err.message || 'Google sign-in failed')
+      setError(err.message || t('auth.googleFailed'))
       setOauthLoading(false)
     }
   }
@@ -60,14 +62,14 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
             WorshipFlow
           </div>
           <div style={{ fontSize: 16, color: 'var(--muted)', marginTop: 8 }}>
-            Worship Director Dashboard
+            {t('auth.worshipDirectorDashboard')}
           </div>
         </div>
 
         {/* Card */}
         <div className="card" style={{ padding: 56 }}>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700, marginBottom: 32, color: 'var(--text)' }}>
-            {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
+            {mode === 'signin' ? t('auth.signInToAccount') : t('auth.createYourAccount')}
           </div>
 
           {/* Google button */}
@@ -105,22 +107,22 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
             ) : (
               <span style={{ fontSize: 13 }}>...</span>
             )}
-            {oauthLoading ? 'Redirecting...' : `${mode === 'signin' ? 'Sign in' : 'Sign up'} with Google`}
+            {oauthLoading ? t('auth.redirecting') : (mode === 'signin' ? t('auth.signInWithGoogle') : t('auth.signUpWithGoogle'))}
           </button>
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>or continue with email</span>
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>{t('auth.orContinueEmail')}</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Email</label>
+              <label className="form-label">{t('auth.email')}</label>
               <input
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -129,7 +131,7 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
               />
             </div>
             <div className="form-group" style={{ marginBottom: 24 }}>
-              <label className="form-label">Password</label>
+              <label className="form-label">{t('auth.password')}</label>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -154,21 +156,21 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
               disabled={loading || oauthLoading}
               style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '10px 0' }}
             >
-              {loading ? '...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {loading ? '...' : mode === 'signin' ? t('auth.signIn') : t('auth.createAccountButton')}
             </button>
           </form>
 
           <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--muted)' }}>
             {mode === 'signin' ? (
-              <>New here?{' '}
+              <>{t('auth.newHere')}{' '}
                 <span style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }} onClick={() => { setMode('signup'); setError('') }}>
-                  Create an account
+                  {t('auth.createAnAccount')}
                 </span>
               </>
             ) : (
-              <>Already have an account?{' '}
+              <>{t('auth.haveAccount')}{' '}
                 <span style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }} onClick={() => { setMode('signin'); setError('') }}>
-                  Sign in
+                  {t('auth.signInLink')}
                 </span>
               </>
             )}

@@ -47,10 +47,12 @@ export async function createProfile(userId, name, churchName) {
   return data
 }
 
-export async function updateProfile(userId, { name, churchName }) {
+export async function updateProfile(userId, { name, churchName, preferredLanguage }) {
+  const updates = { name, church_name: churchName }
+  if (preferredLanguage !== undefined) updates.preferred_language = preferredLanguage
   const { data, error } = await supabase
     .from('profiles')
-    .update({ name, church_name: churchName })
+    .update(updates)
     .eq('id', userId)
     .select()
     .single()

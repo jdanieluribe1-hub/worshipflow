@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n, { dateLocale } from '../i18n'
 import { useParams } from 'react-router-dom'
 import { getSongs, getSets, getSongsForBand, getSetsForBand } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
@@ -13,6 +15,7 @@ function getNextSunday() {
 }
 
 export default function BandView({ songs: propSongs = [], sets: propSets = [], public: isPublic = false }) {
+  const { t } = useTranslation()
   const params = useParams()
   const token = params.token || null
   const [selectedDate, setSelectedDate] = useState(getNextSunday)
@@ -81,7 +84,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
   }
 
   const tempoColor = { Fast: '#ef4444', Medium: '#d97706', Slow: '#3b82f6' }
-  const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
+  const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { month:'long', day:'numeric', year:'numeric' })
 
   const currentTransposedKey = current ? (transposedKeys[current.id] || current.key) : null
   const currentLyrics = (() => {
@@ -111,7 +114,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
           </label>
           {isPublic && <button
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? t('bandView.switchToLight') : t('bandView.switchToDark')}
             style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, padding:'4px', color:'var(--muted)', lineHeight:1 }}
           >
             {theme === 'dark' ? '☀️' : '🌙'}
@@ -122,8 +125,8 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
         {displaySongs.length === 0 ? (
           <div style={{ textAlign:'center', padding:'80px 20px', color:'var(--muted)' }}>
             <div style={{ fontSize:40, marginBottom:12 }}>🎸</div>
-            <div style={{ fontSize:16, fontWeight:600, color:'var(--text)', marginBottom:6 }}>No set for {dateLabel}</div>
-            <div style={{ fontSize:14 }}>No songs have been scheduled for this date yet.</div>
+            <div style={{ fontSize:16, fontWeight:600, color:'var(--text)', marginBottom:6 }}>{t('bandView.noSetForDate', { date: dateLabel })}</div>
+            <div style={{ fontSize:14 }}>{t('bandView.noSongsScheduled')}</div>
           </div>
         ) : (
           <>
@@ -140,16 +143,16 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
               ))}
             </div>
             <div className="band-card" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-              <div className="band-song-num">Song {idx+1} of {displaySongs.length}</div>
+              <div className="band-song-num">{t('bandView.songNofM', { n: idx+1, m: displaySongs.length })}</div>
               <div className="band-song-title">{current.title}</div>
               <div className="band-song-artist">{current.artist}</div>
               <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:20, flexWrap:'wrap' }}>
                 <div className="band-key">
-                  <span style={{ color:'var(--muted)', fontWeight:400 }}>{currentTransposedKey === 'Numbers' ? '' : 'Key of'}</span>
-                  <span style={{ color:'var(--text)' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : currentTransposedKey}</span>
+                  <span style={{ color:'var(--muted)', fontWeight:400 }}>{currentTransposedKey === 'Numbers' ? '' : t('library.keyOf')}</span>
+                  <span style={{ color:'var(--text)' }}>{currentTransposedKey === 'Numbers' ? t('bandView.keyOfNumbers') : currentTransposedKey}</span>
                 </div>
                 <span style={{ display:'inline-flex', alignItems:'center', padding:'6px 14px', borderRadius:8, fontSize:13, fontWeight:500, background: (tempoColor[current.tempo] || '#888') + '18', color: tempoColor[current.tempo] || '#888' }}>
-                  {current.tempo}
+                  {t('tempos.' + current.tempo)}
                 </span>
               </div>
               {current.lyrics && (
@@ -180,7 +183,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
               ) : current.pdf_url ? (
                 <iframe src={current.pdf_url} title={current.title} style={{ width:'100%', height:'500px', border:'none', borderRadius:'12px' }} />
               ) : (
-                <div style={{ background:'var(--bg3)', borderRadius:12, padding:24, color:'var(--muted)', fontSize:13 }}>No chord chart uploaded yet</div>
+                <div style={{ background:'var(--bg3)', borderRadius:12, padding:24, color:'var(--muted)', fontSize:13 }}>{t('bandView.noChordChartYet')}</div>
               )}
             </div>
             <div className="band-nav">
@@ -190,7 +193,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
               </div>
               <button onClick={next} disabled={idx===displaySongs.length-1}>→</button>
             </div>
-            <div style={{ textAlign:'center', marginTop:16, fontSize:12, color:'var(--muted)' }}>Swipe left or right to navigate songs</div>
+            <div style={{ textAlign:'center', marginTop:16, fontSize:12, color:'var(--muted)' }}>{t('bandView.swipeHint')}</div>
           </>
         )}
       </div>
@@ -204,7 +207,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
           <div style={{ background:'var(--bg2)', borderBottom:'1px solid var(--border)', padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontFamily:'var(--font-head)', fontWeight:700, fontSize:16, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{current.title}</div>
-              <div style={{ fontSize:12, color:'var(--muted)' }}>{currentTransposedKey === 'Numbers' ? '# Numbers' : `Key of ${currentTransposedKey}`} · {current.tempo}</div>
+              <div style={{ fontSize:12, color:'var(--muted)' }}>{currentTransposedKey === 'Numbers' ? t('bandView.keyOfNumbers') : `${t('library.keyOf')} ${currentTransposedKey}`} · {t('tempos.' + current.tempo)}</div>
             </div>
             <TransposeControl
               originalKey={current.key}
@@ -215,7 +218,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
             />
             <button onClick={prev} disabled={idx===0} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'var(--text)', flexShrink:0 }}>←</button>
             <button onClick={next} disabled={idx===displaySongs.length-1} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:'50%', width:36, height:36, cursor:'pointer', fontSize:16, color:'var(--text)', flexShrink:0 }}>→</button>
-            <button onClick={() => setExpanded(false)} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13, fontWeight:600, color:'var(--muted)', flexShrink:0, fontFamily:'inherit' }}>✕ Close</button>
+            <button onClick={() => setExpanded(false)} style={{ background:'none', border:'1.5px solid var(--border2)', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13, fontWeight:600, color:'var(--muted)', flexShrink:0, fontFamily:'inherit' }}>{t('bandView.close')}</button>
           </div>
           <div style={{ background:'var(--bg2)', borderBottom:'1px solid var(--border)', padding:'8px 16px', display:'flex', gap:8, overflowX:'auto', flexShrink:0 }}>
             {displaySongs.map((s,i) => (

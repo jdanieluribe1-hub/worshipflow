@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n, { dateLocale } from '../i18n'
 import { getRecommendations, deleteRecommendation } from '../lib/supabase'
 
 function linkIcon(url) {
@@ -9,6 +11,7 @@ function linkIcon(url) {
 }
 
 export default function Recommendations({ activeChurch }) {
+  const { t } = useTranslation()
   const [recs, setRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,19 +31,19 @@ export default function Recommendations({ activeChurch }) {
   useEffect(() => { load() }, [activeChurch?.id])
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Remove this recommendation?')) return
+    if (!window.confirm(t('recommendations.confirmRemove'))) return
     try {
       await deleteRecommendation(id)
       setRecs(prev => prev.filter(r => r.id !== id))
     } catch (e) {
-      alert('Error: ' + e.message)
+      alert(t('errors.generic', { msg: e.message }))
     }
   }
 
   const recommendLink = `${window.location.origin}/recommend?church=${activeChurch?.id}&name=${encodeURIComponent(activeChurch?.name || '')}`
 
-  if (loading) return <div style={{ color: 'var(--muted)', padding: 20 }}>Loading...</div>
-  if (error) return <div style={{ color: 'var(--red)', padding: 20 }}>Error: {error}</div>
+  if (loading) return <div style={{ color: 'var(--muted)', padding: 20 }}>{t('common.loading')}</div>
+  if (error) return <div style={{ color: 'var(--red)', padding: 20 }}>{t('recommendations.errorLoading', { msg: error })}</div>
 
   return (
     <div style={{ maxWidth: 640 }}>
@@ -48,22 +51,24 @@ export default function Recommendations({ activeChurch }) {
         <div className="empty-state">
           <div className="empty-icon">🎵</div>
           <div className="empty-text">
-            No recommendations yet<br />
-            Share the link below with your congregation
+            {t('recommendations.noRecsYet')}<br />
+            {t('recommendations.shareWithCongregation')}
           </div>
           <div style={{ marginTop: 20, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--accent)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {recommendLink}
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert('Link copied!') }}>Copy</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert(t('recommendations.linkCopied')) }}>{t('common.copy')}</button>
           </div>
         </div>
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div style={{ fontSize: 13, color: 'var(--muted)' }}>{recs.length} recommendation{recs.length !== 1 ? 's' : ''}</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert('Link copied!') }}>
-              📋 Copy Share Link
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+              {t('recommendations.nRecommendations', { count: recs.length })}
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert(t('recommendations.linkCopied')) }}>
+              {t('recommendations.copyShareLink')}
             </button>
           </div>
 
@@ -71,7 +76,7 @@ export default function Recommendations({ activeChurch }) {
             {recs.map(rec => {
               const link = linkIcon(rec.link)
               const date = rec.created_at
-                ? new Date(rec.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                ? new Date(rec.created_at).toLocaleDateString(dateLocale(i18n.language), { month: 'short', day: 'numeric', year: 'numeric' })
                 : null
               return (
                 <div key={rec.id} className="card card-sm" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>

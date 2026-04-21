@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getChurchByInviteToken, joinChurchByToken, setActiveChurchDB } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function JoinChurch() {
+  const { t } = useTranslation()
   const { token } = useParams()
   const navigate = useNavigate()
   const { user, loading: authLoading, refreshChurches } = useAuth()
@@ -31,7 +33,7 @@ export default function JoinChurch() {
       setJoined(true)
       setTimeout(() => navigate('/'), 1500)
     } catch (err) {
-      setError(err.message || 'Failed to join')
+      setError(err.message || t('settings.failedToJoin'))
       setJoining(false)
     }
   }
@@ -60,17 +62,17 @@ export default function JoinChurch() {
 
         <div className="card" style={{ padding: 32, textAlign: 'center' }}>
           {!authLoading && fetching && (
-            <div style={{ color: 'var(--muted)', fontSize: 14 }}>Looking up invite...</div>
+            <div style={{ color: 'var(--muted)', fontSize: 14 }}>{t('joinChurch.lookingUpInvite')}</div>
           )}
 
           {!fetching && !church && (
             <>
               <div style={{ fontSize: 40, marginBottom: 16 }}>🔗</div>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-                Invalid invite link
+                {t('joinChurch.invalidLink')}
               </div>
               <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                This link may have expired or been regenerated. Ask your admin for a new one.
+                {t('joinChurch.invalidLinkDesc')}
               </div>
             </>
           )}
@@ -78,7 +80,7 @@ export default function JoinChurch() {
           {!fetching && church && !joined && (
             <>
               <div style={{ fontSize: 40, marginBottom: 16 }}>🏛</div>
-              <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>You've been invited to join</div>
+              <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>{t('joinChurch.youveBeenInvited')}</div>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
                 {church.name}
               </div>
@@ -90,15 +92,15 @@ export default function JoinChurch() {
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '10px 0', marginBottom: 12 }}
                   >
-                    Sign up to join {church.name}
+                    {t('joinChurch.signUpToJoin', { name: church.name })}
                   </button>
                   <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                    Already have an account?{' '}
+                    {t('auth.haveAccount')}{' '}
                     <span
                       style={{ color: 'var(--accent)', cursor: 'pointer' }}
                       onClick={() => navigate(`/?join=${token}`)}
                     >
-                      Sign in
+                      {t('auth.signInLink')}
                     </span>
                   </div>
                 </>
@@ -117,7 +119,7 @@ export default function JoinChurch() {
                     className="btn btn-primary"
                     style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '10px 0' }}
                   >
-                    {joining ? 'Joining...' : `Join ${church.name}`}
+                    {joining ? t('onboarding.joining') : t('onboarding.joinChurchName', { name: church.name })}
                   </button>
                 </>
               )}
@@ -128,9 +130,9 @@ export default function JoinChurch() {
             <>
               <div style={{ fontSize: 40, marginBottom: 16 }}>✓</div>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-                You've joined {church?.name}!
+                {t('joinChurch.joinedTitle', { name: church?.name })}
               </div>
-              <div style={{ fontSize: 13, color: 'var(--muted)' }}>Redirecting to dashboard...</div>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>{t('joinChurch.redirecting')}</div>
             </>
           )}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   createSongVariant, updateSongVariant, publishSongVariant,
   unpublishSongVariant, deleteSongVariant, listSongVariants
@@ -223,6 +224,7 @@ function AddChordInput({ charPos, onCommit, onCancel }) {
 // ─── Main editor ─────────────────────────────────────────────────────────────
 
 export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpenSong }) {
+  const { t } = useTranslation()
   const [selectedSong, setSelectedSong] = useState(null)
   const [variants, setVariants] = useState([])
   const [selectedVariantId, setSelectedVariantId] = useState(null)
@@ -356,7 +358,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
 
     const onMouseMove = (e) => {
       const { chordId, lineIdx, startX, startCharPos, startLineY } = dragState
-      // Use fractional charPos during drag for smooth pixel movement
       const deltaCharPos = (e.clientX - startX) / CHAR_W
       const LINE_HEIGHT = 52
       const lineOffset = Math.round((e.clientY - startLineY) / LINE_HEIGHT)
@@ -398,7 +399,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     }
 
     const onMouseUp = () => {
-      // Snap fractional charPos to integers on commit
       const snapped = linesRef.current.map(line => ({
         ...line,
         chords: line.chords.map(c => ({ ...c, charPos: Math.round(c.charPos) }))
@@ -484,7 +484,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     setSaving(true); setSaveError('')
     try {
       if (!selectedVariantId) {
-        const name = variantName.trim() || 'Untitled Variant'
+        const name = variantName.trim() || t('songEditor.untitledVariant')
         const newId = await createSongVariant(selectedSong.id, name, serializeLinesToLyrics(lines))
         setSelectedVariantId(newId)
         setVariantName(name)
@@ -492,13 +492,13 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
         setVariants(v)
         setSavedLines(JSON.parse(JSON.stringify(lines)))
       } else {
-        await updateSongVariant(selectedVariantId, variantName || 'Untitled Variant', serializeLinesToLyrics(lines))
+        await updateSongVariant(selectedVariantId, variantName || t('songEditor.untitledVariant'), serializeLinesToLyrics(lines))
         setSavedLines(JSON.parse(JSON.stringify(lines)))
         setVariants(v => v.map(x => x.id === selectedVariantId ? { ...x, name: variantName, chord_data: serializeLinesToLyrics(lines) } : x))
       }
       setDirty(false)
     } catch (err) {
-      setSaveError(err.message || 'Save failed')
+      setSaveError(err.message || t('errors.saveFailed', { msg: '' }))
     } finally {
       setSaving(false)
     }
@@ -508,14 +508,14 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     if (!selectedVariantId) return
     setSaving(true); setSaveError('')
     try {
-      await updateSongVariant(selectedVariantId, variantName || 'Untitled Variant', serializeLinesToLyrics(lines))
+      await updateSongVariant(selectedVariantId, variantName || t('songEditor.untitledVariant'), serializeLinesToLyrics(lines))
       await publishSongVariant(selectedVariantId)
       const v = await listSongVariants(selectedSong.id)
       setVariants(v)
       setDirty(false)
       setSavedLines(JSON.parse(JSON.stringify(lines)))
     } catch (err) {
-      setSaveError(err.message || 'Publish failed')
+      setSaveError(err.message || t('errors.publishFailed', { msg: '' }))
     } finally {
       setSaving(false)
       setConfirmPublish(false)
@@ -530,7 +530,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       const v = await listSongVariants(selectedSong.id)
       setVariants(v)
     } catch (err) {
-      setSaveError(err.message || 'Failed')
+      setSaveError(err.message || t('errors.generic', { msg: '' }))
     } finally {
       setSaving(false)
     }
@@ -550,7 +550,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       setLines(JSON.parse(JSON.stringify(originalLines)))
       setUndoStack([]); setRedoStack([])
     } catch (err) {
-      setSaveError(err.message || 'Delete failed')
+      setSaveError(err.message || t('errors.deleteFailed', { msg: '' }))
     } finally {
       setSaving(false)
       setConfirmDelete(false)
@@ -593,7 +593,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             fontSize: 14, minWidth: 220, cursor: 'pointer',
           }}
         >
-          <option value="">— Select a song —</option>
+          <option value="">{t('songEditor.selectSong')}</option>
           {songs.filter(s => s.lyrics).map(s => (
             <option key={s.id} value={s.id}>{s.title}{s.artist ? ` — ${s.artist}` : ''}</option>
           ))}
@@ -621,10 +621,10 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               fontSize: 14, cursor: 'pointer',
             }}
           >
-            <option value="">Original (editing copy)</option>
+            <option value="">{t('songEditor.originalEditing')}</option>
             {variants.map(v => (
               <option key={v.id} value={v.id}>
-                {v.name}{v.status === 'draft' ? ' (draft)' : ''}
+                {v.name}{v.status === 'draft' ? t('songEditor.draftLabel') : ''}
               </option>
             ))}
           </select>
@@ -637,11 +637,11 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
           borderRadius: 12, padding: 40, textAlign: 'center', color: 'var(--muted)',
         }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>✏️</div>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, marginBottom: 8 }}>Song Editor</div>
-          <div style={{ fontSize: 14 }}>Select a song above to start editing chord arrangements.</div>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, marginBottom: 8 }}>{t('songEditor.title')}</div>
+          <div style={{ fontSize: 14 }}>{t('songEditor.emptyState')}</div>
           {songs.filter(s => s.lyrics).length === 0 && (
             <div style={{ fontSize: 13, marginTop: 12, color: 'var(--red)' }}>
-              No songs with chord charts found. Upload a chord chart in the Library first.
+              {t('songEditor.noSongsWithCharts')}
             </div>
           )}
         </div>
@@ -658,7 +658,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             <input
               value={variantName}
               onChange={e => setVariantName(e.target.value)}
-              placeholder="Variant name (e.g. Acoustic Version)"
+              placeholder={t('songEditor.variantNamePlaceholder')}
               style={{
                 background: 'var(--bg3)', border: '1px solid var(--border)',
                 borderRadius: 8, padding: '7px 12px', color: 'var(--text)',
@@ -679,7 +679,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                 disabled={!undoStack.length}
                 style={toolBtn(!undoStack.length)}
                 title="Undo (⌘Z)"
-              >↩ Undo</button>
+              >{t('songEditor.undo')}</button>
               <button
                 onClick={() => {
                   if (!redoStack.length) return
@@ -692,7 +692,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                 disabled={!redoStack.length}
                 style={toolBtn(!redoStack.length)}
                 title="Redo (⌘⇧Z)"
-              >↪ Redo</button>
+              >{t('songEditor.redo')}</button>
             </div>
 
             <button
@@ -700,26 +700,26 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               disabled={!dirty}
               style={toolBtn(!dirty)}
               title="Discard unsaved changes"
-            >Discard changes</button>
+            >{t('songEditor.discardChanges')}</button>
 
             <button
               onClick={() => setConfirmReset(true)}
               style={toolBtn(false)}
               title="Reset to original song chords"
-            >Reset to original</button>
+            >{t('songEditor.resetToOriginal')}</button>
           </div>
 
           {/* Confirm reset dialog */}
           {confirmReset && (
             <div style={dialogOverlay}>
               <div style={dialogBox}>
-                <div style={{ fontWeight: 700, marginBottom: 8 }}>Reset to original?</div>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('songEditor.resetConfirmTitle')}</div>
                 <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                  This will discard all your changes and restore the song's original chord arrangement. You can still undo this action.
+                  {t('songEditor.resetConfirmBody')}
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button onClick={() => setConfirmReset(false)} style={toolBtn(false)}>Cancel</button>
-                  <button onClick={resetToOriginal} style={dangerBtn}>Reset</button>
+                  <button onClick={() => setConfirmReset(false)} style={toolBtn(false)}>{t('common.cancel')}</button>
+                  <button onClick={resetToOriginal} style={dangerBtn}>{t('songEditor.reset')}</button>
                 </div>
               </div>
             </div>
@@ -730,35 +730,35 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20,
           }}>
             <button onClick={saveVariant} disabled={saving} style={accentBtn}>
-              {saving ? 'Saving...' : selectedVariantId ? 'Save draft' : 'Save as variant'}
+              {saving ? t('songEditor.saving') : selectedVariantId ? t('songEditor.saveDraft') : t('songEditor.saveAsVariant')}
             </button>
 
             {selectedVariantId && !isPublished && (
               <button onClick={() => setConfirmPublish(true)} disabled={saving} style={accentBtn}>
-                Publish
+                {t('songEditor.publish')}
               </button>
             )}
 
             {selectedVariantId && isPublished && (
               <button onClick={unpublishVariant} disabled={saving} style={toolBtn(false)}>
-                Unpublish
+                {t('songEditor.unpublish')}
               </button>
             )}
 
             {selectedVariantId && (
               <button onClick={() => setConfirmDelete(true)} disabled={saving} style={dangerBtnSm}>
-                Delete variant
+                {t('songEditor.deleteVariant')}
               </button>
             )}
 
             {currentVariant && (
               <span style={{ fontSize: 12, color: isPublished ? 'var(--green)' : 'var(--muted)', marginLeft: 4 }}>
-                {isPublished ? '● Published' : '○ Draft'}
+                {isPublished ? t('songEditor.published') : t('songEditor.draft')}
               </span>
             )}
 
             {!selectedVariantId && (
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>Editing original — save to create a variant</span>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>{t('songEditor.editingOriginalHint')}</span>
             )}
 
             {saveError && (
@@ -771,15 +771,15 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             <div style={dialogOverlay}>
               <div style={dialogBox}>
                 <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                  Publish "{variantName || 'Untitled Variant'}"?
+                  {t('songEditor.publishConfirmTitle', { name: variantName || t('songEditor.untitledVariant') })}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                  This will make it visible to everyone in your church.
+                  {t('songEditor.publishConfirmBody')}
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button onClick={() => setConfirmPublish(false)} style={toolBtn(false)}>Cancel</button>
+                  <button onClick={() => setConfirmPublish(false)} style={toolBtn(false)}>{t('common.cancel')}</button>
                   <button onClick={publishVariant} disabled={saving} style={accentBtn}>
-                    {saving ? 'Publishing...' : 'Publish'}
+                    {saving ? t('songEditor.publishing') : t('songEditor.publish')}
                   </button>
                 </div>
               </div>
@@ -790,14 +790,14 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
           {confirmDelete && (
             <div style={dialogOverlay}>
               <div style={dialogBox}>
-                <div style={{ fontWeight: 700, marginBottom: 8 }}>Delete this variant?</div>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('songEditor.deleteConfirmTitle')}</div>
                 <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                  This cannot be undone.
+                  {t('songEditor.deleteConfirmBody')}
                 </div>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                  <button onClick={() => setConfirmDelete(false)} style={toolBtn(false)}>Cancel</button>
+                  <button onClick={() => setConfirmDelete(false)} style={toolBtn(false)}>{t('common.cancel')}</button>
                   <button onClick={deleteVariant} disabled={saving} style={dangerBtn}>
-                    {saving ? 'Deleting...' : 'Delete'}
+                    {saving ? t('songEditor.deleting') : t('common.delete')}
                   </button>
                 </div>
               </div>
@@ -826,7 +826,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
           >
             {lines.length === 0 && (
               <div style={{ color: 'var(--muted)', fontSize: 14 }}>
-                This song has no chord data yet.
+                {t('songEditor.noChordData')}
               </div>
             )}
             {lines.map((line, lineIdx) => {
@@ -882,8 +882,8 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
           </div>
 
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>
-            {dirty ? '● Unsaved changes' : '✓ Up to date'}
-            {selectedVariantId && dirty && '  — autosaves in 2s'}
+            {dirty ? t('songEditor.unsavedChanges') : t('songEditor.upToDate')}
+            {selectedVariantId && dirty && t('songEditor.autosavesIn2s')}
           </div>
         </>
       )}

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { supabase, getProfile, getChurches, setActiveChurchDB } from './supabase'
+import { supabase, getProfile, getChurches, setActiveChurchDB, updateProfile } from './supabase'
+import i18n from '../i18n'
 
 const AuthContext = createContext(null)
 
@@ -14,6 +15,9 @@ export function AuthProvider({ children }) {
     try {
       const p = await getProfile(u.id)
       setProfileState(p)
+      if (p?.preferred_language && p.preferred_language !== i18n.language) {
+        i18n.changeLanguage(p.preferred_language)
+      }
       if (p) {
         const churchList = await getChurches(u.id)
         setChurches(churchList)
@@ -63,6 +67,16 @@ export function AuthProvider({ children }) {
     await setActiveChurchDB(user.id, church.id)
   }
 
+  async function setLanguage(lang) {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('wf_language', lang)
+    if (user) {
+      await updateProfile(user.id, { preferredLanguage: lang })
+      const p = await getProfile(user.id)
+      setProfileState(p)
+    }
+  }
+
   async function refreshChurches() {
     if (!user) return
     const churchList = await getChurches(user.id)
@@ -75,7 +89,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, setProfile, loading, churches, activeChurch, setActiveChurch, refreshChurches }}>
+    <AuthContext.Provider value={{ user, profile, setProfile, loading, churches, activeChurch, setActiveChurch, refreshChurches, setLanguage }}>
       {children}
     </AuthContext.Provider>
   )

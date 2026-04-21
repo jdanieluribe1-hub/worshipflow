@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import {
   createProfile, createChurch,
@@ -9,6 +10,7 @@ import {
 import { useAuth } from '../lib/AuthContext'
 
 export default function Onboarding() {
+  const { t } = useTranslation()
   const { user, setProfile, refreshChurches } = useAuth()
   const [searchParams] = useSearchParams()
   const [step, setStep] = useState(1) // 1 = name/church, 2 = create or join
@@ -98,7 +100,7 @@ export default function Onboarding() {
 
   const handleStep1 = async (e) => {
     e.preventDefault()
-    if (!name.trim()) { setError('Please enter your name'); return }
+    if (!name.trim()) { setError(t('onboarding.pleaseEnterName')); return }
     setError('')
     // If arriving via invite link, auto-join immediately after name entry — skip step 2
     if (pendingJoinToken) {
@@ -108,7 +110,7 @@ export default function Onboarding() {
         const result = await refreshChurches()
         setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
       } catch (err) {
-        setError(err.message || 'Something went wrong')
+        setError(err.message || t('onboarding.somethingWentWrong'))
         setLoading(false)
       }
       return
@@ -125,13 +127,13 @@ export default function Onboarding() {
       const result = await refreshChurches()
       setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
     } catch (err) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || t('onboarding.somethingWentWrong'))
       setLoading(false)
     }
   }
 
   const handleJoin = async () => {
-    if (!joinChurchPreview) { setError('Please enter a valid invite link or code'); return }
+    if (!joinChurchPreview) { setError(t('onboarding.pleaseEnterInvite')); return }
     setError('')
     setLoading(true)
     try {
@@ -139,7 +141,7 @@ export default function Onboarding() {
       const result = await refreshChurches()
       setProfile({ ...profile, active_church_id: result?.activeChurch?.id })
     } catch (err) {
-      setError(err.message || 'Failed to join church')
+      setError(err.message || t('onboarding.failedToJoinChurch'))
       setLoading(false)
     }
   }
@@ -157,14 +159,14 @@ export default function Onboarding() {
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🎸</div>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 800, color: 'var(--text)' }}>
-            Welcome to WorshipFlow!
+            {t('onboarding.welcome')}
           </div>
           <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 8 }}>
             {pendingJoinToken
               ? joinChurchPreview
-                ? `You've been invited to join ${joinChurchPreview.name}`
-                : "You've been invited to join a church"
-              : step === 1 ? "Let's set up your account" : "Set up your church"}
+                ? t('onboarding.invitedToJoinName', { name: joinChurchPreview.name })
+                : t('onboarding.invitedToJoinGeneric')
+              : step === 1 ? t('onboarding.setupAccount') : t('onboarding.setupChurch')}
           </div>
         </div>
 
@@ -185,10 +187,10 @@ export default function Onboarding() {
           {step === 1 && (
             <form onSubmit={handleStep1}>
               <div className="form-group">
-                <label className="form-label">Your Name</label>
+                <label className="form-label">{t('onboarding.yourName')}</label>
                 <input
                   type="text"
-                  placeholder="e.g. Daniel"
+                  placeholder={t('onboarding.yourNamePlaceholder')}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   required
@@ -198,10 +200,10 @@ export default function Onboarding() {
               </div>
               {!pendingJoinToken && (
                 <div className="form-group" style={{ marginBottom: 28 }}>
-                  <label className="form-label">Church Name <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(optional)</span></label>
+                  <label className="form-label">{t('onboarding.churchNameLabel')} <span style={{ color: 'var(--muted)', fontWeight: 400 }}>({t('common.optional')})</span></label>
                   <input
                     type="text"
-                    placeholder="e.g. Calvary Chapel"
+                    placeholder={t('onboarding.churchNamePlaceholder2')}
                     value={churchName}
                     onChange={e => setChurchName(e.target.value)}
                     style={{ width: '100%' }}
@@ -221,7 +223,7 @@ export default function Onboarding() {
                 disabled={loading}
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '10px 0' }}
               >
-                {loading ? 'Joining...' : pendingJoinToken ? `Join ${joinChurchPreview?.name || 'Church'}` : 'Continue →'}
+                {loading ? t('onboarding.joining') : pendingJoinToken ? t('onboarding.joinChurchName', { name: joinChurchPreview?.name || t('onboarding.joinChurch') }) : t('onboarding.continue')}
               </button>
             </form>
           )}
@@ -229,7 +231,7 @@ export default function Onboarding() {
           {step === 2 && !joinMode && (
             <div>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 20, color: 'var(--text)' }}>
-                How would you like to get started?
+                {t('onboarding.howGetStarted')}
               </div>
 
               <button
@@ -247,10 +249,10 @@ export default function Onboarding() {
               >
                 <div style={{ fontSize: 24, marginBottom: 6 }}>🏛</div>
                 <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                  {loading ? 'Creating...' : 'Create a new church'}
+                  {loading ? t('onboarding.creatingChurch') : t('onboarding.createChurch')}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  You'll be the admin — invite your team later
+                  {t('onboarding.adminDesc')}
                 </div>
               </button>
 
@@ -267,9 +269,9 @@ export default function Onboarding() {
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
               >
                 <div style={{ fontSize: 24, marginBottom: 6 }}>🔗</div>
-                <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Join an existing church</div>
+                <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{t('onboarding.joinExistingChurch')}</div>
                 <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  Paste an invite link or short code from your admin
+                  {t('onboarding.inviteOrCodeDesc')}
                 </div>
               </button>
 
@@ -287,32 +289,32 @@ export default function Onboarding() {
                 onClick={() => { setJoinMode(false); setError('') }}
                 style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}
               >
-                ← Back
+                {t('onboarding.backArrow')}
               </button>
               <div style={{ fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 600, marginBottom: 16, color: 'var(--text)' }}>
-                Join an existing church
+                {t('onboarding.joinExistingChurch')}
               </div>
               <div className="form-group" style={{ marginBottom: 20 }}>
-                <label className="form-label">Invite link or short code</label>
+                <label className="form-label">{t('onboarding.inviteOrCodeLabel')}</label>
                 <input
                   type="text"
-                  placeholder="Invite link or short code"
+                  placeholder={t('onboarding.invitePlaceholder')}
                   value={inviteInput}
                   onChange={e => handleInviteChange(e.target.value)}
                   style={{ width: '100%' }}
                   autoFocus
                 />
                 {lookupLoading && (
-                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)' }}>Looking up...</div>
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)' }}>{t('onboarding.lookingUp')}</div>
                 )}
                 {joinChurchPreview && (
                   <div style={{ marginTop: 8, fontSize: 13, color: 'var(--green)' }}>
-                    ✓ Found: <strong>{joinChurchPreview.name}</strong>
+                    {t('onboarding.churchFoundPreview', { name: joinChurchPreview.name })}
                   </div>
                 )}
                 {inviteInput.length > 3 && !lookupLoading && !joinChurchPreview && (
                   <div style={{ marginTop: 8, fontSize: 13, color: 'var(--muted)' }}>
-                    Church not found — check the link or code
+                    {t('onboarding.churchNotFoundCode')}
                   </div>
                 )}
               </div>
@@ -329,7 +331,7 @@ export default function Onboarding() {
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, padding: '10px 0' }}
               >
-                {loading ? 'Joining...' : `Join ${joinChurchPreview?.name || 'Church'}`}
+                {loading ? t('onboarding.joining') : t('onboarding.joinChurchName', { name: joinChurchPreview?.name || t('onboarding.joinChurch') })}
               </button>
             </div>
           )}

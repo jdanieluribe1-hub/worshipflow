@@ -1,35 +1,22 @@
 import React from 'react'
-
-const FEATURES = [
-  {
-    title: 'Song Library',
-    desc: 'Upload, organize, and transpose on the fly. Every chart your church has ever used, in one place.',
-    screenshot: 'Screenshot: Song Library',
-  },
-  {
-    title: 'Set Builder',
-    desc: 'Drag and drop to build your Sunday set in minutes. Add notes, key overrides, and share with the band.',
-    screenshot: 'Screenshot: Set Builder',
-  },
-  {
-    title: 'Band View',
-    desc: 'Everyone sees the same chord chart, in the right key, on their phone. No printing, no confusion.',
-    screenshot: 'Screenshot: Band View',
-  },
-  {
-    title: 'History & Recommendations',
-    desc: "See what you've played and get smart suggestions for what's next.",
-    screenshot: 'Screenshot: History & Recommendations',
-  },
-]
-
-const STEPS = [
-  { num: '1', title: 'Build your library', desc: 'Upload chord charts or paste lyrics. Transpose any song instantly.' },
-  { num: '2', title: 'Plan your set', desc: 'Drag songs into order, set keys per-song, add rehearsal notes.' },
-  { num: '3', title: 'Share with your team', desc: 'Your band opens the Band View on their phone — chords ready to go.' },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function Landing() {
+  const { t } = useTranslation()
+
+  const FEATURES = [
+    { title: t('landing.feature1Title'), desc: t('landing.feature1Body'), screenshot: t('landing.screenshotLibrary') },
+    { title: t('landing.feature2Title'), desc: t('landing.feature2Body'), screenshot: t('landing.screenshotSetBuilder') },
+    { title: t('landing.feature3Title'), desc: t('landing.feature3Body'), screenshot: t('landing.screenshotBandView') },
+    { title: t('landing.feature4Title'), desc: t('landing.feature4Body'), screenshot: t('landing.screenshotHistory') },
+  ]
+
+  const STEPS = [
+    { num: '1', title: t('landing.howStep1'), desc: t('landing.step1Desc') },
+    { num: '2', title: t('landing.howStep2'), desc: t('landing.step2Desc') },
+    { num: '3', title: t('landing.howStep3'), desc: t('landing.step3Desc') },
+  ]
+
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh', fontFamily: 'var(--font-body, sans-serif)' }}>
 
@@ -43,8 +30,8 @@ export default function Landing() {
           WorshipFlow
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <a href="/login" style={linkBtn}>Sign in</a>
-          <a href="/signup" style={primaryBtn}>Get started free</a>
+          <a href="/login" style={linkBtn}>{t('landing.signIn')}</a>
+          <a href="/signup" style={primaryBtn}>{t('landing.getStarted')}</a>
         </div>
       </header>
 
@@ -59,24 +46,24 @@ export default function Landing() {
           fontWeight: 800, lineHeight: 1.1, margin: '0 0 20px',
           maxWidth: 720,
         }}>
-          Run your worship set<br />without the chaos.
+          {t('landing.heroTitle')}
         </h1>
         <p style={{
           fontSize: 'clamp(16px, 2.5vw, 20px)', color: 'var(--muted)',
           maxWidth: 540, margin: '0 0 40px', lineHeight: 1.6,
         }}>
-          One place for your songs, your sets, your band, and your Sundays.
+          {t('landing.heroSubtitle')}
         </p>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href="/signup" style={{ ...primaryBtn, fontSize: 16, padding: '14px 28px' }}>Get started free</a>
-          <a href="/login" style={{ ...linkBtn, fontSize: 16, padding: '14px 28px' }}>Sign in</a>
+          <a href="/signup" style={{ ...primaryBtn, fontSize: 16, padding: '14px 28px' }}>{t('landing.getStarted')}</a>
+          <a href="/login" style={{ ...linkBtn, fontSize: 16, padding: '14px 28px' }}>{t('landing.signIn')}</a>
         </div>
       </section>
 
       {/* ── Features ─────────────────────────────────────────────── */}
       <section style={{ padding: '60px 24px', maxWidth: 1100, margin: '0 auto' }}>
         <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48 }}>
-          Everything your worship team needs
+          {t('landing.featuresSectionTitle')}
         </h2>
         <div style={{
           display: 'grid',
@@ -88,7 +75,6 @@ export default function Landing() {
               background: 'var(--bg2)', border: '1px solid var(--border)',
               borderRadius: 16, overflow: 'hidden',
             }}>
-              {/* Screenshot placeholder */}
               <div style={{
                 height: 200, background: 'var(--bg3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -116,7 +102,7 @@ export default function Landing() {
       }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 56 }}>
-            How it works
+            {t('landing.howItWorksTitle')}
           </h2>
           <div style={{
             display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center',
@@ -137,7 +123,7 @@ export default function Landing() {
                 </div>
                 {i < STEPS.length - 1 && (
                   <div style={{
-                    display: 'none', // connector hidden on wrap; visual flow is clear enough
+                    display: 'none',
                   }} />
                 )}
                 <h3 style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 700, margin: '0 0 8px' }}>
@@ -157,17 +143,17 @@ export default function Landing() {
         padding: '100px 24px', textAlign: 'center',
       }}>
         <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, margin: '0 0 16px' }}>
-          Ready to simplify your Sundays?
+          {t('landing.ctaTitle')}
         </h2>
         <p style={{ color: 'var(--muted)', fontSize: 16, margin: '0 0 36px' }}>
-          Free to get started. No credit card required.
+          {t('landing.ctaSubtitle')}
         </p>
         <a href="/signup" style={{ ...primaryBtn, fontSize: 16, padding: '14px 32px', display: 'inline-block' }}>
-          Get started free
+          {t('landing.getStarted')}
         </a>
         <div style={{ marginTop: 20 }}>
           <a href="/login" style={{ color: 'var(--muted)', fontSize: 14, textDecoration: 'none' }}>
-            Already have an account? <span style={{ color: 'var(--accent)' }}>Sign in</span>
+            {t('landing.alreadyHaveAccount')} <span style={{ color: 'var(--accent)' }}>{t('landing.signIn')}</span>
           </a>
         </div>
       </section>
