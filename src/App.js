@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getSongs, getSets } from './lib/supabase'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import Home from './pages/Home'
@@ -31,25 +32,19 @@ const PAGE_PATHS = {
 }
 const PATH_PAGES = Object.fromEntries(Object.entries(PAGE_PATHS).map(([k, v]) => [v, k]))
 
-const BOTTOM_NAV = [
-  { id: 'home', icon: '🏠', label: 'Home' },
-  { id: 'library', icon: '♪', label: 'Library' },
-  { id: 'thisweek', icon: '📅', label: 'Sets' },
-  { id: 'history', icon: '📊', label: 'History' },
-]
-
 function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveChurch, mode, onToggle, mobileOpen, onMobileClose }) {
+  const { t } = useTranslation()
   const nav = [
-    { id: 'home', icon: '🏠', label: 'Home' },
-    { id: 'library', icon: '♪', label: 'Song Library' },
-    { id: 'thisweek', icon: '📅', label: 'Set Builder', badge: weekCount },
-    { id: 'history', icon: '📊', label: 'Play History' },
+    { id: 'home', icon: '🏠', label: t('nav.home') },
+    { id: 'library', icon: '♪', label: t('nav.songLibrary') },
+    { id: 'thisweek', icon: '📅', label: t('nav.setBuilder'), badge: weekCount },
+    { id: 'history', icon: '📊', label: t('nav.playHistory') },
   ]
   const tools = [
-    { id: 'upload', icon: '⬆', label: 'Upload Chart' },
-    { id: 'bandview', icon: '🎸', label: 'Band View' },
-    { id: 'recommendations', icon: '💡', label: 'Recommendations' },
-    { id: 'editor', icon: '✏️', label: 'Song Editor' },
+    { id: 'upload', icon: '⬆', label: t('nav.uploadChart') },
+    { id: 'bandview', icon: '🎸', label: t('nav.bandView') },
+    { id: 'editor', icon: '✏️', label: t('nav.songEditor') },
+    { id: 'recommendations', icon: '💡', label: t('nav.recommendations') },
   ]
   const iconsOnly = mode === 'icons'
 
@@ -78,7 +73,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
         </div>
 
         <nav className="nav">
-          {!iconsOnly && <div className="nav-section">Main</div>}
+          {!iconsOnly && <div className="nav-section">{t('nav.sectionMain')}</div>}
           {nav.map(n => (
             <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)} title={n.label}>
               <span className="nav-icon">{n.icon}</span>
@@ -88,7 +83,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
             </button>
           ))}
 
-          {!iconsOnly && <div className="nav-section">Tools</div>}
+          {!iconsOnly && <div className="nav-section">{t('nav.sectionTools')}</div>}
           {iconsOnly && <div className="nav-divider" />}
           {tools.map(n => (
             <button key={n.id} className={`nav-item ${page === n.id ? 'active' : ''}`} onClick={() => handleNav(n.id)} title={n.label}>
@@ -99,7 +94,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
 
           {churches && churches.length > 1 && (
             <>
-              {!iconsOnly && <div className="nav-section">Church</div>}
+              {!iconsOnly && <div className="nav-section">{t('nav.sectionChurch')}</div>}
               {iconsOnly && <div className="nav-divider" />}
               {!iconsOnly && (
                 <div style={{ padding: '0 8px 8px' }}>
@@ -125,11 +120,11 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
             </>
           )}
 
-          {!iconsOnly && <div className="nav-section">Settings</div>}
+          {!iconsOnly && <div className="nav-section">{t('nav.sectionSettings')}</div>}
           {iconsOnly && <div className="nav-divider" />}
-          <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => handleNav('settings')} title="Settings">
+          <button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => handleNav('settings')} title={t('nav.settings')}>
             <span className="nav-icon">⚙</span>
-            {!iconsOnly && <span className="nav-label">Settings</span>}
+            {!iconsOnly && <span className="nav-label">{t('nav.settings')}</span>}
           </button>
         </nav>
       </aside>
@@ -138,6 +133,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
 }
 
 function AppShell() {
+  const { t } = useTranslation()
   const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -185,11 +181,18 @@ function AppShell() {
   }
 
   const titles = {
-    home: 'Dashboard', library: 'Song Library', thisweek: 'Set Builder',
-    history: 'Play History', upload: 'Upload Chord Chart',
-    bandview: 'Band View', settings: 'Settings',
-    recommendations: 'Song Recommendations', editor: 'Song Editor',
+    home: t('nav.home'), library: t('nav.songLibrary'), thisweek: t('nav.setBuilder'),
+    history: t('nav.playHistory'), upload: t('nav.uploadChart'),
+    bandview: t('nav.bandView'), settings: t('nav.settings'),
+    recommendations: t('nav.recommendations'), editor: t('nav.songEditor'),
   }
+
+  const BOTTOM_NAV = [
+    { id: 'home', icon: '🏠', label: t('nav.home') },
+    { id: 'library', icon: '♪', label: t('nav.library') },
+    { id: 'thisweek', icon: '📅', label: t('nav.thisWeek') },
+    { id: 'history', icon: '📊', label: t('nav.history') },
+  ]
 
   if (authLoading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d0f14', color: '#7c85a0', fontFamily: 'sans-serif' }}>

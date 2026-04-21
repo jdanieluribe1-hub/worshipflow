@@ -25,13 +25,23 @@
     "plays": "plays"
   },
   "nav": {
+    "home": "Home",
     "library": "Library",
+    "songLibrary": "Song Library",
     "thisWeek": "This Week",
+    "setBuilder": "Set Builder",
     "history": "History",
+    "playHistory": "Play History",
+    "uploadChart": "Upload Chart",
+    "bandView": "Band View",
     "recommendations": "Recommendations",
     "settings": "Settings",
     "songEditor": "Song Editor",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "sectionMain": "Main",
+    "sectionTools": "Tools",
+    "sectionChurch": "Church",
+    "sectionSettings": "Settings"
   },
   "auth": {
     "signIn": "Sign In",

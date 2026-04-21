@@ -25,13 +25,23 @@
     "plays": "reproducciones"
   },
   "nav": {
+    "home": "Inicio",
     "library": "Biblioteca",
+    "songLibrary": "Biblioteca de Canciones",
     "thisWeek": "Esta Semana",
+    "setBuilder": "Armador de Sets",
     "history": "Historial",
+    "playHistory": "Historial de Reproducción",
+    "uploadChart": "Subir Partitura",
+    "bandView": "Vista del Equipo",
     "recommendations": "Recomendaciones",
     "settings": "Configuración",
     "songEditor": "Editor de Canciones",
-    "signOut": "Cerrar Sesión"
+    "signOut": "Cerrar Sesión",
+    "sectionMain": "Principal",
+    "sectionTools": "Herramientas",
+    "sectionChurch": "Iglesia",
+    "sectionSettings": "Configuración"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
