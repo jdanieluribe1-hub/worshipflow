@@ -1,8 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 export default function Landing() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   const FEATURES = [
     { title: t('landing.feature1Title'), desc: t('landing.feature1Body'), screenshot: t('landing.screenshotLibrary') },
@@ -30,8 +32,8 @@ export default function Landing() {
           WorshipFlow
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <a href="/login" style={linkBtn}>{t('landing.signIn')}</a>
-          <a href="/signup" style={primaryBtn}>{t('landing.getStarted')}</a>
+          <button onClick={() => navigate('/login')} style={linkBtn}>{t('landing.signIn')}</button>
+          <button onClick={() => navigate('/signup')} style={primaryBtn}>{t('landing.getStarted')}</button>
         </div>
       </header>
 
@@ -55,8 +57,8 @@ export default function Landing() {
           {t('landing.heroSubtitle')}
         </p>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href="/signup" style={{ ...primaryBtn, fontSize: 16, padding: '14px 28px' }}>{t('landing.getStarted')}</a>
-          <a href="/login" style={{ ...linkBtn, fontSize: 16, padding: '14px 28px' }}>{t('landing.signIn')}</a>
+          <button onClick={() => navigate('/signup')} style={{ ...primaryBtn, fontSize: 16, padding: '14px 28px' }}>{t('landing.getStarted')}</button>
+          <button onClick={() => navigate('/login')} style={{ ...linkBtn, fontSize: 16, padding: '14px 28px' }}>{t('landing.signIn')}</button>
         </div>
       </section>
 
@@ -148,13 +150,13 @@ export default function Landing() {
         <p style={{ color: 'var(--muted)', fontSize: 16, margin: '0 0 36px' }}>
           {t('landing.ctaSubtitle')}
         </p>
-        <a href="/signup" style={{ ...primaryBtn, fontSize: 16, padding: '14px 32px', display: 'inline-block' }}>
+        <button onClick={() => navigate('/signup')} style={{ ...primaryBtn, fontSize: 16, padding: '14px 32px' }}>
           {t('landing.getStarted')}
-        </a>
+        </button>
         <div style={{ marginTop: 20 }}>
-          <a href="/login" style={{ color: 'var(--muted)', fontSize: 14, textDecoration: 'none' }}>
+          <span onClick={() => navigate('/login')} style={{ color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
             {t('landing.alreadyHaveAccount')} <span style={{ color: 'var(--accent)' }}>{t('landing.signIn')}</span>
-          </a>
+          </span>
         </div>
       </section>
 
