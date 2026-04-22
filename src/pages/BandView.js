@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n, { dateLocale } from '../i18n'
-import { useParams } from 'react-router-dom'
-import { getSongs, getSets, getSongsForBand, getSetsForBand } from '../lib/supabase'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { getSongs, getSets, getSongsForBand, getSetsForBand, getSongsForBandByShortCode, getSetsForBandByShortCode } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
@@ -17,7 +17,9 @@ function getNextSunday() {
 export default function BandView({ songs: propSongs = [], sets: propSets = [], public: isPublic = false }) {
   const { t } = useTranslation()
   const params = useParams()
+  const [searchParams] = useSearchParams()
   const token = params.token || null
+  const shortCode = searchParams.get('c') || null
   const [selectedDate, setSelectedDate] = useState(getNextSunday)
   const [idx, setIdx] = useState(0)
   const [localSongs, setLocalSongs] = useState([])
@@ -45,15 +47,19 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     }
   }
 
-  // Self-fetch when used on the public /band/:token route
+  // Self-fetch when used on the public /band route
   useEffect(() => {
     if (!isPublic) return
-    if (token) {
+    if (shortCode) {
+      Promise.all([getSongsForBandByShortCode(shortCode), getSetsForBandByShortCode(shortCode)])
+        .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
+        .catch(() => {})
+    } else if (token) {
       Promise.all([getSongsForBand(token), getSetsForBand(token)])
         .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
         .catch(() => {})
     }
-  }, [isPublic, token])
+  }, [isPublic, token, shortCode])
 
   const songs = propSongs.length ? propSongs : localSongs
   const sets  = propSets.length  ? propSets  : localSets

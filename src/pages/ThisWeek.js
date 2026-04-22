@@ -141,8 +141,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     const apple = overrides.apple || songAppleMusicUrls
     const useSongs = ids.map(id => songs.find(s => s.id === id)).filter(Boolean)
     const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { weekday:'long', month:'long', day:'numeric', year:'numeric' })
-    const bandLink = activeChurch?.band_token
-      ? `${window.location.origin}/band/${activeChurch.band_token}`
+    const bandLink = activeChurch?.short_code
+      ? `${window.location.origin}/band?c=${activeChurch.short_code}`
       : `${window.location.origin}/band`
     const recommendLink = activeChurch?.short_code
       ? `${window.location.origin}/recommend?c=${activeChurch.short_code}`

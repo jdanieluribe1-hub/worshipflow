@@ -305,6 +305,18 @@ export async function getSetsForBand(bandToken) {
   return data || []
 }
 
+export async function getSongsForBandByShortCode(shortCode) {
+  const { data, error } = await supabase.rpc('get_songs_for_band_by_short_code', { p_short_code: shortCode })
+  if (error) throw error
+  return data || []
+}
+
+export async function getSetsForBandByShortCode(shortCode) {
+  const { data, error } = await supabase.rpc('get_sets_for_band_by_short_code', { p_short_code: shortCode })
+  if (error) throw error
+  return data || []
+}
+
 // ─── Song Variants ────────────────────────────────────────────────────────────
 
 export async function createSongVariant(songId, name, chordData) {
