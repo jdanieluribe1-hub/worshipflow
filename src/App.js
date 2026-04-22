@@ -274,6 +274,7 @@ export default function App() {
           <Route path="/band/:token" element={<BandViewPublic />} />
           <Route path="/band" element={<BandViewPublic />} />
           <Route path="/recommend" element={<RecommendView />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/join/:token" element={<JoinChurch />} />
           <Route path="*" element={<AppShell />} />
@@ -298,6 +299,15 @@ function LandingRoute() {
   if (user && profile) { navigate('/home', { replace: true }); return null }
   if (user && !profile) return <Onboarding />
   return <Landing />
+}
+
+function LoginPage() {
+  const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
+  if (loading) return null
+  if (user && profile) { navigate('/home', { replace: true }); return null }
+  if (user && !profile) return <Onboarding />
+  return <Login onNeedsOnboarding={() => {}} defaultMode="signin" />
 }
 
 function BandViewPublic() {

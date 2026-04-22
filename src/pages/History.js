@@ -14,6 +14,12 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
   const [deleting, setDeleting] = useState(false)
   const [duplicateDate, setDuplicateDate] = useState('')
   const [duplicating, setDuplicating] = useState(false)
+  const [unlockedDates, setUnlockedDates] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`wf_unlocked_${activeChurch?.id}`)
+      return stored ? new Set(JSON.parse(stored)) : new Set()
+    } catch { return new Set() }
+  })
 
   // Edit modal state
   const [editModal, setEditModal] = useState(false)
@@ -36,7 +42,18 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
   const effectiveKey = (s) => selectedSet?.key_overrides?.[s.id] || s.key
 
   const isPast = selectedKey ? new Date(selectedKey + 'T12:00:00') < today : false
+  const isAdmin = activeChurch?.role === 'admin'
+  const isLocked = isPast && !unlockedDates.has(selectedKey)
   const locale = dateLocale(i18n.language)
+
+  const toggleLock = (dateKey) => {
+    setUnlockedDates(prev => {
+      const next = new Set(prev)
+      if (next.has(dateKey)) { next.delete(dateKey) } else { next.add(dateKey) }
+      localStorage.setItem(`wf_unlocked_${activeChurch?.id}`, JSON.stringify([...next]))
+      return next
+    })
+  }
 
   const handleDeleteSet = async () => {
     if (!selectedKey) return
@@ -150,7 +167,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       <div key={key} className={cls} onClick={() => hasSet && setSelectedKey(isSelected ? null : key)}>
         <div className="cal-date">{d}</div>
         {hasSet && <><div className="cal-dot"/><div className="cal-count">{songCount}</div></>}
-        {hasSet && cellIsPast && <div style={{ fontSize:8, color:'var(--muted)', lineHeight:1 }}>🔒</div>}
+        {hasSet && cellIsPast && <div style={{ fontSize:8, color:'var(--muted)', lineHeight:1 }}>{unlockedDates.has(key) ? '🔓' : '🔒'}</div>}
       </div>
     )
   }
@@ -220,7 +237,15 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                     <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:700, flex:1 }}>
                       {new Date(selectedKey+'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' })}
                     </div>
-                    {isPast && <span title="Past set — locked" style={{ fontSize:14 }}>🔒</span>}
+                    {isPast && (
+                      isAdmin
+                        ? <span
+                            title={isLocked ? 'Locked — click to unlock' : 'Unlocked — click to re-lock'}
+                            style={{ fontSize:14, cursor:'pointer', opacity: 0.8 }}
+                            onClick={() => toggleLock(selectedKey)}
+                          >{isLocked ? '🔒' : '🔓'}</span>
+                        : <span title="Past set — locked (read-only)" style={{ fontSize:14 }}>🔒</span>
+                    )}
                   </div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:3 }}>
                     {selectedSongs.length} {t('history.songs')} · {t('history.keysLabel')} {[...new Set(selectedSongs.map(s=>effectiveKey(s)))].join(', ')||'—'}
@@ -257,7 +282,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                       <input type="date" value={duplicateDate} onChange={e => setDuplicateDate(e.target.value)} style={{ flex:1, fontSize:12, padding:'5px 8px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }} />
                       <button className="btn btn-ghost btn-sm" onClick={handleDuplicateSet} disabled={duplicating || !duplicateDate} style={{ whiteSpace:'nowrap' }}>{duplicating ? t('history.copyingDots') : t('history.duplicateToDate')}</button>
                     </div>
-                    {!isPast && (
+                    {!isLocked && (
                       <>
                         <button className="btn btn-ghost btn-sm" onClick={openEditModal} style={{ width:'100%' }}>{t('history.editSet')}</button>
                         <button className="btn btn-ghost btn-sm" onClick={handleDeleteSet} disabled={deleting} style={{ color:'var(--red)', borderColor:'var(--red)', width:'100%' }}>{deleting ? t('history.deletingDots') : t('history.deleteThisSet')}</button>
