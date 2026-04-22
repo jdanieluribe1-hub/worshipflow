@@ -20,7 +20,7 @@ import SongEditor from './pages/SongEditor'
 import './App.css'
 
 const PAGE_PATHS = {
-  home: '/dashboard',
+  home: '/home',
   library: '/library',
   thisweek: '/sets',
   history: '/history',
@@ -137,9 +137,8 @@ function AppShell() {
   const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [needsOnboarding, setNeedsOnboarding] = useState(false)
   const page = PATH_PAGES[location.pathname] || 'home'
-  const setPage = useCallback((id) => navigate(PAGE_PATHS[id] || '/dashboard'), [navigate])
+  const setPage = useCallback((id) => navigate(PAGE_PATHS[id] || '/home'), [navigate])
   const [pendingOpenSong, setPendingOpenSong] = useState(null)
   const [songs, setSongs] = useState([])
   const [sets, setSets] = useState([])
@@ -201,12 +200,10 @@ function AppShell() {
   )
 
   if (!user) {
-    return <Login onNeedsOnboarding={() => setNeedsOnboarding(true)} />
+    navigate('/', { replace: true })
+    return null
   }
-  if (!profile || needsOnboarding) return <Onboarding />
-
-  // Redirect bare / to /dashboard when logged in
-  if (location.pathname === '/') { navigate('/dashboard', { replace: true }); return null }
+  if (!profile) return <Onboarding />
 
   const weekSongs = weekSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
 
@@ -273,7 +270,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/home" element={<Landing />} />
+          <Route path="/" element={<LandingRoute />} />
           <Route path="/band/:token" element={<BandViewPublic />} />
           <Route path="/band" element={<BandViewPublic />} />
           <Route path="/recommend" element={<RecommendView />} />
@@ -289,9 +286,18 @@ export default function App() {
 function SignupPage() {
   const { user, profile, loading } = useAuth()
   if (loading) return null
-  if (user && profile) { window.location.replace('/'); return null }
+  if (user && profile) { window.location.replace('/home'); return null }
   if (user && !profile) return <Onboarding />
   return <Login onNeedsOnboarding={() => {}} defaultMode="signup" />
+}
+
+function LandingRoute() {
+  const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
+  if (loading) return null
+  if (user && profile) { navigate('/home', { replace: true }); return null }
+  if (user && !profile) return <Onboarding />
+  return <Landing />
 }
 
 function BandViewPublic() {

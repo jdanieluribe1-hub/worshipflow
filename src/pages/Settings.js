@@ -90,7 +90,7 @@ export default function Settings({ theme, setTheme, user }) {
 
   const handleSignOut = async () => {
     await signOut()
-    navigate('/home')
+    navigate('/')
   }
 
   const handleDeleteAccount = async () => {
