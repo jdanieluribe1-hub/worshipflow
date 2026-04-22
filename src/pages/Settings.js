@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, leaveChurch, regenerateInviteToken, deleteOwnAccount, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Settings({ theme, setTheme, user }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { profile, setProfile, churches, activeChurch, setActiveChurch, refreshChurches, setLanguage } = useAuth()
   const [name, setName] = useState(profile?.name || '')
   const [churchName, setChurchName] = useState(profile?.church_name || '')
@@ -88,6 +90,7 @@ export default function Settings({ theme, setTheme, user }) {
 
   const handleSignOut = async () => {
     await signOut()
+    navigate('/home')
   }
 
   const handleDeleteAccount = async () => {
