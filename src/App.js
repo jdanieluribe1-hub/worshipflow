@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Analytics } from '@vercel/analytics/react'
 import { getSongs, getSets } from './lib/supabase'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import Home from './pages/Home'
@@ -282,6 +283,7 @@ export default function App() {
           <Route path="*" element={<AppShell />} />
         </Routes>
       </AuthProvider>
+      <Analytics />
     </BrowserRouter>
   )
 }
