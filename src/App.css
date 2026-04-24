@@ -84,6 +84,8 @@ body {
 .sidebar-icons .logo { padding: 20px 0 16px; justify-content: center; flex-direction: column; gap: 6px; }
 .logo-title { font-family: var(--font-head); font-size: 17px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; }
 .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
+.logo-link { text-decoration: none; color: inherit; cursor: pointer; }
+.logo-link:hover .logo-sub { color: var(--accent, #4f8ef7); }
 
 .sidebar-toggle-btn {
   background: none; border: 1px solid var(--border2); color: var(--muted);
