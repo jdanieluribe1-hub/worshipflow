@@ -42,12 +42,12 @@ export default function Settings({ theme, setTheme, user }) {
     setSaving(false)
   }
 
-  const bandLink = church?.band_token
-    ? `${window.location.origin}/band/${church.band_token}`
+  const bandLink = church?.short_code
+    ? `${window.location.origin}/band?c=${church.short_code}`
     : `${window.location.origin}/band`
 
-  const recommendLink = church?.id
-    ? `${window.location.origin}/recommend?church=${church.id}&name=${encodeURIComponent(church.name || '')}`
+  const recommendLink = church?.short_code
+    ? `${window.location.origin}/recommend?c=${church.short_code}`
     : `${window.location.origin}/recommend`
 
   const inviteLink = church?.invite_token
