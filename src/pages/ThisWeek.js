@@ -20,6 +20,7 @@ function getNextSunday() {
 export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [], activeChurch }) {
   const { t } = useTranslation()
   const [serviceDate, setServiceDate] = useState(getNextSunday())
+  const [serviceTime, setServiceTime] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
@@ -34,13 +35,13 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [previewVariant, setPreviewVariant] = useState(null)
 
   useEffect(() => {
-    const savedSet = sets.find(s => s.service_date === serviceDate)
+    const savedSet = sets.find(s => s.service_date === serviceDate && (s.service_time || '') === serviceTime)
     setKeyOverrides(savedSet?.key_overrides || {})
     const links = savedSet?.music_links || {}
     setSongSpotifyUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.spotify || ''])))
     setSongYoutubeUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.youtube || ''])))
     setSongAppleMusicUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.apple || ''])))
-  }, [serviceDate, sets])
+  }, [serviceDate, serviceTime, sets])
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
   const med = weekSongs.filter(s=>s.tempo==='Medium').length
@@ -108,7 +109,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!weekSongIds.length) return alert(t('thisWeek.addSongsFirst'))
     setSaving(true)
     try {
-      await upsertSet(activeChurch?.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks())
+      await upsertSet(activeChurch?.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks(), serviceTime)
       await refreshSets()
       alert(t('thisWeek.setSaved'))
     } catch(e) { alert(t('thisWeek.errorSave', { msg: e.message })) }
@@ -120,7 +121,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!window.confirm(t('thisWeek.finalizeConfirm', { date: serviceDate }))) return
     setFinalizing(true)
     try {
-      await finalizeSet(activeChurch?.id, serviceDate, weekSongIds, keyOverrides, buildMusicLinks())
+      await finalizeSet(activeChurch?.id, serviceDate, weekSongIds, keyOverrides, buildMusicLinks(), serviceTime)
       await refreshSets()
       setWeekSongIds([])
       setNotes('')
@@ -159,8 +160,15 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       <div className="grid-2" style={{ marginBottom:24 }}>
         <div className="stat-card">
           <div className="stat-label">{t('thisWeek.serviceDate')}</div>
-          <div style={{ display:'flex', justifyContent:'center', marginTop:4 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:4 }}>
             <input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)} style={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }} />
+            <input
+              type="text"
+              placeholder={t('thisWeek.serviceTimePlaceholder')}
+              value={serviceTime}
+              onChange={e => setServiceTime(e.target.value)}
+              style={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }}
+            />
           </div>
         </div>
         <div className="stat-card">

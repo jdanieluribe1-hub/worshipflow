@@ -201,23 +201,24 @@ export async function getSets(churchId) {
   return data
 }
 
-export async function getSetByDate(churchId, date) {
+export async function getSetByDate(churchId, date, serviceTime = '') {
   const { data, error } = await supabase
     .from('sets')
     .select('*')
     .eq('church_id', churchId)
     .eq('service_date', date)
+    .eq('service_time', serviceTime)
     .single()
   if (error && error.code !== 'PGRST116') throw error
   return data || null
 }
 
-export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}) {
+export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}, serviceTime = '') {
   const { data, error } = await supabase
     .from('sets')
     .upsert(
-      { church_id: churchId, service_date: serviceDate, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks },
-      { onConflict: 'church_id,service_date' }
+      { church_id: churchId, service_date: serviceDate, service_time: serviceTime, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks },
+      { onConflict: 'church_id,service_date,service_time' }
     )
     .select()
     .single()
@@ -225,13 +226,13 @@ export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyO
   return data
 }
 
-export async function finalizeSet(churchId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}) {
+export async function finalizeSet(churchId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}, serviceTime = '') {
   await incrementPlays(songIds)
   const { data, error } = await supabase
     .from('sets')
     .upsert(
-      { church_id: churchId, service_date: serviceDate, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks },
-      { onConflict: 'church_id,service_date' }
+      { church_id: churchId, service_date: serviceDate, service_time: serviceTime, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks },
+      { onConflict: 'church_id,service_date,service_time' }
     )
     .select()
     .single()
@@ -239,12 +240,13 @@ export async function finalizeSet(churchId, serviceDate, songIds, keyOverrides =
   return data
 }
 
-export async function deleteSet(churchId, serviceDate) {
+export async function deleteSet(churchId, serviceDate, serviceTime = '') {
   const { error } = await supabase
     .from('sets')
     .delete()
     .eq('church_id', churchId)
     .eq('service_date', serviceDate)
+    .eq('service_time', serviceTime)
   if (error) throw error
 }
 

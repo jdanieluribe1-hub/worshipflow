@@ -211,6 +211,7 @@
   "thisWeek": {
     "title": "This Week",
     "serviceDate": "Service Date",
+    "serviceTimePlaceholder": "Service time (e.g. 10:00 AM)",
     "tempoMix": "Tempo Mix",
     "fast": "fast",
     "mid": "mid",
