@@ -238,7 +238,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
           onClick={() => setActiveTab('danis-database')}
           style={{ padding:'8px 20px', background:'none', border:'none', borderBottom: activeTab === 'danis-database' ? '2px solid var(--accent)' : '2px solid transparent', color: activeTab === 'danis-database' ? 'var(--text)' : 'var(--muted)', cursor:'pointer', fontWeight: activeTab === 'danis-database' ? 600 : 400, fontSize:14 }}
         >
-          ✦ {t('library.danisDatabaseTab')}
+          ✦ Dani's Database
         </button>
       </div>
 
@@ -431,7 +431,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                     <div style={{ fontFamily:'var(--font-head)',fontSize:20,fontWeight:700 }}>{detailSong.title}</div>
                     <div style={{ color:'var(--muted)',fontSize:13 }}>{detailSong.artist}</div>
                     {isTemplate && (
-                      <div style={{ fontSize:11, color:'var(--accent)', marginTop:2 }}>✦ {t('library.danisDatabaseTab')}</div>
+                      <div style={{ fontSize:11, color:'var(--accent)', marginTop:2 }}>✦ Dani's Database</div>
                     )}
                   </div>
                 </div>
