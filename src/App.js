@@ -211,8 +211,8 @@ function NoChurchState() {
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: 'calc(100vh - 56px)', padding: 32,
+      display: 'flex', justifyContent: 'center',
+      paddingTop: 64, paddingLeft: 32, paddingRight: 32, paddingBottom: 32,
     }}>
       <div style={{ width: '100%', maxWidth: 760 }}>
         <div style={{ textAlign: 'center', marginBottom: 48 }}>

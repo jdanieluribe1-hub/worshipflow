@@ -82,8 +82,8 @@ export async function getChurches(userId) {
   return (data || []).map(row => ({ ...row.churches, role: row.role, joined_at: row.joined_at }))
 }
 
-export async function createChurch(name) {
-  const { data, error } = await supabase.rpc('create_church_for_user', { church_name: name })
+export async function createChurch(name, language = 'en') {
+  const { data, error } = await supabase.rpc('create_church_for_user', { church_name: name, church_language: language })
   if (error) throw error
   return data
 }
