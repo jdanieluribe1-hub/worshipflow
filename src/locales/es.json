@@ -182,7 +182,15 @@
     "saveChanges": "Guardar Cambios",
     "inThisWeekFull": "✓ En Esta Semana",
     "addToThisWeekFull": "+ Añadir a Esta Semana",
-    "pleaseEnterTitle": "Por favor ingresa el título de la canción."
+    "pleaseEnterTitle": "Por favor ingresa el título de la canción.",
+    "myLibraryTab": "Mi Biblioteca",
+    "danisDatabaseTab": "Base de Dani",
+    "danisDatabaseDesc": "Acordes curados por Dani — añade cualquier canción a tu biblioteca y personalízala para tu iglesia.",
+    "addToLibrary": "+ Añadir a Biblioteca",
+    "alreadyAdded": "✓ Añadida",
+    "noDanisSongs": "Aún no hay canciones en la Base de Dani.",
+    "publishToDatabase": "Publicar en Base de Dani",
+    "removeFromDatabase": "Quitar de la Base"
   },
   "songEditor": {
     "title": "Editor de Canciones",

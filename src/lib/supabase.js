@@ -319,6 +319,35 @@ export async function getSetsForBandByShortCode(shortCode) {
   return data || []
 }
 
+// ─── Dani's Database (public template songs) ─────────────────────────────────
+
+export async function getPublicTemplateSongs() {
+  const { data, error } = await supabase
+    .from('songs')
+    .select('*')
+    .eq('is_public_template', true)
+    .order('title')
+  if (error) throw error
+  return data || []
+}
+
+export async function importTemplateSong(songId, churchId) {
+  const { data, error } = await supabase.rpc('import_template_song', {
+    p_song_id: songId,
+    p_church_id: churchId,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function toggleSongPublicTemplate(songId) {
+  const { data, error } = await supabase.rpc('toggle_song_public_template', {
+    p_song_id: songId,
+  })
+  if (error) throw error
+  return data
+}
+
 // ─── Song Variants ────────────────────────────────────────────────────────────
 
 export async function createSongVariant(songId, name, chordData) {
