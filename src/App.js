@@ -333,8 +333,8 @@ function AppShell() {
     }).catch(() => setDataLoading(false))
   }, [activeChurch?.id])
 
-  const refreshSongs = () => getSongs(activeChurch.id).then(s => setSongs(s || []))
-  const refreshSets  = () => getSets(activeChurch.id).then(s => setSets(s || []))
+  const refreshSongs = () => activeChurch?.id ? getSongs(activeChurch.id).then(s => setSongs(s || [])) : Promise.resolve()
+  const refreshSets  = () => activeChurch?.id ? getSets(activeChurch.id).then(s => setSets(s || [])) : Promise.resolve()
 
   const cycleSidebar = () => {
     setSidebarMode(m => m === 'full' ? 'icons' : 'full')
@@ -354,6 +354,10 @@ function AppShell() {
     { id: 'history', icon: '📊', label: t('nav.history') },
   ]
 
+  // useMemo must be called before any conditional returns to satisfy React hooks rules
+  const enrichedSongs = useMemo(() => computePlayCounts(songs, sets), [songs, sets])
+  const weekSongs = weekSongIds.map(id => enrichedSongs.find(s => s.id === id)).filter(Boolean)
+
   if (authLoading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d0f14', color: '#7c85a0', fontFamily: 'sans-serif' }}>
       Loading WorshipFlow...
@@ -366,8 +370,11 @@ function AppShell() {
   }
   if (!profile) return <Onboarding />
 
-  const enrichedSongs = useMemo(() => computePlayCounts(songs, sets), [songs, sets])
-  const weekSongs = weekSongIds.map(id => enrichedSongs.find(s => s.id === id)).filter(Boolean)
+  if (dataLoading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d0f14', color: '#7c85a0', fontFamily: 'sans-serif' }}>
+      Loading WorshipFlow...
+    </div>
+  )
 
   const pageProps = {
     songs: enrichedSongs, sets, weekSongIds, weekSongs,
@@ -375,12 +382,6 @@ function AppShell() {
     theme, setTheme, profile, user,
     activeChurch, churches, setPage,
   }
-
-  if (dataLoading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0d0f14', color: '#7c85a0', fontFamily: 'sans-serif' }}>
-      Loading WorshipFlow...
-    </div>
-  )
 
   return (
     <div className={`app sidebar-mode-${sidebarMode}`}>
