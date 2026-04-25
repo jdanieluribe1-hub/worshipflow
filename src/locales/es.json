@@ -128,6 +128,19 @@
     "uploadChartDesc": "Añade una nueva canción desde PDF o URL",
     "nextLabel": "Siguiente"
   },
+  "noChurch": {
+    "title": "Aún no perteneces a ninguna iglesia",
+    "subtitle": "Crea una nueva iglesia o ingresa un código corto para unirte a una existente.",
+    "createTitle": "Crear una Iglesia",
+    "churchNamePlaceholder": "ej. Iglesia Gracia Comunidad",
+    "creating": "Creando...",
+    "create": "Crear Iglesia",
+    "or": "o",
+    "joinTitle": "Unirte con un Código",
+    "shortCodePlaceholder": "Ingresa el código (ej. ABC123)",
+    "joining": "Uniéndose...",
+    "join": "Unirse a la Iglesia"
+  },
   "library": {
     "title": "Biblioteca",
     "addSong": "+ Añadir Canción",

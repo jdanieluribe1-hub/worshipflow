@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getSongs, getSets } from './lib/supabase'
+import { getSongs, getSets, createChurch, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from './lib/supabase'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import Home from './pages/Home'
 import Library from './pages/Library'
@@ -157,6 +157,142 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
   )
 }
 
+function NoChurchState() {
+  const { t } = useTranslation()
+  const { user, refreshChurches } = useAuth()
+
+  const [churchName, setChurchName] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
+
+  const [joinCode, setJoinCode] = useState('')
+  const [joinPreview, setJoinPreview] = useState(null)
+  const [joining, setJoining] = useState(false)
+  const [joinError, setJoinError] = useState('')
+
+  const handleCreate = async () => {
+    if (!churchName.trim()) return
+    setCreating(true)
+    setCreateError('')
+    try {
+      await createChurch(churchName.trim())
+      await refreshChurches()
+    } catch (err) {
+      setCreateError(err.message || 'Something went wrong.')
+      setCreating(false)
+    }
+  }
+
+  const handleJoinCodeChange = async (val) => {
+    setJoinCode(val)
+    setJoinPreview(null)
+    setJoinError('')
+    if (val.trim().length >= 4) {
+      try {
+        const c = await getChurchByShortCode(val.trim())
+        setJoinPreview(c)
+      } catch {}
+    }
+  }
+
+  const handleJoin = async () => {
+    if (!joinPreview) return
+    setJoining(true)
+    setJoinError('')
+    try {
+      await joinChurchByShortCode(joinCode.trim())
+      await setActiveChurchDB(user.id, joinPreview.id)
+      await refreshChurches()
+    } catch (err) {
+      setJoinError(err.message || t('settings.failedToJoin'))
+      setJoining(false)
+    }
+  }
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: 'calc(100vh - 56px)', padding: 32,
+    }}>
+      <div style={{ width: '100%', maxWidth: 760 }}>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ fontSize: 64, marginBottom: 20 }}>⛪</div>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 28, fontWeight: 700, marginBottom: 10 }}>
+            {t('noChurch.title')}
+          </div>
+          <div style={{ color: 'var(--muted)', fontSize: 15 }}>
+            {t('noChurch.subtitle')}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 20, alignItems: 'start' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 32 }}>
+            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 17 }}>
+              {t('noChurch.createTitle')}
+            </div>
+            <input
+              className="form-input"
+              placeholder={t('noChurch.churchNamePlaceholder')}
+              value={churchName}
+              onChange={e => setChurchName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCreate()}
+              disabled={creating}
+            />
+            {createError && <div style={{ fontSize: 13, color: 'var(--red)' }}>{createError}</div>}
+            <button
+              className="btn btn-primary"
+              onClick={handleCreate}
+              disabled={creating || !churchName.trim()}
+            >
+              {creating ? t('noChurch.creating') : t('noChurch.create')}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 64 }}>
+            <div style={{ width: 1, height: 56, background: 'var(--border)' }} />
+            <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+              {t('noChurch.or')}
+            </div>
+            <div style={{ width: 1, height: 56, background: 'var(--border)' }} />
+          </div>
+
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 32 }}>
+            <div style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 17 }}>
+              {t('noChurch.joinTitle')}
+            </div>
+            <input
+              className="form-input"
+              placeholder={t('noChurch.shortCodePlaceholder')}
+              value={joinCode}
+              onChange={e => handleJoinCodeChange(e.target.value.toUpperCase())}
+              onKeyDown={e => e.key === 'Enter' && handleJoin()}
+              disabled={joining}
+            />
+            {joinPreview && (
+              <div style={{ fontSize: 13, color: 'var(--green)' }}>
+                {t('settings.foundChurch', { name: joinPreview.name })}
+              </div>
+            )}
+            {joinCode.length >= 4 && !joinPreview && !joining && (
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+                {t('settings.noChurchFound')}
+              </div>
+            )}
+            {joinError && <div style={{ fontSize: 13, color: 'var(--red)' }}>{joinError}</div>}
+            <button
+              className="btn btn-primary"
+              onClick={handleJoin}
+              disabled={joining || !joinPreview}
+            >
+              {joining ? t('noChurch.joining') : t('noChurch.join')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AppShell() {
   const { t } = useTranslation()
   const { user, profile, loading: authLoading, churches, activeChurch, setActiveChurch } = useAuth()
@@ -188,7 +324,7 @@ function AppShell() {
   }, [sidebarMode])
 
   useEffect(() => {
-    if (!activeChurch?.id) return
+    if (!activeChurch?.id) { setDataLoading(false); return }
     setDataLoading(true)
     Promise.all([getSongs(activeChurch.id), getSets(activeChurch.id)]).then(([s, st]) => {
       setSongs(s || [])
@@ -261,15 +397,21 @@ function AppShell() {
           <div className="topbar-actions" id="topbar-actions"></div>
         </div>
         <div className="content">
-          {page === 'home' && <Home {...pageProps} setPage={setPage} setPendingOpenSong={setPendingOpenSong} />}
-          {page === 'library' && <Library {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
-          {page === 'thisweek' && <ThisWeek {...pageProps} setPage={setPage} />}
-          {page === 'history' && <History {...pageProps} setPage={setPage} />}
-          {page === 'upload' && <Upload {...pageProps} />}
-          {page === 'bandview' && <BandView {...pageProps} />}
-          {page === 'recommendations' && <Recommendations {...pageProps} />}
-          {page === 'settings' && <Settings {...pageProps} />}
-          {page === 'editor' && <SongEditor {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
+          {!activeChurch && page !== 'settings' ? (
+            <NoChurchState />
+          ) : (
+            <>
+              {page === 'home' && <Home {...pageProps} setPage={setPage} setPendingOpenSong={setPendingOpenSong} />}
+              {page === 'library' && <Library {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
+              {page === 'thisweek' && <ThisWeek {...pageProps} setPage={setPage} />}
+              {page === 'history' && <History {...pageProps} setPage={setPage} />}
+              {page === 'upload' && <Upload {...pageProps} />}
+              {page === 'bandview' && <BandView {...pageProps} />}
+              {page === 'recommendations' && <Recommendations {...pageProps} />}
+              {page === 'settings' && <Settings {...pageProps} />}
+              {page === 'editor' && <SongEditor {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
+            </>
+          )}
         </div>
       </div>
 
