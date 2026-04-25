@@ -187,9 +187,7 @@
     "danisDatabaseDesc": "Acordes curados por Dani — añade cualquier canción a tu biblioteca y personalízala para tu iglesia.",
     "addToLibrary": "+ Añadir a Biblioteca",
     "alreadyAdded": "✓ Añadida",
-    "noDanisSongs": "Aún no hay canciones en la Base de Dani.",
-    "publishToDatabase": "Publicar en Base de Dani",
-    "removeFromDatabase": "Quitar de la Base"
+    "noDanisSongs": "Aún no hay canciones en Dani's Database."
   },
   "songEditor": {
     "title": "Editor de Canciones",

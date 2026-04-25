@@ -340,13 +340,6 @@ export async function importTemplateSong(songId, churchId) {
   return data
 }
 
-export async function toggleSongPublicTemplate(songId) {
-  const { data, error } = await supabase.rpc('toggle_song_public_template', {
-    p_song_id: songId,
-  })
-  if (error) throw error
-  return data
-}
 
 // ─── Song Variants ────────────────────────────────────────────────────────────
 

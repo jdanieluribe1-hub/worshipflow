@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { addSong, deleteSong, updateSong, getPublicTemplateSongs, importTemplateSong, toggleSongPublicTemplate } from '../lib/supabase'
+import { addSong, deleteSong, updateSong, getPublicTemplateSongs, importTemplateSong } from '../lib/supabase'
 import { parsePDFWithAI, generateProPresenterFile, stripChords } from '../lib/ai'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
@@ -15,11 +15,9 @@ const TEMPOS = ['Fast','Medium','Slow']
 const THEMES = ['Praise','Worship','Prayer','Communion','Offering','Closing','Opening','Christmas','Easter','Thanksgiving']
 const SPECIALTY = ['Contemporary','Traditional','Hymn','Spanish','Bilingual','Acoustic','Youth','Children','Advent']
 
-const DANIEL_EMAIL = 'jdanieluribe.1@gmail.com'
-
 function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':'🎶' }
 
-export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch, pendingOpenSong, setPendingOpenSong, setPage, user }) {
+export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch, pendingOpenSong, setPendingOpenSong, setPage }) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState('my-library')
   const [filter, setFilter] = useState({ tempo: 'all', key: 'all', search: '' })
@@ -38,9 +36,6 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const [templateSongs, setTemplateSongs] = useState([])
   const [templateLoading, setTemplateLoading] = useState(false)
   const [importing, setImporting] = useState({})
-  const [togglingPublic, setTogglingPublic] = useState({})
-
-  const isDaniel = user?.email === DANIEL_EMAIL
 
   // Set of template IDs already imported into this church
   const importedTemplateIds = useMemo(
@@ -202,26 +197,6 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
     setImporting(p => { const n = { ...p }; delete n[song.id]; return n })
   }
 
-  const handleTogglePublic = async (song) => {
-    setTogglingPublic(p => ({ ...p, [song.id]: true }))
-    try {
-      const newStatus = await toggleSongPublicTemplate(song.id)
-      await refreshSongs()
-      setDetailSong(s => s?.id === song.id ? { ...s, is_public_template: newStatus } : s)
-      setTemplateSongs(prev => {
-        if (newStatus && !prev.find(s => s.id === song.id)) {
-          return [...prev, { ...song, is_public_template: true }].sort((a, b) => a.title.localeCompare(b.title))
-        }
-        if (!newStatus) return prev.filter(s => s.id !== song.id)
-        return prev.map(s => s.id === song.id ? { ...s, is_public_template: newStatus } : s)
-      })
-      if (!newStatus && activeTab === 'danis-database') closeDetail()
-    } catch (e) {
-      alert('Error: ' + e.message)
-    }
-    setTogglingPublic(p => { const n = { ...p }; delete n[song.id]; return n })
-  }
-
   const isTemplate = activeTab === 'danis-database'
 
   return (
@@ -284,12 +259,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
           <div key={s.id} className={`song-row ${!isTemplate && inWeek ? 'selected' : ''}`} onClick={() => openDetail(s)}>
             <div className="song-thumb">{tempoEmoji(s.tempo)}</div>
             <div className="song-info">
-              <div className="song-title">
-                {s.title}
-                {!isTemplate && isDaniel && s.is_public_template && (
-                  <span style={{ marginLeft:6, fontSize:11, color:'var(--accent)', opacity:0.8 }}>✦</span>
-                )}
-              </div>
+              <div className="song-title">{s.title}</div>
               <div className="song-artist">{s.artist}</div>
             </div>
             <div className="song-tags">
@@ -545,15 +515,6 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                 <div className="modal-footer">
                   {isTemplate ? (
                     <>
-                      {isDaniel && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => handleTogglePublic(detailSong)}
-                          disabled={togglingPublic[detailSong.id]}
-                        >
-                          {togglingPublic[detailSong.id] ? '...' : t('library.removeFromDatabase')}
-                        </button>
-                      )}
                       <div style={{ flex:1 }} />
                       {(() => {
                         const alreadyAdded = importedTemplateIds.has(detailSong.id)
@@ -574,16 +535,6 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                     <>
                       <button className="btn btn-red btn-sm" onClick={()=>handleDelete(detailSong.id)}>{t('common.delete')}</button>
                       <div style={{ flex:1 }} />
-                      {isDaniel && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => handleTogglePublic(detailSong)}
-                          disabled={togglingPublic[detailSong.id]}
-                          title={detailSong.is_public_template ? t('library.removeFromDatabase') : t('library.publishToDatabase')}
-                        >
-                          {togglingPublic[detailSong.id] ? '...' : detailSong.is_public_template ? '✦ ' + t('library.removeFromDatabase') : '✦ ' + t('library.publishToDatabase')}
-                        </button>
-                      )}
                       <button className="btn btn-ghost btn-sm modal-footer-edit" onClick={startEdit}>{t('common.edit')}</button>
                       <button className="btn btn-ghost modal-footer-close" onClick={closeDetail}>{t('common.close')}</button>
                       <button className={`btn modal-footer-week ${weekSongIds.includes(detailSong.id)?'btn-primary':'btn-ghost'}`} onClick={()=>{toggleWeek(detailSong.id,{stopPropagation:()=>{}});closeDetail()}}>
