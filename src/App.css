@@ -87,12 +87,12 @@ body {
 .logo-link { text-decoration: none; color: inherit; cursor: pointer; }
 .logo-link:hover .logo-sub { color: var(--accent, #4f8ef7); }
 
-.app-switcher { display: flex; align-items: center; gap: 6px; }
-.app-switcher-btn { font-family: var(--font-head); font-size: 15px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; text-decoration: none; }
-.app-switcher-active { color: var(--text); cursor: default; }
-.app-switcher-inactive { color: var(--muted); transition: color 0.15s; }
-.app-switcher-inactive:hover { color: var(--text); }
-.app-switcher-divider { color: var(--border2); font-weight: 300; font-size: 16px; }
+.app-switcher { display: flex; align-items: center; gap: 4px; }
+.app-switcher-btn { font-family: var(--font-head); font-size: 13px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; text-decoration: none; padding: 3px 9px; border-radius: 6px; border: 1px solid transparent; transition: all 0.15s; }
+.app-switcher-active { color: var(--text); background: var(--border2); border-color: var(--border2); cursor: default; }
+.app-switcher-inactive { color: var(--muted); border-color: var(--border2); }
+.app-switcher-inactive:hover { color: var(--text); border-color: var(--muted); }
+.app-switcher-divider { display: none; }
 
 .sidebar-toggle-btn {
   background: none; border: 1px solid var(--border2); color: var(--muted);
