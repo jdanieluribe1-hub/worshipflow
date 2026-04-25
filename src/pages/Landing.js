@@ -28,8 +28,10 @@ export default function Landing() {
         padding: '20px 40px', borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 100,
       }}>
-        <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>
-          WorshipFlow
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <a href={process.env.REACT_APP_SERVICEFLOW_URL} style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--muted)', textDecoration: 'none' }}>ServiceFlow</a>
+          <span style={{ color: 'var(--border2)', fontWeight: 300, fontSize: 18 }}>|</span>
+          <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>WorshipFlow</span>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <button onClick={() => navigate('/login')} style={linkBtn}>{t('landing.signIn')}</button>

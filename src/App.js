@@ -86,10 +86,11 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
       <aside className={`sidebar sidebar-${mode} ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="logo">
           {!iconsOnly && (
-            <a href={process.env.REACT_APP_SERVICEFLOW_URL} className="logo-link" title="Go to ServiceFlow">
-              <div className="logo-title">WorshipFlow</div>
-              <div className="logo-sub">Director Dashboard</div>
-            </a>
+            <div className="app-switcher">
+              <a href={process.env.REACT_APP_SERVICEFLOW_URL} className="app-switcher-btn app-switcher-inactive" title="Go to ServiceFlow">ServiceFlow</a>
+              <span className="app-switcher-divider">|</span>
+              <span className="app-switcher-btn app-switcher-active">WorshipFlow</span>
+            </div>
           )}
           {iconsOnly && <div className="logo-title" style={{ fontSize: 14, textAlign: 'center' }}>WF</div>}
           <button className="sidebar-toggle-btn" onClick={onToggle} title="Toggle sidebar">
