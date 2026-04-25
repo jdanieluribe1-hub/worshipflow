@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getSongs, getSets } from './lib/supabase'
@@ -18,6 +18,31 @@ import JoinChurch from './pages/JoinChurch'
 import Landing from './pages/Landing'
 import SongEditor from './pages/SongEditor'
 import './App.css'
+
+// Compute play counts dynamically from finalized sets so they stay in sync
+// with actual set history (prevents stale DB counters from showing wrong data).
+function computePlayCounts(songs, sets) {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const MS_3_WEEKS  = 21 * 24 * 60 * 60 * 1000
+  const MS_3_MONTHS = 90 * 24 * 60 * 60 * 1000
+
+  const counts = {}
+  songs.forEach(s => { counts[s.id] = { plays_3weeks: 0, plays_3months: 0, plays_year: 0 } })
+
+  sets.filter(s => s.finalized).forEach(set => {
+    const date = new Date(set.service_date + 'T12:00:00')
+    const age  = now - date
+    ;(set.song_ids || []).forEach(id => {
+      if (!counts[id]) return
+      if (age <= MS_3_WEEKS)  counts[id].plays_3weeks++
+      if (age <= MS_3_MONTHS) counts[id].plays_3months++
+      if (date.getFullYear() === currentYear) counts[id].plays_year++
+    })
+  })
+
+  return songs.map(s => ({ ...s, ...counts[s.id] }))
+}
 
 const PAGE_PATHS = {
   home: '/home',
@@ -205,10 +230,11 @@ function AppShell() {
   }
   if (!profile) return <Onboarding />
 
-  const weekSongs = weekSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
+  const enrichedSongs = useMemo(() => computePlayCounts(songs, sets), [songs, sets])
+  const weekSongs = weekSongIds.map(id => enrichedSongs.find(s => s.id === id)).filter(Boolean)
 
   const pageProps = {
-    songs, sets, weekSongIds, weekSongs,
+    songs: enrichedSongs, sets, weekSongIds, weekSongs,
     setWeekSongIds, refreshSongs, refreshSets,
     theme, setTheme, profile, user,
     activeChurch, churches, setPage,
