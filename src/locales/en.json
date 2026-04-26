@@ -41,7 +41,8 @@
     "sectionMain": "Main",
     "sectionTools": "Tools",
     "sectionChurch": "Church",
-    "sectionSettings": "Settings"
+    "sectionSettings": "Settings",
+    "switchTo": "Switch to"
   },
   "auth": {
     "signIn": "Sign In",

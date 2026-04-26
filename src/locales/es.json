@@ -41,7 +41,8 @@
     "sectionMain": "Principal",
     "sectionTools": "Herramientas",
     "sectionChurch": "Iglesia",
-    "sectionSettings": "Configuración"
+    "sectionSettings": "Configuración",
+    "switchTo": "Cambiar a"
   },
   "auth": {
     "signIn": "Iniciar Sesión",

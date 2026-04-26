@@ -158,7 +158,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
             <span className="app-switch-icon">⇄</span>
             {!iconsOnly && (
               <div className="app-switch-text">
-                <span className="app-switch-label">Switch to</span>
+                <span className="app-switch-label">{t('nav.switchTo')}</span>
                 <span className="app-switch-name">ServiceFlow</span>
               </div>
             )}
