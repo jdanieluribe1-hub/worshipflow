@@ -86,7 +86,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
       <aside className={`sidebar sidebar-${mode} ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="logo">
           {!iconsOnly && (
-            <a href={process.env.REACT_APP_SERVICEFLOW_URL} className="logo-link" title="Go to ServiceFlow">
+            <a href="/home" className="logo-link">
               <div className="logo-title">WorshipFlow</div>
               <div className="logo-sub">Director Dashboard</div>
             </a>
@@ -152,6 +152,18 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
             {!iconsOnly && <span className="nav-label">{t('nav.settings')}</span>}
           </button>
         </nav>
+
+        <div className="sidebar-app-switch">
+          <a href={process.env.REACT_APP_SERVICEFLOW_URL} className="app-switch-link" title="Switch to ServiceFlow">
+            <span className="app-switch-icon">⇄</span>
+            {!iconsOnly && (
+              <div className="app-switch-text">
+                <span className="app-switch-label">Switch to</span>
+                <span className="app-switch-name">ServiceFlow</span>
+              </div>
+            )}
+          </a>
+        </div>
       </aside>
     </>
   )
