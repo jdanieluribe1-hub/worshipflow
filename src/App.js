@@ -406,7 +406,7 @@ function AppShell() {
               {page === 'library' && <Library {...pageProps} pendingOpenSong={pendingOpenSong} setPendingOpenSong={setPendingOpenSong} />}
               {page === 'thisweek' && <ThisWeek {...pageProps} setPage={setPage} />}
               {page === 'history' && <History {...pageProps} setPage={setPage} />}
-              {page === 'upload' && <Upload {...pageProps} />}
+              {page === 'upload' && <Upload {...pageProps} setPendingOpenSong={setPendingOpenSong} />}
               {page === 'bandview' && <BandView {...pageProps} />}
               {page === 'recommendations' && <Recommendations {...pageProps} />}
               {page === 'settings' && <Settings {...pageProps} />}

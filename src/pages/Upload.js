@@ -12,7 +12,7 @@ const KEYS = [
 ]
 const TEMPOS = ['Fast','Medium','Slow']
 
-export default function Upload({ refreshSongs, activeChurch }) {
+export default function Upload({ refreshSongs, activeChurch, setPage, setPendingOpenSong }) {
   const { t } = useTranslation()
   const [step, setStep] = useState('idle')
   const [extracted, setExtracted] = useState(null)
@@ -20,6 +20,7 @@ export default function Upload({ refreshSongs, activeChurch }) {
   const [urlInput, setUrlInput] = useState('')
   const [pasteText, setPasteText] = useState('')
   const [saving, setSaving] = useState(false)
+  const [savedSong, setSavedSong] = useState(null)
   const [error, setError] = useState('')
   const [transposedKey, setTransposedKey] = useState(null)
 
@@ -96,7 +97,7 @@ export default function Upload({ refreshSongs, activeChurch }) {
       const lyricsToSave = (transposedKey && transposedKey !== origKey)
         ? transposeLyrics(extracted.lyrics, origKey, transposedKey)
         : extracted.lyrics
-      await addSong({
+      const saved = await addSong({
         title: extracted.title.trim(),
         artist: extracted.artist.trim(),
         key: activeKey,
@@ -108,6 +109,7 @@ export default function Upload({ refreshSongs, activeChurch }) {
         church_id: activeChurch?.id,
       })
       await refreshSongs()
+      setSavedSong(saved)
       setStep('done')
     } catch(e) {
       alert(t('errors.saveFailed', { msg: e.message }))
@@ -115,13 +117,21 @@ export default function Upload({ refreshSongs, activeChurch }) {
     setSaving(false)
   }
 
-  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setPasteText(''); setError(''); setTransposedKey(null) }
+  const reset = () => { setStep('idle'); setExtracted(null); setPdfFile(null); setUrlInput(''); setPasteText(''); setError(''); setTransposedKey(null); setSavedSong(null) }
+
+  const handleViewInLibrary = () => {
+    if (savedSong && setPendingOpenSong) setPendingOpenSong(savedSong)
+    if (setPage) setPage('library')
+  }
 
   if (step === 'done') return (
     <div className="empty-state">
       <div className="empty-icon">✅</div>
       <div className="empty-text">{t('upload.songSaved')}</div>
-      <button className="btn btn-primary" style={{ marginTop:16 }} onClick={reset}>{t('upload.uploadAnother')}</button>
+      <div style={{ display:'flex', gap:12, marginTop:16, justifyContent:'center' }}>
+        <button className="btn btn-ghost" onClick={reset}>{t('upload.uploadAnother')}</button>
+        <button className="btn btn-primary" onClick={handleViewInLibrary}>{t('upload.viewInLibrary')}</button>
+      </div>
     </div>
   )
 
