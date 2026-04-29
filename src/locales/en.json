@@ -184,6 +184,7 @@
     "inThisWeekFull": "✓ In This Week",
     "addToThisWeekFull": "+ Add to This Week",
     "pleaseEnterTitle": "Please enter a song title.",
+    "duplicateSong": "\"{{title}}\" is already in your library.",
     "myLibraryTab": "My Library",
     "danisDatabaseDesc": "Chord charts curated by Dani — add any song to your library and customize it for your church.",
     "addToLibrary": "+ Add to Library",

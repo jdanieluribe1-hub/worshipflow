@@ -109,12 +109,19 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const toggleEditSpecialty = (sp) =>
     setEditForm(f => ({ ...f, specialty: f.specialty.includes(sp) ? f.specialty.filter(x=>x!==sp) : [...f.specialty, sp] }))
 
-  const filtered = useMemo(() => (activeTab === 'my-library' ? songs : templateSongs).filter(s => {
-    if (filter.tempo !== 'all' && s.tempo !== filter.tempo) return false
-    if (filter.key !== 'all' && s.key !== filter.key) return false
-    if (filter.search && !s.title.toLowerCase().includes(filter.search.toLowerCase()) && !(s.artist||'').toLowerCase().includes(filter.search.toLowerCase())) return false
-    return true
-  }), [activeTab, songs, templateSongs, filter])
+  const filtered = useMemo(() => {
+    const pool = activeTab === 'my-library' ? songs : templateSongs
+    const seen = new Set()
+    return pool.filter(s => {
+      if (filter.tempo !== 'all' && s.tempo !== filter.tempo) return false
+      if (filter.key !== 'all' && s.key !== filter.key) return false
+      if (filter.search && !s.title.toLowerCase().includes(filter.search.toLowerCase()) && !(s.artist||'').toLowerCase().includes(filter.search.toLowerCase())) return false
+      const key = s.title.trim().toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [activeTab, songs, templateSongs, filter])
 
   const toggleWeek = (id, e) => {
     e.stopPropagation()
@@ -127,6 +134,10 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
 
   const handleAdd = async () => {
     if (!form.title.trim()) return toast(t('library.pleaseEnterTitle'), 'info')
+    const normalizedTitle = form.title.trim().toLowerCase()
+    if (songs.some(s => s.title.trim().toLowerCase() === normalizedTitle)) {
+      return toast(t('library.duplicateSong', { title: form.title.trim() }), 'info')
+    }
     setSaving(true)
     try {
       await addSong({ title: form.title.trim(), artist: form.artist.trim(), key: form.key, tempo: form.tempo, themes: form.themes, specialty: [], notes: form.notes, plays_3weeks: 0, plays_3months: 0, plays_year: 0, church_id: activeChurch?.id })

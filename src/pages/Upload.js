@@ -13,7 +13,7 @@ const KEYS = [
 ]
 const TEMPOS = ['Fast','Medium','Slow']
 
-export default function Upload({ refreshSongs, activeChurch, setPage, setPendingOpenSong }) {
+export default function Upload({ songs, refreshSongs, activeChurch, setPage, setPendingOpenSong }) {
   const { t } = useTranslation()
   const toast = useToast()
   const [step, setStep] = useState('idle')
@@ -90,6 +90,10 @@ export default function Upload({ refreshSongs, activeChurch, setPage, setPending
 
   const handleSave = async () => {
     if (!extracted.title.trim()) return toast(t('library.pleaseEnterTitle'), 'info')
+    const normalizedTitle = extracted.title.trim().toLowerCase()
+    if (songs && songs.some(s => s.title.trim().toLowerCase() === normalizedTitle)) {
+      return toast(t('library.duplicateSong', { title: extracted.title.trim() }), 'info')
+    }
     setSaving(true)
     try {
       let pdf_url = null

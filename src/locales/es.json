@@ -184,6 +184,7 @@
     "inThisWeekFull": "✓ En Esta Semana",
     "addToThisWeekFull": "+ Añadir a Esta Semana",
     "pleaseEnterTitle": "Por favor ingresa el título de la canción.",
+    "duplicateSong": "\"{{title}}\" ya está en tu biblioteca.",
     "myLibraryTab": "Mi Biblioteca",
     "danisDatabaseDesc": "Acordes curados por Dani — añade cualquier canción a tu biblioteca y personalízala para tu iglesia.",
     "addToLibrary": "+ Añadir a Biblioteca",
