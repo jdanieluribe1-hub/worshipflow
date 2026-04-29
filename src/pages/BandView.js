@@ -8,10 +8,8 @@ import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
 import VariantSelect from '../components/VariantSelect'
 
-function getNextSunday() {
-  const d = new Date()
-  while (d.getDay() !== 0) d.setDate(d.getDate() + 1)
-  return d.toISOString().slice(0, 10)
+function getToday() {
+  return new Date().toISOString().slice(0, 10)
 }
 
 export default function BandView({ songs: propSongs = [], sets: propSets = [], public: isPublic = false }) {
@@ -20,7 +18,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
   const [searchParams] = useSearchParams()
   const token = params.token || null
   const shortCode = searchParams.get('c') || null
-  const [selectedDate, setSelectedDate] = useState(getNextSunday)
+  const [selectedDate, setSelectedDate] = useState(getToday)
   const [idx, setIdx] = useState(0)
   const [localSongs, setLocalSongs] = useState([])
   const [localSets, setLocalSets] = useState([])
