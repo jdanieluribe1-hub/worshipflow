@@ -23,19 +23,32 @@ export default function Landing() {
     <div style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh', fontFamily: 'var(--font-body, sans-serif)' }}>
 
       {/* ── Nav ─────────────────────────────────────────────────── */}
-      <header className="landing-nav" style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      <header style={{
         borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 100,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
-          <a href={process.env.REACT_APP_SERVICEFLOW_URL} style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--muted)', textDecoration: 'none', whiteSpace: 'nowrap' }}>ServiceFlow</a>
-          <span style={{ color: 'var(--border2)', fontWeight: 300, fontSize: 18, flexShrink: 0 }}>|</span>
-          <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--text)', whiteSpace: 'nowrap' }}>WorshipFlow</span>
+        {/* Desktop: single row with logo + buttons */}
+        <div className="landing-nav-desktop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <a href={process.env.REACT_APP_SERVICEFLOW_URL} style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--muted)', textDecoration: 'none' }}>ServiceFlow</a>
+            <span style={{ color: 'var(--border2)', fontWeight: 300, fontSize: 18 }}>|</span>
+            <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>WorshipFlow</span>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => navigate('/login')} style={linkBtn}>{t('landing.signIn')}</button>
+            <button onClick={() => navigate('/signup')} style={primaryBtn}>{t('landing.getStarted')}</button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+        {/* Mobile: buttons row */}
+        <div className="landing-nav-mobile-btns">
           <button onClick={() => navigate('/login')} style={linkBtn}>{t('landing.signIn')}</button>
-          <button onClick={() => navigate('/signup')} className="landing-nav-cta-secondary" style={primaryBtn}>{t('landing.getStarted')}</button>
+          <button onClick={() => navigate('/signup')} style={primaryBtn}>{t('landing.getStarted')}</button>
+        </div>
+        {/* Mobile: app switcher row */}
+        <div className="landing-nav-mobile-switcher">
+          <a href={process.env.REACT_APP_SERVICEFLOW_URL} style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14, color: 'var(--muted)', textDecoration: 'none' }}>ServiceFlow</a>
+          <span style={{ color: 'var(--border2)', fontWeight: 300 }}>|</span>
+          <span style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>WorshipFlow</span>
         </div>
       </header>
 

@@ -545,18 +545,27 @@ textarea { resize: vertical; min-height: 80px; }
 .app-switch-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 .app-switch-name { font-size: 13px; font-weight: 500; }
 
-/* Landing nav responsive */
-.landing-nav {
-  padding: 16px 40px;
+/* Landing nav — desktop shows single row, mobile splits into 2 rows */
+.landing-nav-mobile-btns,
+.landing-nav-mobile-switcher {
+  display: none;
 }
-.landing-nav-cta-secondary {
-  display: inline-flex;
-}
+
 @media (max-width: 640px) {
-  .landing-nav {
-    padding: 14px 16px;
+  .landing-nav-desktop {
+    display: none !important;
   }
-  .landing-nav-cta-secondary {
-    display: none;
+  .landing-nav-mobile-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .landing-nav-mobile-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 16px 12px;
   }
 }
