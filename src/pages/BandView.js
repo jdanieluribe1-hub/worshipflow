@@ -27,6 +27,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
   const [transposedKeys, setTransposedKeys] = useState({})
   const [selectedVariants, setSelectedVariants] = useState({})
   const [expanded, setExpanded] = useState(false)
+  const [error, setError] = useState(null)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('wf_band_theme') || 'dark'
     if (isPublic) {
@@ -53,11 +54,11 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     if (shortCode) {
       Promise.all([getSongsForBandByShortCode(shortCode), getSetsForBandByShortCode(shortCode)])
         .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
-        .catch(console.error)
+        .catch(err => { console.error(err); setError(t('bandView.loadError')) })
     } else if (token) {
       Promise.all([getSongsForBand(token), getSetsForBand(token)])
         .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
-        .catch(console.error)
+        .catch(err => { console.error(err); setError(t('bandView.loadError')) })
     }
   }, [isPublic, token, shortCode])
 
@@ -101,6 +102,19 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     if (!override || override === current.key) return source
     return transposeLyrics(source, current.key, override)
   })()
+
+  if (error) return (
+    <div className="band-page">
+      <div className="band-topbar">
+        <div className="band-logo">WorshipFlow</div>
+      </div>
+      <div className="band-content" style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--muted)' }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>{error}</div>
+        <div style={{ fontSize: 14 }}>{t('bandView.loadErrorHint')}</div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="band-page">

@@ -275,7 +275,9 @@
     "close": "✕ Cerrar",
     "switchToLight": "Cambiar a modo claro",
     "switchToDark": "Cambiar a modo oscuro",
-    "keyOfNumbers": "# Números"
+    "keyOfNumbers": "# Números",
+    "loadError": "No se pudo cargar la información de la banda",
+    "loadErrorHint": "Verifica el enlace o intenta refrescar la página."
   },
   "history": {
     "title": "Historial",

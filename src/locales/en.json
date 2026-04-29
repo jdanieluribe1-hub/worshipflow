@@ -275,7 +275,9 @@
     "close": "✕ Close",
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode",
-    "keyOfNumbers": "# Numbers"
+    "keyOfNumbers": "# Numbers",
+    "loadError": "Unable to load band data",
+    "loadErrorHint": "Check your link or try refreshing the page."
   },
   "history": {
     "title": "History",
