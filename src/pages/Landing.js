@@ -46,9 +46,9 @@ export default function Landing() {
         </div>
         {/* Mobile: app switcher row */}
         <div className="landing-nav-mobile-switcher">
-          <a href={process.env.REACT_APP_SERVICEFLOW_URL} style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14, color: 'var(--muted)', textDecoration: 'none' }}>ServiceFlow</a>
+          <a href={process.env.REACT_APP_SERVICEFLOW_URL} style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 17, color: 'var(--muted)', textDecoration: 'none' }}>ServiceFlow</a>
           <span style={{ color: 'var(--border2)', fontWeight: 300 }}>|</span>
-          <span style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>WorshipFlow</span>
+          <span style={{ fontFamily: 'var(--font-head)', fontWeight: 700, fontSize: 17, color: 'var(--text)' }}>WorshipFlow</span>
         </div>
       </header>
 
@@ -103,7 +103,7 @@ export default function Landing() {
                 <h3 style={{ fontFamily: 'var(--font-head)', fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>
                   {f.title}
                 </h3>
-                <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                <p style={{ color: 'var(--muted)', fontSize: 17, lineHeight: 1.6, margin: 0 }}>
                   {f.desc}
                 </p>
               </div>
@@ -146,7 +146,7 @@ export default function Landing() {
                 <h3 style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 700, margin: '0 0 8px' }}>
                   {s.title}
                 </h3>
-                <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                <p style={{ color: 'var(--muted)', fontSize: 17, lineHeight: 1.6, margin: 0 }}>
                   {s.desc}
                 </p>
               </div>
@@ -169,7 +169,7 @@ export default function Landing() {
           {t('landing.getStarted')}
         </button>
         <div style={{ marginTop: 20 }}>
-          <span onClick={() => navigate('/login')} style={{ color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
+          <span onClick={() => navigate('/login')} style={{ color: 'var(--muted)', fontSize: 17, cursor: 'pointer' }}>
             {t('landing.alreadyHaveAccount')} <span style={{ color: 'var(--accent)' }}>{t('landing.signIn')}</span>
           </span>
         </div>
@@ -200,7 +200,7 @@ const primaryBtn = {
   borderRadius: 8,
   textDecoration: 'none',
   fontWeight: 600,
-  fontSize: 14,
+  fontSize: 17,
   display: 'inline-flex',
   alignItems: 'center',
 }
@@ -213,7 +213,7 @@ const linkBtn = {
   borderRadius: 8,
   textDecoration: 'none',
   fontWeight: 600,
-  fontSize: 14,
+  fontSize: 17,
   display: 'inline-flex',
   alignItems: 'center',
 }
