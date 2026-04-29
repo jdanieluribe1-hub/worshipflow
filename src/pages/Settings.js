@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../components/Toast'
 import { updateProfile, signOut, getChurchMembers, updateMemberRole, removeMember, leaveChurch, regenerateInviteToken, deleteOwnAccount, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 
 export default function Settings({ theme, setTheme, user }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const toast = useToast()
   const { profile, setProfile, churches, activeChurch, setActiveChurch, refreshChurches, setLanguage } = useAuth()
   const [name, setName] = useState(profile?.name || '')
   const [churchName, setChurchName] = useState(profile?.church_name || '')
@@ -24,7 +26,7 @@ export default function Settings({ theme, setTheme, user }) {
       setMembersLoading(true)
       getChurchMembers(activeChurch.id)
         .then(m => setMembers(m))
-        .catch(() => {})
+        .catch(console.error)
         .finally(() => setMembersLoading(false))
     }
   }, [activeChurch?.id])
@@ -37,7 +39,7 @@ export default function Settings({ theme, setTheme, user }) {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
-      alert(t('errors.saveFailed', { msg: e.message }))
+      toast(t('errors.saveFailed', { msg: e.message }), 'error')
     }
     setSaving(false)
   }
@@ -103,7 +105,7 @@ export default function Settings({ theme, setTheme, user }) {
       await deleteOwnAccount()
       await signOut()
     } catch (e) {
-      alert(t('errors.generic', { msg: e.message }))
+      toast(t('errors.generic', { msg: e.message }), 'error')
       setDeletingAccount(false)
     }
   }
@@ -115,7 +117,7 @@ export default function Settings({ theme, setTheme, user }) {
       setChurch(updated)
       await refreshChurches()
     } catch (e) {
-      alert(t('errors.generic', { msg: e.message }))
+      toast(t('errors.generic', { msg: e.message }), 'error')
     }
   }
 
@@ -124,7 +126,7 @@ export default function Settings({ theme, setTheme, user }) {
       await updateMemberRole(church.id, memberId, newRole)
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m))
     } catch (e) {
-      alert(t('errors.generic', { msg: e.message }))
+      toast(t('errors.generic', { msg: e.message }), 'error')
     }
   }
 
@@ -134,7 +136,7 @@ export default function Settings({ theme, setTheme, user }) {
       await removeMember(church.id, memberId)
       setMembers(prev => prev.filter(m => m.id !== memberId))
     } catch (e) {
-      alert(t('errors.generic', { msg: e.message }))
+      toast(t('errors.generic', { msg: e.message }), 'error')
     }
   }
 
@@ -148,7 +150,7 @@ export default function Settings({ theme, setTheme, user }) {
       await leaveChurch(activeChurch.id)
       await refreshChurches()
     } catch (e) {
-      alert(t('errors.generic', { msg: e.message }))
+      toast(t('errors.generic', { msg: e.message }), 'error')
     }
   }
 
@@ -211,7 +213,7 @@ export default function Settings({ theme, setTheme, user }) {
           <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {bandLink}
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(bandLink); alert(t('common.copied')) }}>{t('common.copy')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(bandLink); toast(t('common.copied'), 'success', 2000) }}>{t('common.copy')}</button>
         </div>
       </div>
 
@@ -223,7 +225,7 @@ export default function Settings({ theme, setTheme, user }) {
           <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {recommendLink}
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert(t('common.copied')) }}>{t('common.copy')}</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); toast(t('common.copied'), 'success', 2000) }}>{t('common.copy')}</button>
         </div>
       </div>
 
@@ -281,14 +283,14 @@ export default function Settings({ theme, setTheme, user }) {
                   <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '9px 16px', fontSize: 20, fontWeight: 700, letterSpacing: '0.15em', color: 'var(--text)', fontFamily: 'monospace' }}>
                     {church?.short_code || '—'}
                   </div>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(church?.short_code || ''); alert(t('settings.codeCopied')) }}>{t('settings.copyCode')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(church?.short_code || ''); toast(t('settings.codeCopied'), 'success', 2000) }}>{t('settings.copyCode')}</button>
                 </div>
                 {/* Full link */}
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <div style={{ flex: 1, background: 'var(--bg3)', borderRadius: 8, padding: '9px 12px', fontSize: 12, color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inviteLink}
                   </div>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteLink); alert(t('common.copied')) }}>{t('settings.copyLink')}</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(inviteLink); toast(t('common.copied'), 'success', 2000) }}>{t('settings.copyLink')}</button>
                   <button className="btn btn-ghost btn-sm" onClick={handleRegenerateInvite} style={{ color: 'var(--muted)' }}>{t('settings.regenerate')}</button>
                 </div>
               </div>

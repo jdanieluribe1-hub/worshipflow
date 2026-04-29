@@ -124,7 +124,7 @@ export default function Landing() {
           <div style={{
             display: 'flex', gap: 40, flexWrap: 'wrap', justifyContent: 'center',
           }}>
-            {STEPS.map((s, i) => (
+            {STEPS.map(s => (
               <div key={s.num} style={{
                 flex: '1 1 200px', maxWidth: 260,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
@@ -138,11 +138,6 @@ export default function Landing() {
                 }}>
                   {s.num}
                 </div>
-                {i < STEPS.length - 1 && (
-                  <div style={{
-                    display: 'none',
-                  }} />
-                )}
                 <h3 style={{ fontFamily: 'var(--font-head)', fontSize: 17, fontWeight: 700, margin: '0 0 8px' }}>
                   {s.title}
                 </h3>

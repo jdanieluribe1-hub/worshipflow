@@ -53,11 +53,11 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     if (shortCode) {
       Promise.all([getSongsForBandByShortCode(shortCode), getSetsForBandByShortCode(shortCode)])
         .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
-        .catch(() => {})
+        .catch(console.error)
     } else if (token) {
       Promise.all([getSongsForBand(token), getSetsForBand(token)])
         .then(([s, st]) => { setLocalSongs(s || []); setLocalSets(st || []) })
-        .catch(() => {})
+        .catch(console.error)
     }
   }, [isPublic, token, shortCode])
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../components/Toast'
 import i18n, { dateLocale } from '../i18n'
 import { upsertSet, finalizeSet } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
@@ -19,6 +20,7 @@ function getNextSunday() {
 
 export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [], activeChurch }) {
   const { t } = useTranslation()
+  const toast = useToast()
   const [serviceDate, setServiceDate] = useState(getNextSunday())
   const [serviceTime, setServiceTime] = useState('')
   const [notes, setNotes] = useState('')
@@ -106,18 +108,18 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   }
 
   const saveSet = async () => {
-    if (!weekSongIds.length) return alert(t('thisWeek.addSongsFirst'))
+    if (!weekSongIds.length) return toast(t('thisWeek.addSongsFirst'), 'info')
     setSaving(true)
     try {
       await upsertSet(activeChurch?.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks(), serviceTime)
       await refreshSets()
-      alert(t('thisWeek.setSaved'))
-    } catch(e) { alert(t('thisWeek.errorSave', { msg: e.message })) }
+      toast(t('thisWeek.setSaved'), 'success')
+    } catch(e) { toast(t('thisWeek.errorSave', { msg: e.message }), 'error') }
     setSaving(false)
   }
 
   const finalize = async () => {
-    if (!weekSongIds.length) return alert(t('thisWeek.addSongsFirst'))
+    if (!weekSongIds.length) return toast(t('thisWeek.addSongsFirst'), 'info')
     if (!window.confirm(t('thisWeek.finalizeConfirm', { date: serviceDate }))) return
     setFinalizing(true)
     try {
@@ -129,8 +131,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       setSongYoutubeUrls({})
       setSongAppleMusicUrls({})
       setKeyOverrides({})
-      alert(t('thisWeek.setFinalized'))
-    } catch(e) { alert(t('thisWeek.errorFinalize', { msg: e.message })) }
+      toast(t('thisWeek.setFinalized'), 'success')
+    } catch(e) { toast(t('thisWeek.errorFinalize', { msg: e.message }), 'error') }
     setFinalizing(false)
   }
 
@@ -337,7 +339,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={()=>setWaModal(false)}>{t('common.close')}</button>
-              <button className="btn btn-green" onClick={()=>{navigator.clipboard.writeText(waMessage());alert(t('common.copied'))}}>{t('thisWeek.copyMessage')}</button>
+              <button className="btn btn-green" onClick={()=>{navigator.clipboard.writeText(waMessage());toast(t('common.copied'), 'success', 2000)}}>{t('thisWeek.copyMessage')}</button>
             </div>
           </div>
         </div>

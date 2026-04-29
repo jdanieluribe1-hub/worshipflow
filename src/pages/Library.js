@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../components/Toast'
 import { addSong, deleteSong, updateSong, getPublicTemplateSongs, importTemplateSong } from '../lib/supabase'
 import { parsePDFWithAI, generateProPresenterFile, stripChords } from '../lib/ai'
 import { transposeLyrics } from '../lib/transpose'
@@ -19,6 +20,7 @@ function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':
 
 export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSongs, activeChurch, pendingOpenSong, setPendingOpenSong, setPage }) {
   const { t } = useTranslation()
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState('my-library')
   const [filter, setFilter] = useState({ tempo: 'all', key: 'all', search: '' })
   const [modal, setModal] = useState(null)
@@ -81,7 +83,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   }
 
   const handleEditSave = async () => {
-    if (!editForm.title.trim()) return alert(t('library.pleaseEnterTitle'))
+    if (!editForm.title.trim()) return toast(t('library.pleaseEnterTitle'), 'info')
     setSaving(true)
     try {
       const updates = {
@@ -97,7 +99,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       await refreshSongs()
       setDetailSong(s => ({ ...s, ...updates }))
       setEditing(false)
-    } catch (e) { alert(t('errors.saveFailed', { msg: e.message })) }
+    } catch (e) { toast(t('errors.saveFailed', { msg: e.message }), 'error') }
     setSaving(false)
   }
 
@@ -124,14 +126,14 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   }
 
   const handleAdd = async () => {
-    if (!form.title.trim()) return alert(t('library.pleaseEnterTitle'))
+    if (!form.title.trim()) return toast(t('library.pleaseEnterTitle'), 'info')
     setSaving(true)
     try {
       await addSong({ title: form.title.trim(), artist: form.artist.trim(), key: form.key, tempo: form.tempo, themes: form.themes, specialty: [], notes: form.notes, plays_3weeks: 0, plays_3months: 0, plays_year: 0, church_id: activeChurch?.id })
       await refreshSongs()
       setModal(null)
       setForm({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
-    } catch(e) { alert(t('errors.saveSongFailed', { msg: e.message })) }
+    } catch(e) { toast(t('errors.saveSongFailed', { msg: e.message }), 'error') }
     setSaving(false)
   }
 
@@ -159,7 +161,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       await refreshSongs()
       setDetailSong(s => ({ ...s, ...updates }))
     } catch (e) {
-      alert(t('errors.convertPDFFailed', { msg: e.message }))
+      toast(t('errors.convertPDFFailed', { msg: e.message }), 'error')
     }
     setConverting(false)
   }
@@ -181,7 +183,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       await refreshSongs()
       setDetailSong(s => ({ ...s, ...updates }))
       setViewTransposedKey(null)
-    } catch(e) { alert(t('errors.saveFailed', { msg: e.message })) }
+    } catch(e) { toast(t('errors.saveFailed', { msg: e.message }), 'error') }
     setSaving(false)
   }
 
@@ -192,7 +194,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       await importTemplateSong(song.id, activeChurch.id)
       await refreshSongs()
     } catch (e) {
-      alert('Error adding to library: ' + e.message)
+      toast('Error adding to library: ' + e.message, 'error')
     }
     setImporting(p => { const n = { ...p }; delete n[song.id]; return n })
   }
@@ -498,7 +500,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
                       <>
                         <div className="propre-box">{stripChords(detailSong.lyrics)}</div>
                         <div style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(stripChords(detailSong.lyrics)); alert(t('common.copied')) }}>{t('library.copyText')}</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(stripChords(detailSong.lyrics)); toast(t('common.copied'), 'success', 2000) }}>{t('library.copyText')}</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => {
                             const blob = new Blob([proPresenterBin], { type: 'application/octet-stream' })
                             const a = document.createElement('a')

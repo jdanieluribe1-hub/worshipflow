@@ -48,12 +48,11 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       justifyContent: 'center',
       background: 'var(--bg)',
       padding: 20,
       paddingTop: '5.25vh',
-      alignItems: 'flex-start',
     }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
         {/* Logo */}

@@ -33,9 +33,9 @@ export default function Onboarding() {
       setJoinMode(true)
       const token = extractToken(pendingJoinToken)
       if (token.length === 36) {
-        getChurchByInviteToken(token).then(c => setJoinChurchPreview(c)).catch(() => {})
+        getChurchByInviteToken(token).then(c => setJoinChurchPreview(c)).catch(console.error)
       } else if (/^[a-zA-Z0-9]{4,12}$/.test(token)) {
-        getChurchByShortCode(token).then(c => setJoinChurchPreview(c)).catch(() => {})
+        getChurchByShortCode(token).then(c => setJoinChurchPreview(c)).catch(console.error)
       }
     }
   }, [pendingJoinToken])

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../components/Toast'
 import { uploadPDF, addSong } from '../lib/supabase'
 import { parsePDFWithAI } from '../lib/ai'
 import { transposeLyrics } from '../lib/transpose'
@@ -14,6 +15,7 @@ const TEMPOS = ['Fast','Medium','Slow']
 
 export default function Upload({ refreshSongs, activeChurch, setPage, setPendingOpenSong }) {
   const { t } = useTranslation()
+  const toast = useToast()
   const [step, setStep] = useState('idle')
   const [extracted, setExtracted] = useState(null)
   const [pdfFile, setPdfFile] = useState(null)
@@ -26,7 +28,7 @@ export default function Upload({ refreshSongs, activeChurch, setPage, setPending
 
   const handleFile = async (file) => {
     const allowed = ['application/pdf', 'image/png', 'image/jpeg']
-    if (!file || !allowed.includes(file.type)) return alert(t('upload.pleaseUploadFile'))
+    if (!file || !allowed.includes(file.type)) return toast(t('upload.pleaseUploadFile'), 'info')
     setPdfFile(file)
     setStep('parsing')
     setError('')
@@ -54,7 +56,7 @@ export default function Upload({ refreshSongs, activeChurch, setPage, setPending
   }
 
   const handleURL = async () => {
-    if (!urlInput.trim()) return alert(t('upload.pleaseEnterUrl'))
+    if (!urlInput.trim()) return toast(t('upload.pleaseEnterUrl'), 'info')
     setStep('parsing')
     setError('')
     try {
@@ -80,14 +82,14 @@ export default function Upload({ refreshSongs, activeChurch, setPage, setPending
   }
 
   const handlePaste = () => {
-    if (!pasteText.trim()) return alert(t('upload.pleasePasteLyrics'))
+    if (!pasteText.trim()) return toast(t('upload.pleasePasteLyrics'), 'info')
     setExtracted({ title: '', artist: '', key: 'G', tempo: 'Medium', lyrics: pasteText.trim() })
     setTransposedKey('G')
     setStep('review')
   }
 
   const handleSave = async () => {
-    if (!extracted.title.trim()) return alert(t('library.pleaseEnterTitle'))
+    if (!extracted.title.trim()) return toast(t('library.pleaseEnterTitle'), 'info')
     setSaving(true)
     try {
       let pdf_url = null
@@ -112,7 +114,7 @@ export default function Upload({ refreshSongs, activeChurch, setPage, setPending
       setSavedSong(saved)
       setStep('done')
     } catch(e) {
-      alert(t('errors.saveFailed', { msg: e.message }))
+      toast(t('errors.saveFailed', { msg: e.message }), 'error')
     }
     setSaving(false)
   }

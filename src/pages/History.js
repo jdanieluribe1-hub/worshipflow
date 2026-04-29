@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../components/Toast'
 import i18n, { dateLocale } from '../i18n'
 import { deleteSet, upsertSet } from '../lib/supabase'
 import TransposeControl from '../components/TransposeControl'
@@ -8,6 +9,7 @@ function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':
 
 export default function History({ songs, sets, refreshSets, setPage, activeChurch }) {
   const { t } = useTranslation()
+  const toast = useToast()
   const [view, setView] = useState('calendar')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedKey, setSelectedKey] = useState(null)
@@ -64,7 +66,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       await deleteSet(activeChurch?.id, selectedKey)
       await refreshSets()
       setSelectedKey(null)
-    } catch (e) { alert(t('errors.deleteSetFailed', { msg: e.message })) }
+    } catch (e) { toast(t('errors.deleteSetFailed', { msg: e.message }), 'error') }
     setDeleting(false)
   }
 
@@ -77,8 +79,8 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       await refreshSets()
       setDuplicateDate('')
       const destDateStr = new Date(duplicateDate + 'T12:00:00').toLocaleDateString(locale, { month:'long', day:'numeric', year:'numeric' })
-      alert(t('history.duplicatedAlert', { date: destDateStr }))
-    } catch (e) { alert(t('errors.generic', { msg: e.message })) }
+      toast(t('history.duplicatedAlert', { date: destDateStr }), 'success')
+    } catch (e) { toast(t('errors.generic', { msg: e.message }), 'error') }
     setDuplicating(false)
   }
 
@@ -96,7 +98,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       await upsertSet(activeChurch?.id, selectedKey, editSongIds, editNotes, editKeyOverrides, editMusicLinks)
       await refreshSets()
       setEditModal(false)
-    } catch(e) { alert(t('errors.generic', { msg: e.message })) }
+    } catch(e) { toast(t('errors.generic', { msg: e.message }), 'error') }
     setEditSaving(false)
   }
 
@@ -409,7 +411,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
             </div>
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={()=>setEditWaModal(false)}>{t('common.close')}</button>
-              <button className="btn btn-green" onClick={()=>{navigator.clipboard.writeText(editWaMessage());alert(t('common.copied'))}}>{t('thisWeek.copyMessage')}</button>
+              <button className="btn btn-green" onClick={()=>{navigator.clipboard.writeText(editWaMessage());toast(t('common.copied'), 'success', 2000)}}>{t('thisWeek.copyMessage')}</button>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { ToastProvider } from './components/Toast'
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getSongs, getSets, createChurch, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from './lib/supabase'
@@ -450,6 +451,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ToastProvider>
         <Routes>
           <Route path="/" element={<LandingRoute />} />
           <Route path="/band/:token" element={<BandViewPublic />} />
@@ -460,6 +462,7 @@ export default function App() {
           <Route path="/join/:token" element={<JoinChurch />} />
           <Route path="*" element={<AppShell />} />
         </Routes>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useToast } from '../components/Toast'
 import i18n, { dateLocale } from '../i18n'
 import { getRecommendations, deleteRecommendation } from '../lib/supabase'
 
@@ -12,6 +13,7 @@ function linkIcon(url) {
 
 export default function Recommendations({ activeChurch }) {
   const { t } = useTranslation()
+  const toast = useToast()
   const [recs, setRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -36,7 +38,7 @@ export default function Recommendations({ activeChurch }) {
       await deleteRecommendation(id)
       setRecs(prev => prev.filter(r => r.id !== id))
     } catch (e) {
-      alert(t('errors.generic', { msg: e.message }))
+      toast(t('errors.generic', { msg: e.message }), 'error')
     }
   }
 
@@ -58,7 +60,7 @@ export default function Recommendations({ activeChurch }) {
             <div style={{ background: 'var(--bg3)', borderRadius: 8, padding: '9px 14px', fontSize: 13, color: 'var(--accent)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {recommendLink}
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert(t('recommendations.linkCopied')) }}>{t('common.copy')}</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); toast(t('recommendations.linkCopied'), 'success', 2000) }}>{t('common.copy')}</button>
           </div>
         </div>
       ) : (
@@ -67,7 +69,7 @@ export default function Recommendations({ activeChurch }) {
             <div style={{ fontSize: 13, color: 'var(--muted)' }}>
               {t('recommendations.nRecommendations', { count: recs.length })}
             </div>
-            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); alert(t('recommendations.linkCopied')) }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(recommendLink); toast(t('recommendations.linkCopied'), 'success', 2000) }}>
               {t('recommendations.copyShareLink')}
             </button>
           </div>

@@ -21,7 +21,7 @@ export default function RecommendView() {
     if (shortCode) {
       getChurchByShortCode(shortCode)
         .then(c => { setChurchId(c.id); setChurchName(c.name || 'Worship Flow') })
-        .catch(() => {})
+        .catch(console.error)
     }
   }, [shortCode])
 
