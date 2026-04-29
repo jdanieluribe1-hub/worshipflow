@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n, { dateLocale } from '../i18n'
 
@@ -31,8 +31,8 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
     .sort((a,b) => a.service_date.localeCompare(b.service_date))
     .slice(0, 5)
 
-  const topSongs = [...songs].sort((a,b) => (b.plays_year||0)-(a.plays_year||0)).slice(0,5)
-  const librarySongs = [...songs].sort((a,b) => a.title.localeCompare(b.title)).slice(0,10)
+  const topSongs = useMemo(() => [...songs].sort((a,b) => (b.plays_year||0)-(a.plays_year||0)).slice(0,5), [songs])
+  const librarySongs = useMemo(() => [...songs].sort((a,b) => a.title.localeCompare(b.title)).slice(0,10), [songs])
   const maxPlays = topSongs[0]?.plays_year || 1
 
   const year = calDate.getFullYear()

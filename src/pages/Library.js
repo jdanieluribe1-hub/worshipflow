@@ -109,12 +109,12 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const toggleEditSpecialty = (sp) =>
     setEditForm(f => ({ ...f, specialty: f.specialty.includes(sp) ? f.specialty.filter(x=>x!==sp) : [...f.specialty, sp] }))
 
-  const filtered = (activeTab === 'my-library' ? songs : templateSongs).filter(s => {
+  const filtered = useMemo(() => (activeTab === 'my-library' ? songs : templateSongs).filter(s => {
     if (filter.tempo !== 'all' && s.tempo !== filter.tempo) return false
     if (filter.key !== 'all' && s.key !== filter.key) return false
     if (filter.search && !s.title.toLowerCase().includes(filter.search.toLowerCase()) && !(s.artist||'').toLowerCase().includes(filter.search.toLowerCase())) return false
     return true
-  })
+  }), [activeTab, songs, templateSongs, filter])
 
   const toggleWeek = (id, e) => {
     e.stopPropagation()

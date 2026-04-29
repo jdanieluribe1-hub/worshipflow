@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../components/Toast'
 import i18n, { dateLocale } from '../i18n'
@@ -135,7 +135,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     setEditMusicLinks(prev => ({ ...prev, [id]: { ...(prev[id] || {}), [field]: val } }))
   }
 
-  const sorted = [...songs].sort((a,b)=>(b.plays_year||0)-(a.plays_year||0))
+  const sorted = useMemo(() => [...songs].sort((a,b)=>(b.plays_year||0)-(a.plays_year||0)), [songs])
   const topSong = sorted[0]
 
   const year = currentDate.getFullYear()
