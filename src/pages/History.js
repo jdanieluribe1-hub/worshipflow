@@ -63,7 +63,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     if (!window.confirm(t('history.deleteConfirm', { date: dateStr }))) return
     setDeleting(true)
     try {
-      await deleteSet(activeChurch?.id, selectedKey)
+      await deleteSet(activeChurch?.id, selectedKey, selectedSet.service_time || '')
       await refreshSets()
       setSelectedKey(null)
     } catch (e) { toast(t('errors.deleteSetFailed', { msg: e.message }), 'error') }

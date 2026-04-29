@@ -314,13 +314,14 @@ body {
 .filter-btn.slow.active { background: var(--slow); border-color: var(--slow); color: #fff; }
 
 /* INPUTS */
-input[type="text"], input[type="date"], select, textarea {
+input[type="text"], input[type="date"], input[type="time"], select, textarea {
   background: var(--bg3); border: 1px solid var(--border2);
   border-radius: 8px; color: var(--text);
   font-family: var(--font-body); font-size: 13px;
   padding: 8px 12px; outline: none; transition: border-color 0.15s;
 }
-input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type="text"]:focus, input[type="date"]:focus, input[type="time"]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
 select option { background: var(--bg3); }
 textarea { resize: vertical; min-height: 80px; }
 
