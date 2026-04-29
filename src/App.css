@@ -544,3 +544,19 @@ textarea { resize: vertical; min-height: 80px; }
 .app-switch-text { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; overflow: hidden; }
 .app-switch-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
 .app-switch-name { font-size: 13px; font-weight: 500; }
+
+/* Landing nav responsive */
+.landing-nav {
+  padding: 16px 40px;
+}
+.landing-nav-cta-secondary {
+  display: inline-flex;
+}
+@media (max-width: 640px) {
+  .landing-nav {
+    padding: 14px 16px;
+  }
+  .landing-nav-cta-secondary {
+    display: none;
+  }
+}
