@@ -23,6 +23,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const toast = useToast()
   const [activeTab, setActiveTab] = useState('my-library')
   const [filter, setFilter] = useState({ tempo: 'all', key: 'all', search: '' })
+  const [showDuplicates, setShowDuplicates] = useState(false)
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({ title:'', artist:'', key:'G', tempo:'Medium', themes:[], notes:'' })
   const [saving, setSaving] = useState(false)
@@ -109,6 +110,12 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
   const toggleEditSpecialty = (sp) =>
     setEditForm(f => ({ ...f, specialty: f.specialty.includes(sp) ? f.specialty.filter(x=>x!==sp) : [...f.specialty, sp] }))
 
+  const duplicateTitles = useMemo(() => {
+    const counts = {}
+    songs.forEach(s => { const k = s.title.trim().toLowerCase(); counts[k] = (counts[k] || 0) + 1 })
+    return new Set(Object.keys(counts).filter(k => counts[k] > 1))
+  }, [songs])
+
   const filtered = useMemo(() => {
     const pool = activeTab === 'my-library' ? songs : templateSongs
     const seen = new Set()
@@ -117,11 +124,12 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       if (filter.key !== 'all' && s.key !== filter.key) return false
       if (filter.search && !s.title.toLowerCase().includes(filter.search.toLowerCase()) && !(s.artist||'').toLowerCase().includes(filter.search.toLowerCase())) return false
       const key = s.title.trim().toLowerCase()
+      if (showDuplicates) return duplicateTitles.has(key)
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
-  }, [activeTab, songs, templateSongs, filter])
+  }, [activeTab, songs, templateSongs, filter, showDuplicates, duplicateTitles])
 
   const toggleWeek = (id, e) => {
     e.stopPropagation()
@@ -217,13 +225,13 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
       {/* Tab switcher */}
       <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'1px solid var(--border)' }}>
         <button
-          onClick={() => setActiveTab('my-library')}
+          onClick={() => { setActiveTab('my-library'); setShowDuplicates(false) }}
           style={{ padding:'8px 20px', background:'none', border:'none', borderBottom: activeTab === 'my-library' ? '2px solid var(--accent)' : '2px solid transparent', color: activeTab === 'my-library' ? 'var(--text)' : 'var(--muted)', cursor:'pointer', fontWeight: activeTab === 'my-library' ? 600 : 400, fontSize:14 }}
         >
           {t('library.myLibraryTab')}
         </button>
         <button
-          onClick={() => setActiveTab('danis-database')}
+          onClick={() => { setActiveTab('danis-database'); setShowDuplicates(false) }}
           style={{ padding:'8px 20px', background:'none', border:'none', borderBottom: activeTab === 'danis-database' ? '2px solid var(--accent)' : '2px solid transparent', color: activeTab === 'danis-database' ? 'var(--text)' : 'var(--muted)', cursor:'pointer', fontWeight: activeTab === 'danis-database' ? 600 : 400, fontSize:14 }}
         >
           ✦ Dani's Database
@@ -253,6 +261,15 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
           <option value="all">{t('library.allKeys')}</option>
           {KEYS.map(k => <option key={k} value={k}>{k}</option>)}
         </select>
+        {activeTab === 'my-library' && duplicateTitles.size > 0 && (
+          <button
+            className={`filter-btn ${showDuplicates ? 'active' : ''}`}
+            onClick={() => setShowDuplicates(d => !d)}
+            style={{ color: showDuplicates ? undefined : 'var(--muted)' }}
+          >
+            Duplicates ({duplicateTitles.size})
+          </button>
+        )}
       </div>
 
       <div style={{ marginBottom:12, fontSize:12, color:'var(--muted)' }}>
