@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../components/Toast'
 import i18n, { dateLocale } from '../i18n'
-import { deleteSet, upsertSet } from '../lib/supabase'
+import { deleteSet, upsertSet, listSongVariants } from '../lib/supabase'
 import TransposeControl from '../components/TransposeControl'
 import VariantSelect from '../components/VariantSelect'
 import ChordDisplay from '../components/ChordDisplay'
@@ -97,9 +97,19 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     setEditKeyOverrides({ ...(selectedSet.key_overrides || {}) })
     setEditMusicLinks(JSON.parse(JSON.stringify(selectedSet.music_links || {})))
     setEditNotes(selectedSet.notes || '')
-    setEditVariantOverrides({ ...(selectedSet.variant_overrides || {}) })
+    const variantIds = selectedSet.variant_overrides || {}
+    setEditVariantOverrides({ ...variantIds })
     setEditVariantObjects({})
     setEditModal(true)
+    if (Object.keys(variantIds).length) {
+      Promise.all(
+        Object.entries(variantIds).map(([songId, variantId]) =>
+          listSongVariants(songId)
+            .then(vs => [songId, vs.find(v => v.id === variantId) || null])
+            .catch(() => [songId, null])
+        )
+      ).then(entries => setEditVariantObjects(Object.fromEntries(entries.filter(([, v]) => v))))
+    }
   }
 
   const saveEditModal = async () => {

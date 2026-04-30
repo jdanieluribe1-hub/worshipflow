@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n, { dateLocale } from '../i18n'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { getSongs, getSets, getSongsForBand, getSetsForBand, getSongsForBandByShortCode, getSetsForBandByShortCode, listSongVariants } from '../lib/supabase'
+import { getSongs, getSets, getSongsForBand, getSetsForBand, getSongsForBandByShortCode, getSetsForBandByShortCode, listSongVariants, getPublishedVariant } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
@@ -75,9 +75,10 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     if (!Object.keys(variantIds).length) { setSelectedVariants({}); return }
     Promise.all(
       Object.entries(variantIds).map(([songId, variantId]) =>
-        listSongVariants(songId)
-          .then(variants => [songId, variants.find(v => v.id === variantId) || null])
-          .catch(() => [songId, null])
+        (isPublic
+          ? getPublishedVariant(variantId)
+          : listSongVariants(songId).then(vs => vs.find(v => v.id === variantId) || null)
+        ).then(v => [songId, v]).catch(() => [songId, null])
       )
     ).then(entries => {
       setSelectedVariants(Object.fromEntries(entries.filter(([, v]) => v)))

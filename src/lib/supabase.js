@@ -378,3 +378,9 @@ export async function listSongVariants(songId) {
   if (error) throw error
   return data || []
 }
+
+export async function getPublishedVariant(variantId) {
+  const { data, error } = await supabase.rpc('get_published_variant', { p_variant_id: variantId })
+  if (error) throw error
+  return data?.[0] || null
+}
