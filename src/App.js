@@ -314,6 +314,7 @@ function AppShell() {
   const page = PATH_PAGES[location.pathname] || 'home'
   const setPage = useCallback((id) => navigate(PAGE_PATHS[id] || '/home'), [navigate])
   const [pendingOpenSong, setPendingOpenSong] = useState(null)
+  const [pendingEditSetDate, setPendingEditSetDate] = useState(null)
   const [songs, setSongs] = useState([])
   const [sets, setSets] = useState([])
   const [weekSongIds, setWeekSongIds] = useState([])
@@ -394,6 +395,7 @@ function AppShell() {
     setWeekSongIds, refreshSongs, refreshSets,
     theme, setTheme, profile, user,
     activeChurch, churches, setPage,
+    pendingEditSetDate, setPendingEditSetDate,
   }
 
   return (

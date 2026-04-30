@@ -18,7 +18,7 @@ function getNextSunday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [], activeChurch }) {
+export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs, refreshSets, setPage, sets = [], activeChurch, pendingEditSetDate, setPendingEditSetDate }) {
   const { t } = useTranslation()
   const toast = useToast()
   const [serviceDate, setServiceDate] = useState(getNextSunday())
@@ -39,6 +39,13 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [previewVariant, setPreviewVariant] = useState(null)
 
   useEffect(() => {
+    if (pendingEditSetDate) {
+      setServiceDate(pendingEditSetDate)
+      setPendingEditSetDate(null)
+    }
+  }, [pendingEditSetDate, setPendingEditSetDate])
+
+  useEffect(() => {
     const savedSet = sets.find(s => s.service_date === serviceDate && (s.service_time || '') === serviceTime)
     setKeyOverrides(savedSet?.key_overrides || {})
     setVariantOverrides(savedSet?.variant_overrides || {})
@@ -48,6 +55,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     setSongYoutubeUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.youtube || ''])))
     setSongAppleMusicUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.apple || ''])))
   }, [serviceDate, serviceTime, sets])
+
+  const existingSet = sets.find(s => s.service_date === serviceDate && (s.service_time || '') === serviceTime)
 
   const fast = weekSongs.filter(s=>s.tempo==='Fast').length
   const med = weekSongs.filter(s=>s.tempo==='Medium').length
@@ -286,7 +295,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
 
           <div className="set-actions">
             <div className="set-actions-row">
-              <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving ? t('common.saving') : t('thisWeek.saveSet')}</button>
+              <button className="btn btn-ghost" onClick={saveSet} disabled={saving}>{saving ? t('common.saving') : existingSet ? 'Update Set' : t('thisWeek.saveSet')}</button>
               <button className="btn btn-gold" onClick={()=>setWaModal(true)}>{t('thisWeek.whatsapp')}</button>
             </div>
             <button className="btn btn-primary set-finalize-btn" onClick={finalize} disabled={finalizing}>{finalizing ? t('thisWeek.finalizing') : t('thisWeek.finalize')}</button>

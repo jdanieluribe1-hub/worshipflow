@@ -10,7 +10,7 @@ import { transposeLyrics } from '../lib/transpose'
 
 function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':'🎶' }
 
-export default function History({ songs, sets, refreshSets, setPage, activeChurch }) {
+export default function History({ songs, sets, refreshSets, setPage, activeChurch, setWeekSongIds, setPendingEditSetDate }) {
   const { t } = useTranslation()
   const toast = useToast()
   const [view, setView] = useState('calendar')
@@ -38,6 +38,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
   const [editWaModal, setEditWaModal] = useState(false)
   const [editVariantOverrides, setEditVariantOverrides] = useState({})
   const [editVariantObjects, setEditVariantObjects] = useState({})
+  const [editSongSearch, setEditSongSearch] = useState('')
   const [previewSong, setPreviewSong] = useState(null)
   const [previewVariant, setPreviewVariant] = useState(null)
   const [previewKeyOverride, setPreviewKeyOverride] = useState(null)
@@ -100,6 +101,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     const variantIds = selectedSet.variant_overrides || {}
     setEditVariantOverrides({ ...variantIds })
     setEditVariantObjects({})
+    setEditSongSearch('')
     setEditModal(true)
     if (Object.keys(variantIds).length) {
       Promise.all(
@@ -149,6 +151,13 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       return `${i+1}. *${s.title}* — ${s.artist||''}\n   Key: ${eff} | ${s.tempo}${ml.spotify ? `\n   🎵 ${ml.spotify}` : ''}${ml.youtube ? `\n   ▶️ ${ml.youtube}` : ''}${ml.apple ? `\n   🍎 ${ml.apple}` : ''}`
     }).join('\n\n')
     return `*${t('thisWeek.waMessage.title', { date })}*\n\n${songLines}\n\n${t('thisWeek.waMessage.chordsHeader')}\n${bandLink}\n\n${t('thisWeek.waMessage.recommendHeader')}\n${recommendLink}\n\n${t('thisWeek.waMessage.closing')}`
+  }
+
+  const openInSetBuilder = () => {
+    setWeekSongIds([...(selectedSet.song_ids || [])])
+    setPendingEditSetDate(selectedKey)
+    setEditModal(false)
+    setPage('thisweek')
   }
 
   const setMusicLink = (id, field, val) => {
@@ -407,6 +416,12 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                           onClick={() => { setPreviewSong(s); setPreviewVariant(editVariantObjects[s.id] || null); setPreviewKeyOverride(editKeyOverrides[s.id] || s.key) }}
                         >👁</button>
                       )}
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize:11, padding:'3px 6px', flexShrink:0, color:'var(--red)' }}
+                        title="Remove from set"
+                        onClick={() => setEditSongIds(ids => ids.filter(id => id !== s.id))}
+                      >✕</button>
                     </div>
                     <div style={{ display:'flex', flexDirection:'column', gap:5, paddingLeft:62 }}>
                       <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -426,6 +441,44 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                 </div>
               ))}
 
+              <div style={{ marginTop:16 }}>
+                <div className="form-label" style={{ marginBottom:8 }}>Add Songs</div>
+                <input
+                  type="text"
+                  placeholder="Search songs to add..."
+                  value={editSongSearch}
+                  onChange={e => setEditSongSearch(e.target.value)}
+                  style={{ width:'100%', fontSize:13, padding:'7px 10px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)', marginBottom:6 }}
+                />
+                {editSongSearch.trim() && (() => {
+                  const q = editSongSearch.trim().toLowerCase()
+                  const results = songs.filter(s => !editSongIds.includes(s.id) && (s.title.toLowerCase().includes(q) || (s.artist||'').toLowerCase().includes(q))).slice(0, 6)
+                  return results.length > 0 ? (
+                    <div style={{ border:'1px solid var(--border2)', borderRadius:8, overflow:'hidden' }}>
+                      {results.map(s => (
+                        <div
+                          key={s.id}
+                          onClick={() => { setEditSongIds(ids => [...ids, s.id]); setEditSongSearch('') }}
+                          style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', cursor:'pointer', background:'var(--bg3)', borderBottom:'1px solid var(--border)' }}
+                          onMouseEnter={e => e.currentTarget.style.background='var(--bg4)'}
+                          onMouseLeave={e => e.currentTarget.style.background='var(--bg3)'}
+                        >
+                          <span style={{ fontSize:14, flexShrink:0 }}>{tempoEmoji(s.tempo)}</span>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontWeight:500, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.title}</div>
+                            <div style={{ fontSize:11, color:'var(--muted)' }}>{s.artist}</div>
+                          </div>
+                          <span className="tag tag-key" style={{ fontSize:10, flexShrink:0 }}>{s.key}</span>
+                          <span style={{ fontSize:11, color:'var(--accent)', flexShrink:0 }}>+ Add</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize:12, color:'var(--muted)', padding:'6px 10px' }}>No songs found</div>
+                  )
+                })()}
+              </div>
+
               <div className="form-group" style={{ marginTop:16 }}>
                 <label className="form-label">{t('thisWeek.serviceNotes')}</label>
                 <textarea placeholder={t('thisWeek.serviceNotesPlaceholder')} value={editNotes} onChange={e=>setEditNotes(e.target.value)} style={{ width:'100%' }} />
@@ -434,6 +487,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
 
             <div className="modal-footer" style={{ flexShrink:0, borderTop:'1px solid var(--border)', paddingTop:16 }}>
               <button className="btn btn-gold" onClick={()=>setEditWaModal(true)}>{t('history.whatsappPreview')}</button>
+              <button className="btn btn-ghost" onClick={openInSetBuilder} title="Open this set in the full Set Builder for advanced editing" style={{ fontSize:12 }}>📅 Open in Set Builder</button>
               <div style={{ flex:1 }} />
               <button className="btn btn-ghost" onClick={()=>setEditModal(false)}>{t('common.cancel')}</button>
               <button className="btn btn-primary" onClick={saveEditModal} disabled={editSaving}>{editSaving ? t('history.savingDots') : t('history.saveChanges')}</button>
