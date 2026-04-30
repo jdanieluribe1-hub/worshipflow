@@ -36,6 +36,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     return saved
   })
   const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark'
@@ -90,12 +91,20 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
   const next = () => setIdx(i => Math.min(displaySongs.length - 1, i + 1))
 
   const handleDateChange = (e) => { setSelectedDate(e.target.value); setIdx(0); setTransposedKeys({}) }
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
   const handleTouchEnd = (e) => {
     if (touchStartX.current === null) return
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev() }
+    const diffX = touchStartX.current - e.changedTouches[0].clientX
+    const diffY = touchStartY.current - e.changedTouches[0].clientY
+    // Only trigger swipe when horizontal movement dominates and exceeds threshold
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      diffX > 0 ? next() : prev()
+    }
     touchStartX.current = null
+    touchStartY.current = null
   }
   const handleTransposeChange = (songId, newKey) => {
     setTransposedKeys(prev => ({ ...prev, [songId]: newKey }))
@@ -131,8 +140,8 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
     <div className="band-page">
       <div className="band-topbar">
         <div className="band-logo">WorshipFlow</div>
-        <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-          <label style={{ position:'relative', cursor:'pointer', userSelect:'none' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:20 }}>
+          <label style={{ position:'relative', cursor:'pointer', userSelect:'none', overflow:'hidden' }}>
             <span className="band-week-label" style={{ display:'flex', alignItems:'center', gap:6 }}>
               <span style={{ fontSize:14 }}>📅</span>{dateLabel}
             </span>
@@ -146,7 +155,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
           {isPublic && <button
             onClick={toggleTheme}
             title={theme === 'dark' ? t('bandView.switchToLight') : t('bandView.switchToDark')}
-            style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, padding:'4px', color:'var(--muted)', lineHeight:1 }}
+            style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, padding:'8px', color:'var(--muted)', lineHeight:1, flexShrink:0 }}
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>}
