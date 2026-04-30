@@ -8,7 +8,7 @@ function getNextSunday() {
   const d = new Date()
   const diff = d.getDay() === 0 ? 0 : 7 - d.getDay()
   d.setDate(d.getDate() + diff)
-  return d.toISOString().slice(0, 10)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export default function Home({ songs, sets, setPage, setPendingOpenSong, profile }) {
