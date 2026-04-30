@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   createSongVariant, updateSongVariant, publishSongVariant,
-  unpublishSongVariant, deleteSongVariant, listSongVariants
+  unpublishSongVariant, deleteSongVariant, listSongVariants,
+  updateSong,
 } from '../lib/supabase'
 import { isChordName } from '../lib/transpose'
 
@@ -94,7 +95,7 @@ const CHAR_W = 7.8
 
 // ─── ChordToken ───────────────────────────────────────────────────────────────
 
-function ChordToken({ chord, editing, onDragStart, onEdit, onEditCommit, onEditCancel, onDelete }) {
+function ChordToken({ chord, editing, mode, onDragStart, onEdit, onEditCommit, onEditCancel, onDelete }) {
   const [hovered, setHovered] = useState(false)
   const inputRef = useRef(null)
   const [editVal, setEditVal] = useState(chord.name)
@@ -119,6 +120,15 @@ function ChordToken({ chord, editing, onDragStart, onEdit, onEditCommit, onEditC
     if (e.key === 'Enter') { e.preventDefault(); commitEdit() }
     if (e.key === 'Escape') { onEditCancel() }
   }
+
+  const isDeleteMode = mode === 'delete'
+  const isMoveMode = mode === 'move' || mode === 'add'
+
+  const chordColor = isDeleteMode ? 'var(--red)' : 'var(--accent)'
+  const chordBg = isDeleteMode
+    ? (hovered ? 'rgba(255,80,80,0.18)' : 'var(--bg3)')
+    : (hovered ? 'var(--bg4)' : 'var(--bg3)')
+  const chordCursor = isDeleteMode ? 'pointer' : 'grab'
 
   return (
     <div
@@ -151,26 +161,44 @@ function ChordToken({ chord, editing, onDragStart, onEdit, onEditCommit, onEditC
         <>
           <span
             style={{
-              fontSize: 12, fontWeight: 700, color: 'var(--accent)',
-              background: hovered ? 'var(--bg4)' : 'var(--bg3)',
-              borderRadius: 4, padding: '1px 5px',
-              cursor: 'grab', whiteSpace: 'nowrap',
+              fontSize: 12, fontWeight: 700, color: chordColor,
+              background: chordBg,
+              borderRadius: 4, padding: '3px 7px',
+              cursor: chordCursor, whiteSpace: 'nowrap',
               border: '1px solid transparent',
-              borderColor: hovered ? 'var(--border2)' : 'transparent',
+              borderColor: hovered ? (isDeleteMode ? 'var(--red)' : 'var(--border2)') : 'transparent',
+              touchAction: 'none',
+              minHeight: 28, display: 'inline-flex', alignItems: 'center',
+              transition: 'background 0.1s, border-color 0.1s',
             }}
-            onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onDragStart(e) }}
-            onClick={e => { e.stopPropagation(); onEdit() }}
+            onPointerDown={e => {
+              if (isDeleteMode) {
+                e.preventDefault()
+                e.stopPropagation()
+                onDelete()
+                return
+              }
+              e.preventDefault()
+              e.stopPropagation()
+              onDragStart(e)
+            }}
+            onClick={e => {
+              e.stopPropagation()
+              if (!isDeleteMode && isMoveMode) onEdit()
+            }}
           >
             {chord.name}
           </span>
-          {hovered && (
+          {/* Show ✕ on hover in move/add mode only — not needed in delete mode */}
+          {hovered && !isDeleteMode && (
             <span
-              onClick={e => { e.stopPropagation(); onDelete() }}
+              onPointerDown={e => { e.preventDefault(); e.stopPropagation(); onDelete() }}
               style={{
                 fontSize: 10, color: 'var(--muted)', cursor: 'pointer',
-                lineHeight: 1, padding: '1px 3px',
+                lineHeight: 1, padding: '3px 5px',
                 borderRadius: 3, background: 'var(--bg4)',
                 border: '1px solid var(--border)',
+                minHeight: 28, display: 'inline-flex', alignItems: 'center',
               }}
               title="Delete chord"
             >✕</span>
@@ -221,6 +249,61 @@ function AddChordInput({ charPos, onCommit, onCancel }) {
   )
 }
 
+// ─── Mode toolbar ─────────────────────────────────────────────────────────────
+
+const MODES = [
+  { id: 'move',   icon: '⇄', label: 'Move'   },
+  { id: 'add',    icon: '+', label: 'Add'    },
+  { id: 'delete', icon: '✕', label: 'Delete' },
+]
+
+const MODE_HINTS = {
+  move:   <><strong>Drag</strong> chord to move it · <strong>Tap chord</strong> to rename · hover for <strong>✕</strong> to delete</>,
+  add:    <><strong>Tap empty space</strong> on a line to add a chord · <strong>Tap chord</strong> to rename</>,
+  delete: <><strong>Tap any chord</strong> to delete it instantly · switch to Move to reposition</>,
+}
+
+function ModeToolbar({ mode, onChange }) {
+  return (
+    <div style={{
+      display: 'inline-flex',
+      background: 'var(--bg3)',
+      border: '1px solid var(--border)',
+      borderRadius: 10,
+      padding: 3,
+      gap: 2,
+    }}>
+      {MODES.map(m => {
+        const active = mode === m.id
+        return (
+          <button
+            key={m.id}
+            onClick={() => onChange(m.id)}
+            style={{
+              background: active ? 'var(--accent)' : 'transparent',
+              color: active ? '#fff' : 'var(--muted)',
+              border: 'none',
+              borderRadius: 7,
+              padding: '8px 18px',
+              fontSize: 13,
+              fontWeight: active ? 600 : 400,
+              cursor: 'pointer',
+              minWidth: 80,
+              minHeight: 40,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'background 0.15s, color 0.15s',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            <span style={{ fontSize: 14 }}>{m.icon}</span>
+            {m.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Main editor ─────────────────────────────────────────────────────────────
 
 export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpenSong }) {
@@ -244,6 +327,8 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmPublish, setConfirmPublish] = useState(false)
+  const [confirmSetAsOriginal, setConfirmSetAsOriginal] = useState(false)
+  const [editorMode, setEditorMode] = useState('move') // 'move' | 'add' | 'delete'
 
   // Refs to avoid stale closures in event handlers
   const linesRef = useRef(lines)
@@ -256,6 +341,12 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
   useEffect(() => { redoRef.current = redoStack }, [redoStack])
   useEffect(() => { selectedVariantIdRef.current = selectedVariantId }, [selectedVariantId])
   useEffect(() => { variantNameRef.current = variantName }, [variantName])
+
+  const switchMode = useCallback((m) => {
+    setEditorMode(m)
+    setEditingChordId(null)
+    setAddingChord(null)
+  }, [])
 
   // ── Undo/redo ──────────────────────────────────────────────────────────────
 
@@ -290,6 +381,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     setEditingChordId(null)
     setAddingChord(null)
     setSaveError('')
+    setEditorMode('move')
     const parsed = parseLyricsToLines(song.lyrics || '')
     setLines(parsed)
     setOriginalLines(parsed)
@@ -351,12 +443,12 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  // ── Drag ──────────────────────────────────────────────────────────────────
+  // ── Drag — uses pointer events for mouse + touch ───────────────────────────
 
   useEffect(() => {
     if (!dragState) return
 
-    const onMouseMove = (e) => {
+    const onPointerMove = (e) => {
       const { chordId, lineIdx, startX, startCharPos, startLineY } = dragState
       const deltaCharPos = (e.clientX - startX) / CHAR_W
       const LINE_HEIGHT = 52
@@ -398,7 +490,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       })
     }
 
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       const snapped = linesRef.current.map(line => ({
         ...line,
         chords: line.chords.map(c => ({ ...c, charPos: Math.round(c.charPos) }))
@@ -411,11 +503,11 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
       setDragState(null)
     }
 
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('pointermove', onPointerMove)
+    document.addEventListener('pointerup', onPointerUp)
     return () => {
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('pointerup', onPointerUp)
     }
   }, [dragState, scheduleAutosave])
 
@@ -433,15 +525,16 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     })
   }, [])
 
-  // ── Add chord by clicking on a line ───────────────────────────────────────
+  // ── Add chord — only in 'add' mode ────────────────────────────────────────
 
   const handleLineClick = useCallback((e, lineIdx) => {
     if (dragState) return
+    if (editorMode !== 'add') return
     const rect = e.currentTarget.getBoundingClientRect()
     const charPos = Math.round((e.clientX - rect.left) / CHAR_W)
     setEditingChordId(null)
     setAddingChord({ lineIdx, charPos: Math.max(0, charPos) })
-  }, [dragState])
+  }, [dragState, editorMode])
 
   const commitAddChord = useCallback((lineIdx, charPos, name) => {
     const newLines = linesRef.current.map((line, li) =>
@@ -569,8 +662,29 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     setConfirmReset(false)
   }
 
+  const setAsOriginal = async () => {
+    if (!selectedSong || !selectedVariantId) return
+    setSaving(true); setSaveError('')
+    try {
+      const newLyrics = serializeLinesToLyrics(lines)
+      await updateSong(selectedSong.id, { lyrics: newLyrics })
+      const newParsed = parseLyricsToLines(newLyrics)
+      setOriginalLines(newParsed)
+      setSelectedSong(prev => ({ ...prev, lyrics: newLyrics }))
+    } catch (err) {
+      setSaveError(err.message || 'Failed to set as original')
+    } finally {
+      setSaving(false)
+      setConfirmSetAsOriginal(false)
+    }
+  }
+
   const currentVariant = variants.find(v => v.id === selectedVariantId)
   const isPublished = currentVariant?.status === 'published'
+
+  // Canvas cursor feedback
+  const canvasCursor = dragState ? 'grabbing' : (editorMode === 'add' ? 'crosshair' : 'default')
+  const lineCursor = dragState ? 'grabbing' : (editorMode === 'add' ? 'crosshair' : 'default')
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render
@@ -746,6 +860,13 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             )}
 
             {selectedVariantId && (
+              <button onClick={() => setConfirmSetAsOriginal(true)} disabled={saving} style={toolBtn(false)}
+                title="Promote this variant's chords to become the base song">
+                Set as original
+              </button>
+            )}
+
+            {selectedVariantId && (
               <button onClick={() => setConfirmDelete(true)} disabled={saving} style={dangerBtnSm}>
                 {t('songEditor.deleteVariant')}
               </button>
@@ -786,6 +907,25 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             </div>
           )}
 
+          {/* Confirm set as original dialog */}
+          {confirmSetAsOriginal && (
+            <div style={dialogOverlay}>
+              <div style={dialogBox}>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>Set "{variantName}" as original?</div>
+                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+                  This will permanently overwrite the base song's chords with this variant's chords.
+                  All band members will see the new version. This cannot be undone.
+                </div>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setConfirmSetAsOriginal(false)} style={toolBtn(false)}>{t('common.cancel')}</button>
+                  <button onClick={setAsOriginal} disabled={saving} style={accentBtn}>
+                    {saving ? 'Saving…' : 'Set as original'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Confirm delete dialog */}
           {confirmDelete && (
             <div style={dialogOverlay}>
@@ -804,12 +944,15 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
             </div>
           )}
 
-          {/* ── Editor hint ──────────────────────────────────────────────── */}
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
-            <strong style={{ color: 'var(--text)' }}>Click</strong> empty space to add a chord ·{' '}
-            <strong style={{ color: 'var(--text)' }}>Drag</strong> to reposition ·{' '}
-            <strong style={{ color: 'var(--text)' }}>Click chord</strong> to rename ·{' '}
-            <strong style={{ color: 'var(--text)' }}>✕</strong> to delete
+          {/* ── Mode toolbar + hint ───────────────────────────────────────── */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16,
+            marginBottom: 16, flexWrap: 'wrap',
+          }}>
+            <ModeToolbar mode={editorMode} onChange={switchMode} />
+            <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
+              {MODE_HINTS[editorMode]}
+            </div>
           </div>
 
           {/* ── Canvas ───────────────────────────────────────────────────── */}
@@ -818,9 +961,10 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
               background: 'var(--bg2)', border: '1px solid var(--border)',
               borderRadius: 12, padding: '24px 28px',
               fontFamily: 'monospace', fontSize: 13,
-              cursor: dragState ? 'grabbing' : 'default',
+              cursor: canvasCursor,
               userSelect: dragState ? 'none' : 'auto',
               overflowX: 'auto',
+              touchAction: dragState ? 'none' : 'pan-y',
             }}
             onClick={() => { setEditingChordId(null); setAddingChord(null) }}
           >
@@ -840,8 +984,8 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                     position: 'relative',
                     marginBottom: 6,
                     paddingTop: 26,
-                    minHeight: 46,
-                    cursor: dragState ? 'grabbing' : 'crosshair',
+                    minHeight: 52,
+                    cursor: lineCursor,
                   }}
                   onClick={e => { e.stopPropagation(); handleLineClick(e, lineIdx) }}
                 >
@@ -850,6 +994,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                     <ChordToken
                       key={chord.id}
                       chord={chord}
+                      mode={editorMode}
                       editing={editingChordId === `${lineIdx}-${chord.id}`}
                       onDragStart={e => startDrag(e, lineIdx, chord.id)}
                       onEdit={() => { setAddingChord(null); setEditingChordId(`${lineIdx}-${chord.id}`) }}
@@ -874,7 +1019,7 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                     whiteSpace: 'pre',
                     fontStyle: isSectionLabel ? 'italic' : 'normal',
                   }}>
-                    {line.text || '\u00a0'}
+                    {line.text || ' '}
                   </span>
                 </div>
               )
