@@ -7,6 +7,7 @@ import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
 import TransposeControl from '../components/TransposeControl'
 import VariantSelect from '../components/VariantSelect'
+import EventTypeSelector from '../components/EventTypeSelector'
 
 function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':'🎶' }
 
@@ -182,11 +183,11 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
           <div className="stat-label">{t('thisWeek.serviceDate')}</div>
           <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:4 }}>
             <input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)} style={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }} />
-            <input
-              type="time"
+            <EventTypeSelector
               value={serviceTime}
-              onChange={e => setServiceTime(e.target.value)}
-              style={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }}
+              onChange={setServiceTime}
+              selectStyle={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }}
+              inputStyle={{ width:'100%', maxWidth:'100%', fontSize:12, padding:'6px 8px', boxSizing:'border-box' }}
             />
           </div>
         </div>
