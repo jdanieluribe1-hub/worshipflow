@@ -449,44 +449,34 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     if (!dragState) return
 
     const onPointerMove = (e) => {
-      const { chordId, lineIdx, startX, startCharPos, startLineY } = dragState
+      const { chordId, lineIdx: originLineIdx, startX, startCharPos, startLineY } = dragState
       const deltaCharPos = (e.clientX - startX) / CHAR_W
       const LINE_HEIGHT = 52
       const lineOffset = Math.round((e.clientY - startLineY) / LINE_HEIGHT)
-      const targetLineIdx = Math.max(0, Math.min(linesRef.current.length - 1, lineIdx + lineOffset))
+      const targetLineIdx = Math.max(0, Math.min(linesRef.current.length - 1, originLineIdx + lineOffset))
       const targetLine = linesRef.current[targetLineIdx]
-      const newCharPos = Math.max(0, Math.min(
-        targetLine.text.length,
-        startCharPos + deltaCharPos
-      ))
+      const newCharPos = Math.max(0, Math.min(targetLine.text.length, startCharPos + deltaCharPos))
 
       setLines(prev => {
-        const next = prev.map((line, li) => {
-          if (li === lineIdx && lineIdx !== targetLineIdx) {
-            return { ...line, chords: line.chords.filter(c => c.id !== chordId) }
-          }
-          return line
-        }).map((line, li) => {
-          if (li === targetLineIdx) {
-            if (lineIdx === targetLineIdx) {
-              return {
-                ...line,
-                chords: line.chords.map(c =>
-                  c.id === chordId ? { ...c, charPos: newCharPos } : c
-                )
-              }
-            } else {
-              const movedChord = prev[lineIdx]?.chords.find(c => c.id === chordId)
-              if (!movedChord) return line
-              return {
-                ...line,
-                chords: [...line.chords.filter(c => c.id !== chordId), { ...movedChord, charPos: newCharPos }]
-              }
-            }
-          }
+        // Always find where the chord actually is right now, not where it started
+        const currentLineIdx = prev.findIndex(line => line.chords.some(c => c.id === chordId))
+        if (currentLineIdx === -1) return prev
+
+        if (currentLineIdx === targetLineIdx) {
+          return prev.map((line, li) =>
+            li === currentLineIdx
+              ? { ...line, chords: line.chords.map(c => c.id === chordId ? { ...c, charPos: newCharPos } : c) }
+              : line
+          )
+        }
+
+        const movedChord = prev[currentLineIdx].chords.find(c => c.id === chordId)
+        if (!movedChord) return prev
+        return prev.map((line, li) => {
+          if (li === currentLineIdx) return { ...line, chords: line.chords.filter(c => c.id !== chordId) }
+          if (li === targetLineIdx) return { ...line, chords: [...line.chords.filter(c => c.id !== chordId), { ...movedChord, charPos: newCharPos }] }
           return line
         })
-        return next
       })
     }
 
