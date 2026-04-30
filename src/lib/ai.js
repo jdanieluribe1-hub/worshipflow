@@ -38,6 +38,7 @@ Rules:
 - Song title is at the top of the PDF — do NOT use the filename
 - The key is the most prominent chord (usually first chord of intro or verse)
 - If the key has a flat write it as e.g. "Bb" not "B♭"
+- Chord shorthand: "D+" means D major → output as "D"; "D-" means D minor → output as "Dm"; similarly for any root note
 - Respond ONLY with valid JSON, no markdown:
 {"title":"song title","artist":"artist name","key":"musical key e.g. G, Bb","tempo":"Fast, Medium, or Slow","lyrics":"full chord chart with inline [Chord] markers and [Section] labels"}`
           }
@@ -56,7 +57,7 @@ Rules:
 
 // Removes inline chord markers like [G], [Am], [C/E], [Bb] but keeps section labels like [Chorus]
 function isChordToken(s) {
-  return /^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add|2|4|5|6|7|9|11|13)*(\/[A-G][#b]?)?$/.test(s)
+  return /^[A-G][#b]?(\+[0-9]*|-[0-9]*|(m|M|maj|min|dim|aug|sus|add|2|4|5|6|7|9|11|13)*)(\/[A-G][#b]?)?$/.test(s)
 }
 
 export function stripChords(lyrics) {

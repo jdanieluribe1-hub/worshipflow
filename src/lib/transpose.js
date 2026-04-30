@@ -34,9 +34,10 @@ export function chordToNashville(chord, fromKey) {
 
 export function convertLyricsToNashville(lyrics, fromKey) {
   if (!lyrics || !fromKey) return lyrics
-  return lyrics.replace(/\[([^\]]+)\]/g, (match, inner) =>
-    isChordName(inner) ? '[' + chordToNashville(inner, fromKey) + ']' : match
-  )
+  return lyrics.replace(/\[([^\]]+)\]/g, (match, inner) => {
+    if (!isChordName(inner)) return match
+    return '[' + chordToNashville(normalizeChord(inner), fromKey) + ']'
+  })
 }
 
 export function noteIndex(note) {
@@ -85,8 +86,15 @@ export function getSemitones(fromKey, toKey) {
   return (to - from + 12) % 12
 }
 
+// Normalize shorthand notations: D+ → D (major), D- → Dm (minor), D-7 → Dm7
+export function normalizeChord(s) {
+  return s
+    .replace(/^([A-G][#b]?)\+([0-9]*)$/, '$1$2')
+    .replace(/^([A-G][#b]?)-([0-9]*)$/, '$1m$2')
+}
+
 export function isChordName(s) {
-  return /^[A-G][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/.test(s)
+  return /^[A-G][#b]?(\+[0-9]*|-[0-9]*|(m|M|maj|min|dim|aug|sus|add)?[0-9]*)(\/[A-G][#b]?)?$/.test(s)
 }
 
 export function transposeLyrics(lyrics, fromKey, toKey) {
@@ -96,7 +104,8 @@ export function transposeLyrics(lyrics, fromKey, toKey) {
   const semitones = getSemitones(fromKey, toKey)
   if (semitones === 0) return lyrics
   const flats = usesFlats(toKey)
-  return lyrics.replace(/\[([^\]]+)\]/g, (match, inner) =>
-    isChordName(inner) ? '[' + transposeChord(inner, semitones, flats) + ']' : match
-  )
+  return lyrics.replace(/\[([^\]]+)\]/g, (match, inner) => {
+    if (!isChordName(inner)) return match
+    return '[' + transposeChord(normalizeChord(inner), semitones, flats) + ']'
+  })
 }

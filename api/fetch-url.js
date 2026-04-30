@@ -144,6 +144,7 @@ Rules:
 - Place every chord inline before the word/syllable it falls on — do not drop any chords
 - The key is the most prominent chord (usually first chord of intro or verse)
 - If the key has a flat (b) write it as e.g. "Bb" not "B♭"
+- Chord shorthand: "D+" means D major → output as "D"; "D-" means D minor → output as "Dm"; similarly for any root note
 - Respond ONLY with valid JSON, no markdown:
 {"title":"song title","artist":"artist name","key":"e.g. Bb","tempo":"Fast, Medium, or Slow","lyrics":"full chord chart with inline [Chord] markers and [Section] labels"}
 
