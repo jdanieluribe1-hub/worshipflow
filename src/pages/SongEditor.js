@@ -92,6 +92,8 @@ function serializeLinesToLyrics(lines) {
 
 // Approx char width for 13px monospace
 const CHAR_W = 7.8
+// Must match paddingTop + line text height + marginBottom in the line div
+const LINE_HEIGHT = 60
 
 // ─── ChordToken ───────────────────────────────────────────────────────────────
 
@@ -451,7 +453,6 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
     const onPointerMove = (e) => {
       const { chordId, lineIdx: originLineIdx, startX, startCharPos, startLineY } = dragState
       const deltaCharPos = (e.clientX - startX) / CHAR_W
-      const LINE_HEIGHT = 52
       const lineOffset = Math.round((e.clientY - startLineY) / LINE_HEIGHT)
       const targetLineIdx = Math.max(0, Math.min(linesRef.current.length - 1, originLineIdx + lineOffset))
       const targetLine = linesRef.current[targetLineIdx]
@@ -973,8 +974,8 @@ export default function SongEditor({ songs, user, pendingOpenSong, setPendingOpe
                   style={{
                     position: 'relative',
                     marginBottom: 6,
-                    paddingTop: 26,
-                    minHeight: 52,
+                    paddingTop: 36,
+                    minHeight: 60,
                     cursor: lineCursor,
                   }}
                   onClick={e => { e.stopPropagation(); handleLineClick(e, lineIdx) }}
