@@ -4,6 +4,9 @@ import { useToast } from '../components/Toast'
 import i18n, { dateLocale } from '../i18n'
 import { deleteSet, upsertSet } from '../lib/supabase'
 import TransposeControl from '../components/TransposeControl'
+import VariantSelect from '../components/VariantSelect'
+import ChordDisplay from '../components/ChordDisplay'
+import { transposeLyrics } from '../lib/transpose'
 
 function tempoEmoji(tempo) { return tempo==='Fast'?'⚡':tempo==='Medium'?'♩':'🎶' }
 
@@ -33,6 +36,11 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
   const [editDragOverIdx, setEditDragOverIdx] = useState(null)
   const [editSaving, setEditSaving] = useState(false)
   const [editWaModal, setEditWaModal] = useState(false)
+  const [editVariantOverrides, setEditVariantOverrides] = useState({})
+  const [editVariantObjects, setEditVariantObjects] = useState({})
+  const [previewSong, setPreviewSong] = useState(null)
+  const [previewVariant, setPreviewVariant] = useState(null)
+  const [previewKeyOverride, setPreviewKeyOverride] = useState(null)
 
   const today = new Date(); today.setHours(0,0,0,0)
 
@@ -75,7 +83,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     if (historyMap[duplicateDate] && !window.confirm(t('history.duplicateConfirm', { date: duplicateDate }))) return
     setDuplicating(true)
     try {
-      await upsertSet(activeChurch?.id, duplicateDate, selectedSet.song_ids, selectedSet.notes || '', selectedSet.key_overrides || {}, selectedSet.music_links || {})
+      await upsertSet(activeChurch?.id, duplicateDate, selectedSet.song_ids, selectedSet.notes || '', selectedSet.key_overrides || {}, selectedSet.music_links || {}, '', selectedSet.variant_overrides || {})
       await refreshSets()
       setDuplicateDate('')
       const destDateStr = new Date(duplicateDate + 'T12:00:00').toLocaleDateString(locale, { month:'long', day:'numeric', year:'numeric' })
@@ -89,13 +97,15 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
     setEditKeyOverrides({ ...(selectedSet.key_overrides || {}) })
     setEditMusicLinks(JSON.parse(JSON.stringify(selectedSet.music_links || {})))
     setEditNotes(selectedSet.notes || '')
+    setEditVariantOverrides({ ...(selectedSet.variant_overrides || {}) })
+    setEditVariantObjects({})
     setEditModal(true)
   }
 
   const saveEditModal = async () => {
     setEditSaving(true)
     try {
-      await upsertSet(activeChurch?.id, selectedKey, editSongIds, editNotes, editKeyOverrides, editMusicLinks)
+      await upsertSet(activeChurch?.id, selectedKey, editSongIds, editNotes, editKeyOverrides, editMusicLinks, '', editVariantOverrides)
       await refreshSets()
       setEditModal(false)
     } catch(e) { toast(t('errors.generic', { msg: e.message }), 'error') }
@@ -273,6 +283,13 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                         <div style={{ fontSize:11,color:'var(--muted)' }}>{s.artist}</div>
                       </div>
                       <span className="tag tag-key" style={{ fontSize:10 }}>{effectiveKey(s)}</span>
+                      {(s.lyrics || s.pdf_url) && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ fontSize:11, padding:'3px 6px', flexShrink:0 }}
+                          onClick={() => { setPreviewSong(s); setPreviewVariant(null); setPreviewKeyOverride(effectiveKey(s)) }}
+                        >👁</button>
+                      )}
                     </div>
                   ))}
                   {selectedSet.notes && (
@@ -353,7 +370,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                     outline: editDragOverIdx === i && editDragIdx !== i ? '2px solid var(--accent)' : 'none',
                     cursor:'grab'
                   }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, flexWrap:'wrap' }}>
                       <div style={{ width:22, height:22, borderRadius:'50%', background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'var(--muted)', fontWeight:600, flexShrink:0 }}>{i+1}</div>
                       <div style={{ width:32,height:32,borderRadius:7,background:'var(--bg4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0 }}>{tempoEmoji(s.tempo)}</div>
                       <div style={{ flex:1, minWidth:0 }}>
@@ -365,6 +382,21 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                         transposedKey={editKeyOverrides[s.id] || s.key}
                         onChange={(k) => setEditKeyOverrides(p => ({ ...p, [s.id]: k }))}
                       />
+                      <VariantSelect
+                        songId={s.id}
+                        value={editVariantOverrides[s.id] || null}
+                        onChange={v => {
+                          setEditVariantOverrides(p => ({ ...p, [s.id]: v ? v.id : null }))
+                          setEditVariantObjects(p => ({ ...p, [s.id]: v || null }))
+                        }}
+                      />
+                      {(s.lyrics || s.pdf_url) && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ fontSize:11, padding:'3px 6px', flexShrink:0 }}
+                          onClick={() => { setPreviewSong(s); setPreviewVariant(editVariantObjects[s.id] || null); setPreviewKeyOverride(editKeyOverrides[s.id] || s.key) }}
+                        >👁</button>
+                      )}
                     </div>
                     <div style={{ display:'flex', flexDirection:'column', gap:5, paddingLeft:62 }}>
                       <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -395,6 +427,52 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
               <div style={{ flex:1 }} />
               <button className="btn btn-ghost" onClick={()=>setEditModal(false)}>{t('common.cancel')}</button>
               <button className="btn btn-primary" onClick={saveEditModal} disabled={editSaving}>{editSaving ? t('history.savingDots') : t('history.saveChanges')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHORD PREVIEW MODAL */}
+      {previewSong && (
+        <div className="modal-overlay" style={{ zIndex:1200 }} onClick={e => e.target === e.currentTarget && (setPreviewSong(null) || setPreviewVariant(null))}>
+          <div className="modal" style={{ maxWidth:560 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div>
+                <div style={{ fontFamily:'var(--font-head)', fontSize:18, fontWeight:700 }}>{previewSong.title}</div>
+                <div style={{ fontSize:13, color:'var(--muted)' }}>{previewSong.artist}</div>
+              </div>
+              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                <span className="tag tag-key">{previewKeyOverride || previewSong.key}</span>
+                <span className={`tag tag-${previewSong.tempo?.toLowerCase()}`}>{previewSong.tempo}</span>
+              </div>
+            </div>
+            <div style={{ marginBottom:14, display:'flex', flexWrap:'wrap', gap:8, alignItems:'center' }}>
+              <TransposeControl
+                originalKey={previewSong.key}
+                transposedKey={previewKeyOverride || previewSong.key}
+                onChange={k => setPreviewKeyOverride(k)}
+              />
+              <VariantSelect
+                songId={previewSong.id}
+                value={previewVariant?.id || null}
+                onChange={v => setPreviewVariant(v)}
+              />
+            </div>
+            {previewSong.lyrics ? (
+              <ChordDisplay
+                lyrics={(() => {
+                  const source = previewVariant?.chord_data || previewSong.lyrics
+                  const override = previewKeyOverride
+                  return override && override !== previewSong.key
+                    ? transposeLyrics(source, previewSong.key, override)
+                    : source
+                })()}
+              />
+            ) : previewSong.pdf_url ? (
+              <iframe src={previewSong.pdf_url} title={previewSong.title} style={{ width:'100%', height:400, border:'none', borderRadius:10 }} />
+            ) : null}
+            <div className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => { setPreviewSong(null); setPreviewVariant(null) }}>Close</button>
             </div>
           </div>
         </div>

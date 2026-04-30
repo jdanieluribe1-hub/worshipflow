@@ -33,12 +33,16 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const [dragIdx, setDragIdx] = useState(null)
   const [dragOverIdx, setDragOverIdx] = useState(null)
   const [keyOverrides, setKeyOverrides] = useState({})
+  const [variantOverrides, setVariantOverrides] = useState({})
+  const [variantObjects, setVariantObjects] = useState({})
   const [previewSong, setPreviewSong] = useState(null)
   const [previewVariant, setPreviewVariant] = useState(null)
 
   useEffect(() => {
     const savedSet = sets.find(s => s.service_date === serviceDate && (s.service_time || '') === serviceTime)
     setKeyOverrides(savedSet?.key_overrides || {})
+    setVariantOverrides(savedSet?.variant_overrides || {})
+    setVariantObjects({})
     const links = savedSet?.music_links || {}
     setSongSpotifyUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.spotify || ''])))
     setSongYoutubeUrls(Object.fromEntries(Object.entries(links).map(([id, v]) => [id, v.youtube || ''])))
@@ -50,6 +54,9 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
   const slow = weekSongs.filter(s=>s.tempo==='Slow').length
 
   const effectiveKey = (s) => keyOverrides[s.id] || s.key
+
+  const buildVariantOverrides = () =>
+    Object.fromEntries(Object.entries(variantOverrides).filter(([, v]) => v))
 
   const buildMusicLinks = () => {
     const ml = {}
@@ -111,7 +118,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!weekSongIds.length) return toast(t('thisWeek.addSongsFirst'), 'info')
     setSaving(true)
     try {
-      await upsertSet(activeChurch?.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks(), serviceTime)
+      await upsertSet(activeChurch?.id, serviceDate, weekSongIds, notes, keyOverrides, buildMusicLinks(), serviceTime, buildVariantOverrides())
       await refreshSets()
       toast(t('thisWeek.setSaved'), 'success')
     } catch(e) { toast(t('thisWeek.errorSave', { msg: e.message }), 'error') }
@@ -123,7 +130,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     if (!window.confirm(t('thisWeek.finalizeConfirm', { date: serviceDate }))) return
     setFinalizing(true)
     try {
-      await finalizeSet(activeChurch?.id, serviceDate, weekSongIds, keyOverrides, buildMusicLinks(), serviceTime)
+      await finalizeSet(activeChurch?.id, serviceDate, weekSongIds, keyOverrides, buildMusicLinks(), serviceTime, buildVariantOverrides())
       await refreshSets()
       setWeekSongIds([])
       setNotes('')
@@ -131,6 +138,8 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
       setSongYoutubeUrls({})
       setSongAppleMusicUrls({})
       setKeyOverrides({})
+      setVariantOverrides({})
+      setVariantObjects({})
       toast(t('thisWeek.setFinalized'), 'success')
     } catch(e) { toast(t('thisWeek.errorFinalize', { msg: e.message }), 'error') }
     setFinalizing(false)
@@ -229,15 +238,23 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
                   {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ flexShrink:0 }}>📄</a>}
                   <button className="btn btn-ghost btn-sm" style={{ color:'var(--red)', flexShrink:0 }} onClick={()=>setWeekSongIds(p=>p.filter(x=>x!==s.id))}>✕</button>
                 </div>
-                {/* Row 2: transpose + tempo + preview */}
-                <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:8 }}>
+                {/* Row 2: transpose + variant + tempo + preview */}
+                <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:8, flexWrap:'wrap' }}>
                   <TransposeControl
                     originalKey={s.key}
                     transposedKey={effectiveKey(s)}
                     onChange={(newKey) => setKeyOverrides(p => ({ ...p, [s.id]: newKey }))}
                   />
+                  <VariantSelect
+                    songId={s.id}
+                    value={variantOverrides[s.id] || null}
+                    onChange={v => {
+                      setVariantOverrides(p => ({ ...p, [s.id]: v ? v.id : null }))
+                      setVariantObjects(p => ({ ...p, [s.id]: v || null }))
+                    }}
+                  />
                   <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{t('tempos.' + s.tempo)}</span>
-                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => { setPreviewSong(s); setPreviewVariant(null) }} title={t('thisWeek.previewTitle')}>👁</button>
+                  <button className="btn btn-ghost btn-sm" style={{ fontSize:11, padding:'4px 8px' }} onClick={() => { setPreviewSong(s); setPreviewVariant(variantObjects[s.id] || null) }} title={t('thisWeek.previewTitle')}>👁</button>
                 </div>
                 {/* Rows 3-5: music links */}
                 <div className="week-song-sub" style={{ display:'flex', alignItems:'center', gap:6, marginTop:8 }}>
@@ -298,8 +315,12 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
               />
               <VariantSelect
                 songId={previewSong.id}
-                value={previewVariant?.id || null}
-                onChange={v => { setPreviewVariant(v); setKeyOverrides(p => ({ ...p })) }}
+                value={previewVariant?.id || variantOverrides[previewSong.id] || null}
+                onChange={v => {
+                  setPreviewVariant(v)
+                  setVariantOverrides(p => ({ ...p, [previewSong.id]: v ? v.id : null }))
+                  setVariantObjects(p => ({ ...p, [previewSong.id]: v || null }))
+                }}
               />
             </div>
             {previewSong.lyrics ? (

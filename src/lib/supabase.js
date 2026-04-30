@@ -213,11 +213,11 @@ export async function getSetByDate(churchId, date, serviceTime = '') {
   return data || null
 }
 
-export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}, serviceTime = '') {
+export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyOverrides = {}, musicLinks = {}, serviceTime = '', variantOverrides = {}) {
   const { data, error } = await supabase
     .from('sets')
     .upsert(
-      { church_id: churchId, service_date: serviceDate, service_time: serviceTime, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks },
+      { church_id: churchId, service_date: serviceDate, service_time: serviceTime, song_ids: songIds, notes, key_overrides: keyOverrides, music_links: musicLinks, variant_overrides: variantOverrides },
       { onConflict: 'church_id,service_date,service_time' }
     )
     .select()
@@ -226,12 +226,12 @@ export async function upsertSet(churchId, serviceDate, songIds, notes = '', keyO
   return data
 }
 
-export async function finalizeSet(churchId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}, serviceTime = '') {
+export async function finalizeSet(churchId, serviceDate, songIds, keyOverrides = {}, musicLinks = {}, serviceTime = '', variantOverrides = {}) {
   await incrementPlays(songIds)
   const { data, error } = await supabase
     .from('sets')
     .upsert(
-      { church_id: churchId, service_date: serviceDate, service_time: serviceTime, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks },
+      { church_id: churchId, service_date: serviceDate, service_time: serviceTime, song_ids: songIds, finalized: true, key_overrides: keyOverrides, music_links: musicLinks, variant_overrides: variantOverrides },
       { onConflict: 'church_id,service_date,service_time' }
     )
     .select()
