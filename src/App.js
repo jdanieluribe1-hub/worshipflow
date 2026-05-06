@@ -90,7 +90,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
             <Link to="/home" className="logo-link">
               <div className="logo-title">WorshipFlow</div>
               <div className="logo-sub">Director Dashboard</div>
-            </a>
+            </Link>
           )}
           {iconsOnly && <div className="logo-title" style={{ fontSize: 14, textAlign: 'center' }}>WF</div>}
           <button className="sidebar-toggle-btn" onClick={onToggle} title="Toggle sidebar">
