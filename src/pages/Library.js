@@ -291,11 +291,11 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
             <div className="song-info">
               <div className="song-title">{s.title}</div>
               <div className="song-artist">{s.artist}</div>
-            </div>
-            <div className="song-tags">
-              <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{t('tempos.' + s.tempo)}</span>
-              <span className="tag tag-key">{s.key}</span>
-              {(s.specialty||[]).map(sp => <span key={sp} className="tag tag-specialty">{t('specialties.' + sp)}</span>)}
+              <div className="song-tags">
+                <span className={`tag tag-${s.tempo?.toLowerCase()}`}>{t('tempos.' + s.tempo)}</span>
+                <span className="tag tag-key">{s.key}</span>
+                {(s.specialty||[]).map(sp => <span key={sp} className="tag tag-specialty">{t('specialties.' + sp)}</span>)}
+              </div>
             </div>
             {isTemplate ? (
               <button
@@ -307,7 +307,7 @@ export default function Library({ songs, weekSongIds, setWeekSongIds, refreshSon
               </button>
             ) : (
               <>
-                <div style={{ fontSize:12, color:'var(--muted)', minWidth:60, textAlign:'right' }}>{s.plays_year||0} {t('common.plays')}</div>
+                <div className="song-plays">{s.plays_year||0} {t('common.plays')}</div>
                 <button className={`btn btn-sm ${inWeek?'btn-primary':'btn-ghost'}`} onClick={e=>toggleWeek(s.id,e)}>
                   {inWeek ? t('library.inWeek') : t('library.addToWeek')}
                 </button>
