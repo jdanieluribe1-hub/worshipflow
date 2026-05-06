@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../components/Toast'
-import i18n, { dateLocale } from '../i18n'
+import i18n, { dateLocale, capDateWords } from '../i18n'
 import { deleteSet, upsertSet, listSongVariants } from '../lib/supabase'
 import TransposeControl from '../components/TransposeControl'
 import VariantSelect from '../components/VariantSelect'
@@ -68,7 +68,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
 
   const handleDeleteSet = async () => {
     if (!selectedKey) return
-    const dateStr = new Date(selectedKey + 'T12:00:00').toLocaleDateString(locale, { month:'long', day:'numeric', year:'numeric' })
+    const dateStr = capDateWords(new Date(selectedKey + 'T12:00:00').toLocaleDateString(locale, { month:'long', day:'numeric', year:'numeric' }))
     if (!window.confirm(t('history.deleteConfirm', { date: dateStr }))) return
     setDeleting(true)
     try {
@@ -87,7 +87,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
       await upsertSet(activeChurch?.id, duplicateDate, selectedSet.song_ids, selectedSet.notes || '', selectedSet.key_overrides || {}, selectedSet.music_links || {}, '', selectedSet.variant_overrides || {})
       await refreshSets()
       setDuplicateDate('')
-      const destDateStr = new Date(duplicateDate + 'T12:00:00').toLocaleDateString(locale, { month:'long', day:'numeric', year:'numeric' })
+      const destDateStr = capDateWords(new Date(duplicateDate + 'T12:00:00').toLocaleDateString(locale, { month:'long', day:'numeric', year:'numeric' }))
       toast(t('history.duplicatedAlert', { date: destDateStr }), 'success')
     } catch (e) { toast(t('errors.generic', { msg: e.message }), 'error') }
     setDuplicating(false)
@@ -138,7 +138,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
 
   const editWaMessage = () => {
     const useSongs = editSongIds.map(id => songs.find(s => s.id === id)).filter(Boolean)
-    const date = new Date(selectedKey + 'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' })
+    const date = capDateWords(new Date(selectedKey + 'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' }))
     const bandLink = activeChurch?.short_code
       ? `${window.location.origin}/band?c=${activeChurch.short_code}`
       : `${window.location.origin}/band`
@@ -241,7 +241,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div style={{ fontFamily:'var(--font-head)', fontSize:20, fontWeight:700 }}>
-                {currentDate.toLocaleDateString(locale, { month:'long', year:'numeric' })}
+                {capDateWords(currentDate.toLocaleDateString(locale, { month:'long', year:'numeric' }))}
               </div>
               <div style={{ display:'flex', gap:8 }}>
                 <button className="btn btn-ghost btn-sm" onClick={()=>changeMonth(-1)}>‹</button>
@@ -266,7 +266,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
                 <div style={{ padding:'16px 20px', background:'var(--bg3)', borderBottom:'1px solid var(--border)' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                     <div style={{ fontFamily:'var(--font-head)', fontSize:16, fontWeight:700, flex:1 }}>
-                      {new Date(selectedKey+'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' })}
+                      {capDateWords(new Date(selectedKey+'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' }))}
                     </div>
                     {isPast && (
                       isAdmin
@@ -367,7 +367,7 @@ export default function History({ songs, sets, refreshSets, setPage, activeChurc
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexShrink:0 }}>
               <div>
                 <div className="modal-title" style={{ marginBottom:2 }}>{t('history.editSetTitle')}</div>
-                <div style={{ fontSize:12, color:'var(--muted)' }}>{new Date(selectedKey+'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' })}</div>
+                <div style={{ fontSize:12, color:'var(--muted)' }}>{capDateWords(new Date(selectedKey+'T12:00:00').toLocaleDateString(locale, { weekday:'long', month:'long', day:'numeric', year:'numeric' }))}</div>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={()=>setEditModal(false)}>✕</button>
             </div>

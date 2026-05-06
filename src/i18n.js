@@ -26,4 +26,7 @@ i18n
 const LOCALE_MAP = { en: 'en-US', es: 'es-ES' }
 export const dateLocale = (lang) => LOCALE_MAP[lang] || 'en-US'
 
+export const capDateWords = (str) =>
+  str.replace(/\b[a-záéíóúüñ]{3,}/gi, w => w.charAt(0).toUpperCase() + w.slice(1))
+
 export default i18n

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../components/Toast'
-import i18n, { dateLocale } from '../i18n'
+import i18n, { dateLocale, capDateWords } from '../i18n'
 import { getRecommendations, deleteRecommendation } from '../lib/supabase'
 
 function linkIcon(url) {
@@ -78,7 +78,7 @@ export default function Recommendations({ activeChurch }) {
             {recs.map(rec => {
               const link = linkIcon(rec.link)
               const date = rec.created_at
-                ? new Date(rec.created_at).toLocaleDateString(dateLocale(i18n.language), { month: 'short', day: 'numeric', year: 'numeric' })
+                ? capDateWords(new Date(rec.created_at).toLocaleDateString(dateLocale(i18n.language), { month: 'short', day: 'numeric', year: 'numeric' }))
                 : null
               return (
                 <div key={rec.id} className="card card-sm" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import i18n, { dateLocale } from '../i18n'
+import i18n, { dateLocale, capDateWords } from '../i18n'
 
 function tempoColor(t) { return t==='Fast'?'var(--fast)':t==='Medium'?'var(--medium)':'var(--slow)' }
 
@@ -83,7 +83,7 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
         <div className="card home-cal-card" style={{ padding:24, overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, gap:8 }}>
             <div style={{ fontFamily:'var(--font-head)', fontSize:17, fontWeight:700, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {calDate.toLocaleDateString(locale,{month:'long',year:'numeric'})}
+              {capDateWords(calDate.toLocaleDateString(locale,{month:'long',year:'numeric'}))}
             </div>
             <div style={{ display:'flex', gap:6, flexShrink:0 }}>
               <button className="btn btn-ghost btn-sm" onClick={()=>changeMonth(-1)}>‹</button>
@@ -130,7 +130,7 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
                       pointerEvents:'none',
                     }}>
                       <div style={{ fontSize:12, fontWeight:600, marginBottom:5, color:'var(--text)' }}>
-                        {new Date(key+'T12:00:00').toLocaleDateString(locale,{weekday:'short',month:'short',day:'numeric'})}
+                        {capDateWords(new Date(key+'T12:00:00').toLocaleDateString(locale,{weekday:'short',month:'short',day:'numeric'}))}
                       </div>
                       {(setData.song_ids||[]).slice(0,4).map(id => {
                         const s = songs.find(x => x.id === id)
@@ -175,13 +175,13 @@ export default function Home({ songs, sets, setPage, setPendingOpenSong, profile
               }}>
                 <div style={{ flexShrink:0, textAlign:'center', minWidth:48 }}>
                   <div style={{ fontSize:11, color:'var(--muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>
-                    {new Date(set.service_date+'T12:00:00').toLocaleDateString(locale,{month:'short'})}
+                    {capDateWords(new Date(set.service_date+'T12:00:00').toLocaleDateString(locale,{month:'short'}))}
                   </div>
                   <div style={{ fontFamily:'var(--font-head)', fontSize:22, fontWeight:700, lineHeight:1, color: isNext ? 'var(--accent)' : 'var(--text)' }}>
                     {new Date(set.service_date+'T12:00:00').getDate()}
                   </div>
                   <div style={{ fontSize:10, color:'var(--muted)' }}>
-                    {new Date(set.service_date+'T12:00:00').toLocaleDateString(locale,{weekday:'short'})}
+                    {capDateWords(new Date(set.service_date+'T12:00:00').toLocaleDateString(locale,{weekday:'short'}))}
                   </div>
                 </div>
                 <div style={{ flex:1 }}>

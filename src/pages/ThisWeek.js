@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../components/Toast'
-import i18n, { dateLocale } from '../i18n'
+import i18n, { dateLocale, capDateWords } from '../i18n'
 import { upsertSet, finalizeSet } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
 import ChordDisplay from '../components/ChordDisplay'
@@ -162,7 +162,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
     const youtube = overrides.youtube || songYoutubeUrls
     const apple = overrides.apple || songAppleMusicUrls
     const useSongs = ids.map(id => songs.find(s => s.id === id)).filter(Boolean)
-    const date = new Date(serviceDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { weekday:'long', month:'long', day:'numeric', year:'numeric' })
+    const date = capDateWords(new Date(serviceDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { weekday:'long', month:'long', day:'numeric', year:'numeric' }))
     const bandLink = activeChurch?.short_code
       ? `${window.location.origin}/band?c=${activeChurch.short_code}`
       : `${window.location.origin}/band`
@@ -362,7 +362,7 @@ export default function ThisWeek({ songs, weekSongIds, setWeekSongIds, weekSongs
             <div style={{ marginBottom:14, fontSize:13, color:'var(--muted)' }}>{t('thisWeek.waMessageHint')}</div>
             <div style={{ background:'#111b21', borderRadius:14, padding:20 }}>
               <div style={{ fontSize:11, color:'#8696a0', textAlign:'center', marginBottom:14 }}>
-                {new Date().toLocaleDateString(dateLocale(i18n.language), { weekday:'long' })}
+                {capDateWords(new Date().toLocaleDateString(dateLocale(i18n.language), { weekday:'long' }))}
               </div>
               <div style={{ background:'#005c4b', borderRadius:'10px 10px 10px 2px', padding:'12px 14px', fontSize:13, lineHeight:1.6, color:'#e9edef', whiteSpace:'pre-wrap' }}
                 dangerouslySetInnerHTML={{ __html: waMessage().replace(/\*(.*?)\*/g,'<b>$1</b>') }} />

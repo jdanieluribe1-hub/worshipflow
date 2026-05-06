@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import i18n, { dateLocale } from '../i18n'
+import i18n, { dateLocale, capDateWords } from '../i18n'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { getSongs, getSets, getSongsForBand, getSetsForBand, getSongsForBandByShortCode, getSetsForBandByShortCode, listSongVariants, getPublishedVariant } from '../lib/supabase'
 import { transposeLyrics } from '../lib/transpose'
@@ -111,7 +111,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
   }
 
   const tempoColor = { Fast: '#ef4444', Medium: '#d97706', Slow: '#3b82f6' }
-  const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { month:'long', day:'numeric', year:'numeric' })
+  const dateLabel = capDateWords(new Date(selectedDate + 'T12:00:00').toLocaleDateString(dateLocale(i18n.language), { month:'long', day:'numeric', year:'numeric' }))
 
   const currentTransposedKey = current ? (transposedKeys[current.id] || current.key) : null
   const currentLyrics = (() => {
