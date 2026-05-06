@@ -363,7 +363,7 @@ function AppShell() {
 
   const BOTTOM_NAV = [
     { id: 'home', icon: '🏠', label: t('nav.home') },
-    { id: 'library', icon: '♪', label: t('nav.library') },
+    { id: 'library', icon: '🎵', label: t('nav.library') },
     { id: 'thisweek', icon: '📅', label: t('nav.thisWeek') },
     { id: 'history', icon: '📊', label: t('nav.history') },
   ]
