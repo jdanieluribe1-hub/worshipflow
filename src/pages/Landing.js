@@ -26,6 +26,7 @@ export default function Landing() {
       <header style={{
         borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 100,
+        paddingTop: 'env(safe-area-inset-top)',
       }}>
         {/* Desktop: single row with logo + buttons */}
         <div className="landing-nav-desktop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 40px' }}>

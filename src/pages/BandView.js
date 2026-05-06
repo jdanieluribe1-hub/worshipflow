@@ -244,7 +244,7 @@ export default function BandView({ songs: propSongs = [], sets: propSets = [], p
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <div style={{ background:'var(--bg2)', borderBottom:'1px solid var(--border)', padding:'12px 16px', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
+          <div style={{ background:'var(--bg2)', borderBottom:'1px solid var(--border)', padding:'12px 16px', paddingTop:'calc(12px + env(safe-area-inset-top))', display:'flex', alignItems:'center', gap:12, flexShrink:0 }}>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontFamily:'var(--font-head)', fontWeight:700, fontSize:16, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{current.title}</div>
               <div style={{ fontSize:12, color:'var(--muted)' }}>{currentTransposedKey === 'Numbers' ? t('bandView.keyOfNumbers') : `${t('library.keyOf')} ${currentTransposedKey}`} · {t('tempos.' + current.tempo)}</div>
