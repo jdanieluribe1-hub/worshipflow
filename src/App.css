@@ -76,7 +76,7 @@ body {
 .sidebar-icons { width: 56px; min-width: 56px; }
 
 .logo {
-  padding: 20px 14px 16px;
+  padding: 20px 14px 16px; padding-top: calc(20px + env(safe-area-inset-top));
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; min-height: 64px;
@@ -189,7 +189,7 @@ body {
   .topbar-title-desktop { display: none !important; }
   .topbar-title-mobile { display: block !important; text-align: center; font-size: 18px; }
   .topbar-actions { position: absolute; right: 16px; }
-  .content { padding: 16px; padding-bottom: 80px; overflow-x: hidden; }
+  .content { padding: 16px; padding-bottom: calc(80px + env(safe-area-inset-bottom)); overflow-x: hidden; }
 
   /* Bottom nav */
   .bottom-nav {
@@ -229,7 +229,8 @@ body {
 /* TOPBAR */
 .topbar {
   background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 16px 28px; display: flex; align-items: center; position: relative;
+  padding: 16px 28px; padding-top: calc(16px + env(safe-area-inset-top));
+  display: flex; align-items: center; position: relative;
   justify-content: space-between; min-height: 64px;
 }
 .topbar-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
@@ -434,7 +435,8 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .band-topbar {
   background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; padding-top: calc(16px + env(safe-area-inset-top));
+  display: flex; align-items: center; justify-content: space-between;
 }
 .band-logo { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); }
 .band-week-label { font-size: 12px; color: var(--muted); }
@@ -469,7 +471,8 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .rec-topbar {
   background: #fff; border-bottom: 1px solid rgba(0,0,0,0.08);
-  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; padding-top: calc(16px + env(safe-area-inset-top));
+  display: flex; align-items: center; justify-content: space-between;
 }
 .rec-logo { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: #1a1a1a; }
 .rec-label { font-size: 12px; color: #888; }

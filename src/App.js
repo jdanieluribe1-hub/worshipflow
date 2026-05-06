@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { ToastProvider } from './components/Toast'
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getSongs, getSets, createChurch, getChurchByShortCode, joinChurchByShortCode, setActiveChurchDB } from './lib/supabase'
 import { AuthProvider, useAuth } from './lib/AuthContext'
@@ -87,7 +87,7 @@ function Sidebar({ page, setPage, weekCount, churches, activeChurch, setActiveCh
       <aside className={`sidebar sidebar-${mode} ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="logo">
           {!iconsOnly && (
-            <a href="/home" className="logo-link">
+            <Link to="/home" className="logo-link">
               <div className="logo-title">WorshipFlow</div>
               <div className="logo-sub">Director Dashboard</div>
             </a>
@@ -451,7 +451,7 @@ function AppShell() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <ToastProvider>
         <Routes>
@@ -466,14 +466,15 @@ export default function App() {
         </Routes>
         </ToastProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
 function SignupPage() {
   const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
   if (loading) return null
-  if (user && profile) { window.location.replace('/home'); return null }
+  if (user && profile) { navigate('/home', { replace: true }); return null }
   if (user && !profile) return <Onboarding />
   return <Login onNeedsOnboarding={() => {}} defaultMode="signup" />
 }

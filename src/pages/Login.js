@@ -52,21 +52,21 @@ export default function Login({ onNeedsOnboarding, defaultMode = 'signin' }) {
       justifyContent: 'center',
       background: 'var(--bg)',
       padding: 20,
-      paddingTop: '5.25vh',
+      paddingTop: 'calc(env(safe-area-inset-top) + 28px)',
     }}>
       <div style={{ width: '100%', maxWidth: 640 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 52 }}>
-          <div style={{ fontFamily: 'var(--font-head)', fontSize: 44, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontFamily: 'var(--font-head)', fontSize: 34, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.5px' }}>
             WorshipFlow
           </div>
-          <div style={{ fontSize: 16, color: 'var(--muted)', marginTop: 8 }}>
+          <div style={{ fontSize: 15, color: 'var(--muted)', marginTop: 6 }}>
             {t('auth.worshipDirectorDashboard')}
           </div>
         </div>
 
         {/* Card */}
-        <div className="card" style={{ padding: 56 }}>
+        <div className="card" style={{ padding: 40 }}>
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 24, fontWeight: 700, marginBottom: 32, color: 'var(--text)' }}>
             {mode === 'signin' ? t('auth.signInToAccount') : t('auth.createYourAccount')}
           </div>
